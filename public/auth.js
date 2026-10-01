@@ -151,7 +151,6 @@
             'setting_appearance': ['appearance-settings-content', 'mob-appearance-settings-content'],
             'setting_portfolio': ['portfolio-settings-content', 'mob-portfolio-settings-content'],
             'setting_data_sources': ['datasource-settings-content', 'mob-datasource-settings-content'],
-            'setting_telegram': ['telegram-settings-content', 'mob-telegram-settings-content'],
             'setting_volatility': ['volatility-settings-content', 'mob-volatility-settings-content'],
             'setting_backup': ['backup-settings-content', 'mob-backup-settings-content'],
             'setting_diagnostic': ['diagnostic-settings-content'],

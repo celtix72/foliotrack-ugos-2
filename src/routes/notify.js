@@ -74,43 +74,36 @@ module.exports = function (dependencies) {
             tp: {
                 title: '🏆 TP: AAPL',
                 body: '260.00 € (Tgt: 250.00)',
-                telegramMessage: '*🎯 TARGET PROFIT*\n\nAsset: `AAPL`\nPrezzo: `€260.00`\nTarget: `€250.00`',
                 data: { url: '/dashboard' }
             },
             sl: {
                 title: '⚠️ SL: TSLA',
                 body: '150.00 € (Soglia: 155.00)',
-                telegramMessage: '*⚠️ STOP LOSS*\n\nAsset: `TSLA`\nPrezzo: `€150.00`\nSoglia: `€155.00`',
                 data: { url: '/dashboard' }
             },
             vol: {
                 title: 'ALLERTA VOLATILITÀ 📉',
                 body: 'BTC-EUR variazione giornaliera: -8.5%',
-                telegramMessage: '*📉 ALLERTA VOLATILITÀ*\n\nAsset: `BTC-EUR`\nVariazione: `-8.5%` (Soglia: 5%)',
                 data: { url: '/dashboard' }
             },
             dividend: {
                 title: 'DIVIDENDO RICEVUTO 💰',
                 body: 'MSFT: +€12.50 (Netto)',
-                telegramMessage: '*💰 DIVIDENDO RICEVUTO*\n\nAsset: `MSFT`\nImporto Netto: `€12.50`',
                 data: { url: '/dividend' }
             },
             news: {
                 title: 'News Alert: AAPL',
                 body: 'Apple Inc. announces new AI features for iOS 20.',
-                telegramMessage: '📰 *News Alert: AAPL*\n\nApple Inc\\. announces new AI features for iOS 20\\.\n\n[Leggi notizia completa](https://www.apple.com)',
                 data: { url: 'https://www.apple.com' }
             },
             status: {
                 title: '🔔 OpenUE',
                 body: 'NET €150.0K +€320\n🟢 ETF +€180\n🟢 AZI +€140\n🏆 ENEL +€95',
-                telegramMessage: '*🔔 OPENUE*\n\n`NET. :` `€150.000`\n\n*🟢* *`ETF AZ       +€180`*  *`(+€0)`*\n*🔵* *`AZIONI       +€140`*  *`(+€0)`*\n\n🕒 `09:05`',
                 data: { url: '/dashboard' }
             },
             daily: {
                 title: '📊 Daily',
                 body: 'NET €150.0K +€450\n🟢 ETF +€250\n🟢 AZI +€200\n🏆 ENEL +€120',
-                telegramMessage: '*📊 DAILY REPORT*\n\n`NET. :` `€150.000` (+€450)',
                 data: { url: '/dashboard' }
             }
         };

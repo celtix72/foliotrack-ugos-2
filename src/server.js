@@ -49,7 +49,7 @@ function calculateROI(value, netDeposits, profit) {
     return 0;
 }
 
-const { logger, telegramLogger, getLastLogLines, LOG_FILE, LOGS_DIR, TELEGRAM_LOG_FILE, getRotatedLogFile } = require('./utils/logger');
+const { logger, getLastLogLines, LOG_FILE, LOGS_DIR, getRotatedLogFile } = require('./utils/logger');
 
 dotenv.config();
 
@@ -58,25 +58,6 @@ const { initVapid } = require('./services/pushService');
 initVapid();
 
 const https = require('https');
-
-// ─── Telegram Utility ────────────────────────────────────────────────────────
-function escapeV2(text) {
-    if (typeof text !== 'string') text = String(text || '');
-    // MarkdownV2 requires escaping these characters outside of pre/code spans
-    return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
-}
-
-/**
- * Helper to escape text specifically for code blocks in MarkdownV2.
- * In code blocks, only \ and ` need escaping.
- */
-function escapeCodeV2(text) {
-    if (typeof text !== 'string') text = String(text || '');
-    return text.replace(/([\\`])/g, '\\$1');
-}
-
-
-const { startTelegramPolling, sendTelegramMessage } = require('./services/telegramService');
 
 
 function formatMarketValueV2(value) {
@@ -227,19 +208,17 @@ const isUSMarket = (a) => {
 async function sendStatusNotification(targetUserId = null, eventType = 'STATUS', preCalculatedStats = null, triggerMeta = null) {
     const users = targetUserId 
         ? database.db.prepare(`SELECT id FROM users WHERE id = ?`).all(targetUserId)
-        : database.db.prepare(`SELECT id FROM users WHERE telegram_chat_id IS NOT NULL OR id IN (SELECT DISTINCT user_id FROM push_subscriptions)`).all();
+        : database.db.prepare(`SELECT id FROM users WHERE id IN (SELECT DISTINCT user_id FROM push_subscriptions)`).all();
 
     for (const userRow of users) {
         const userId = userRow.id;
         const userSettings = database.getSettings(userId);
         
-        // Skip if not forced and disabled for this user
-        const statusTgEnabled = (userSettings.telegramEnabled === 'true' || userSettings.telegramBotToken) && (userSettings.marketStatusTelegramEnabled === 'true' || userSettings.notify_status_telegram === 'true');
+        // Skip if not forced and push notifications are disabled for status
         const statusPushEnabled = userSettings.notify_status_push === 'true';
-        if (!targetUserId && !statusTgEnabled && !statusPushEnabled) continue;
+        if (!targetUserId && !statusPushEnabled) continue;
 
         try {
-            const escape = escapeV2;
             const stats = preCalculatedStats || await calculateMarketStats(userId);
             const marketStatus = getMarketStatus();
             const overrides = calculateVariationOverrides(marketStatus);
@@ -300,37 +279,6 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             });
 
             const totalVal = stats.totalNetValue || 0;
-            const bigEmoji = getBigEmoji(marketChange + prePostChange);
-            
-            const tSign = marketChange >= 0 ? '+' : '';
-            let msgHeader = eventType === 'DAILY' ? '📊 DAILY REPORT' : '📈 MARKET STATUS';
-            if (triggerMeta && triggerMeta.label) {
-                msgHeader = `${triggerMeta.label.toUpperCase()}`;
-            }
-            let msg = `*${msgHeader}*\n\n`;
-            const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
-            msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
-
-            for (const [catName, cat] of Object.entries(categories)) {
-                if (cat.assets.length === 0) continue;
-                const catPPSign = cat.totalVarPP >= 0 ? '+' : '';
-                const catVarStr = Math.round(cat.totalVar).toLocaleString('it-IT');
-                const catVarPPStr = Math.round(cat.totalVarPP).toLocaleString('it-IT');
-                msg += `*${cat.emoji}* *\`${escapeCodeV2(catName.padEnd(12) + (cat.totalVar >= 0 ? '+' : '') + '€' + catVarStr)}\`*  *\`(${catPPSign + '€' + catVarPPStr})\`*\n`;
-                
-                cat.assets.sort((a,b) => (b.diffReg + b.diffPP) - (a.diffReg + a.diffPP)).forEach(a => {
-                    const combinedPct = a.changePercent + (a.preMarketChangePercent || a.postMarketChangePercent || 0);
-                    const mktStatus = marketStatus[isUSMarket(a) ? 'US' : 'EU'];
-                    const statusIcon = mktStatus ? (a.diffReg >= 0 ? '🟢' : '🔴') : (a.diffPP !== 0 ? '🟡' : '🔘');
-                    const rowData = `${extractSimpleSymbol(a.ticker).padEnd(8)}${(a.currency === 'USD' ? '$' : '€').padStart(2)} ${a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: a.currentPrice < 10 ? 2 : 1, maximumFractionDigits: a.currentPrice < 10 ? 2 : 1 }).padStart(6)} ${(a.diffReg >= 0 ? '+' : '-') + '€' + Math.round(Math.abs(a.diffReg)).toLocaleString('it-IT').padStart(7)} ${(combinedPct >= 0 ? '+' : '') + Math.abs(combinedPct).toFixed(1) + '%'}`;
-                    msg += `${getPerformanceIcon(combinedPct)} \`${escapeCodeV2(rowData)}\` ${statusIcon}\n`;
-                });
-                msg += '\n';
-            }
-            
-            const tsFormatted = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
-                               new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-            msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
             // Compact Push Notification Body for iOS & Android
             const regVar = stats.totalChange || 0;
@@ -416,7 +364,6 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             notifyUser(userId, eventType, {
                 title: pushTitle,
                 body: pushBody.trim(),
-                telegramMessage: msg,
                 data: { url: '/dashboard' }
             });
 
@@ -424,10 +371,6 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             logger.error(`sendStatusNotification failed for user ${userId}`, err);
         }
     }
-}
-
-async function sendTelegramDailyReport() {
-    await sendMarketStatusTelegram(); // Unify with the new requested format
 }
 
 const yahooFinance = new YahooFinance({ 
@@ -594,7 +537,7 @@ app.use('/api', require('./routes/watchlist')({
 // ─── Settings Routes ──────────────────────────────────────────────────────────
 app.use('/api', require('./routes/settings')({
     requireAuth, requireAdmin, database, logger, resetTransporter,
-    sendTelegramMessage, sendStatusNotification, escapeV2, escapeCodeV2, TELEGRAM_LOG_FILE
+    sendStatusNotification
 }));
 
 // ─── Notifications Routes ─────────────────────────────────────────────────────
@@ -3590,7 +3533,6 @@ async function _internalUpdateMarketData(force = false) {
                 const userAlerts = database.db.prepare(`
                     SELECT 
                         u.id as user_id, 
-                        u.telegram_chat_id,
                         CASE WHEN uw.ticker IS NOT NULL THEN uw.targetPrice ELSE a.targetPrice END as targetPrice,
                         CASE WHEN uw.ticker IS NOT NULL THEN uw.stopLoss ELSE a.stopLoss END as stopLoss
                     FROM users u
@@ -3613,20 +3555,13 @@ async function _internalUpdateMarketData(force = false) {
                             WHERE ticker = ? AND user_id = ? AND type = 'TP' AND date(date) = date('now')
                         `).get(asset.ticker, ua.user_id);
                         if (!existing) {
-                            const sym = asset.ticker.padEnd(8);
                             const cur = asset.currency === 'USD' ? '$' : '€';
                             const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             const targetStr = ua.targetPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            
-                            const tgMsg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
-                                        `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                        `*${escapeV2('Target:')}* \`${escapeCodeV2(cur + ' ' + targetStr)}\`\n\n` +
-                                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             notifyUser(ua.user_id, 'TP', {
                                 title: `🏆 TP: ${asset.ticker}`,
                                 body: `${priceStr} ${cur} (Tgt: ${targetStr})`,
-                                telegramMessage: tgMsg,
                                 ticker: asset.ticker,
                                 data: { ticker: asset.ticker }
                             });
@@ -3640,20 +3575,13 @@ async function _internalUpdateMarketData(force = false) {
                             WHERE ticker = ? AND user_id = ? AND type = 'SL' AND date(date) = date('now')
                         `).get(asset.ticker, ua.user_id);
                         if (!existing) {
-                            const sym = asset.ticker.padEnd(8);
                             const cur = asset.currency === 'USD' ? '$' : '€';
                             const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             const stopStr = ua.stopLoss.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            
-                            const tgMsg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
-                                        `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                        `*${escapeV2('Soglia:')}* \`${escapeCodeV2(cur + ' ' + stopStr)}\`\n\n` +
-                                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             notifyUser(ua.user_id, 'SL', {
                                 title: `⚠️ SL: ${asset.ticker}`,
                                 body: `${priceStr} ${cur} (Soglia: ${stopStr})`,
-                                telegramMessage: tgMsg,
                                 ticker: asset.ticker,
                                 data: { ticker: asset.ticker }
                             });
@@ -3672,22 +3600,12 @@ async function _internalUpdateMarketData(force = false) {
                         `).get(asset.ticker, ua.user_id);
                         
                         if (!existing) {
-                            const sym = asset.ticker.padEnd(8);
-                            const cur = asset.currency === 'USD' ? '$' : '€';
-                            const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             const changeSign = (updateData.change || 0) >= 0 ? '+' : '';
                             const changeStr = changeSign + (updateData.change || 0).toFixed(2) + '%';
-                            const vIcon = (updateData.change || 0) >= 0 ? '📈' : '📉';
-                            
-                            const tgMsg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
-                                        `${escapeV2(vIcon)} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                        `*${escapeV2('Var.:')}* \`${escapeCodeV2(changeStr)}\` ${escapeV2('(Soglia: ' + threshold + '%)')}\n\n` +
-                                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             notifyUser(ua.user_id, 'VOL', {
                                 title: 'VOLATILITY ALERT 📊',
                                 body: `${asset.ticker}: ${changeStr} (Soglia: ${threshold}%)`,
-                                telegramMessage: tgMsg,
                                 ticker: asset.ticker,
                                 data: { ticker: asset.ticker }
                             });
@@ -3776,7 +3694,6 @@ try {
     logger.error('Failed to load lastSnapshotDate from DB', e);
 }
 let lastDailyReportDate = ''; // 'YYYY-MM-DD'
-let lastTelegramStatusTime = 0;
 
 let isFirstNewsSync = true;
 
@@ -3853,15 +3770,6 @@ async function checkAndSendNewsAlert(userId, item, sourceName) {
         }
 
         if (matchedAsset) {
-            const escapeV2 = (text) => {
-                if (typeof text !== 'string') text = String(text || '');
-                return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
-            };
-
-            const cleanTitle = escapeV2(item.title);
-            const cleanTicker = escapeV2(matchedAsset.ticker);
-            const cleanLink = item.link.replace(/([\\)])/g, '\\$1');
-
             // Send notification
             const payload = {
                 title: `News Alert: ${matchedAsset.ticker}`,
@@ -3869,8 +3777,7 @@ async function checkAndSendNewsAlert(userId, item, sourceName) {
                 ticker: matchedAsset.ticker,
                 data: {
                     url: item.link
-                },
-                telegramMessage: `📰 *News Alert: ${cleanTicker}*\n\n${cleanTitle}\n\n[Leggi notizia completa](${cleanLink})`
+                }
             };
             await notifyUser(userId, 'NEWS', payload);
         }
@@ -3996,10 +3903,9 @@ setInterval(async () => {
     for (const u of users) {
         const uSettings = database.getSettings(u.id);
         
-        // Skip user if neither Telegram nor Push is enabled for status
-        const statusTgEnabled = (uSettings.telegramEnabled === 'true' || uSettings.telegramBotToken) && (uSettings.marketStatusTelegramEnabled === 'true' || uSettings.notify_status_telegram === 'true');
+        // Skip user if Push is not enabled for status
         const statusPushEnabled = uSettings.notify_status_push === 'true';
-        if (!statusTgEnabled && !statusPushEnabled) continue;
+        if (!statusPushEnabled) continue;
 
         const mode = uSettings.marketStatusMode || 'smart'; // 'smart', 'interval', 'events_only'
         const eventsEnabled = uSettings.marketStatusEventsEnabled !== 'false';
@@ -4405,8 +4311,7 @@ async function notifyAllUsersServerRestart() {
         for (const u of users) {
             await notifyUser(u.id, 'STATUS', {
                 title: '⚡️ SERVER RIAVVIATO',
-                body: 'Il server FolioTrack è ripartito correttamente ed è ora online.',
-                telegramMessage: '⚡️ *SERVER RIAVVIATO*\n\nIl server FolioTrack è ripartito correttamente ed è ora online.'
+                body: 'Il server FolioTrack è ripartito correttamente ed è ora online.'
             }, true);
         }
         logger.info(`Startup notification sent to ${users.length} users.`);
@@ -4419,9 +4324,6 @@ if (require.main === module) {
     app.listen(PORT, '0.0.0.0', () => {
         logger.info(`FolioTrack server running on port ${PORT}`);
         logger.info(`Database: ${require('./db').db.name}`);
-        
-        // Start Telegram command listener
-        startTelegramPolling().catch(e => logger.error('Telegram polling failed at startup', e));
         
         // Send server restart notification to all users
         notifyAllUsersServerRestart().catch(e => logger.error('Server restart notification failed', e));

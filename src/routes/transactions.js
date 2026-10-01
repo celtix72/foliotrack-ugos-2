@@ -317,7 +317,6 @@ module.exports = function(dependencies) {
             notifyUser(userId, 'DIVIDEND', {
                 title: 'DIVIDENDO RICEVUTO 💰',
                 body: `${sanitizedTicker}: +€${netAmount.toFixed(2)} (Netto)`,
-                telegramMessage: `*💰 DIVIDENDO RICEVUTO*\n\nAsset: \`${sanitizedTicker}\`\nImporto Netto: \`€${netAmount.toFixed(2)}\`\nData: \`${date}\``,
                 data: { url: '/dividend' }
             });
         }

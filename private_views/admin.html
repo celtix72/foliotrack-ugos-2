@@ -578,7 +578,6 @@
                                     <thead>
                                         <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                                             <th class="pb-3 px-2">Tipo di Evento</th>
-                                            <th class="pb-3 text-center px-4">Telegram</th>
                                             <th class="pb-3 text-center px-4">Web Push</th>
                                             <th class="pb-3 text-center px-4">Test</th>
                                         </tr>
@@ -589,9 +588,6 @@
                                             <td class="py-4 px-2">
                                                 <div class="font-bold text-sm">Target Profit (TP)</div>
                                                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Avviso raggiungimento obiettivo di profitto</div>
-                                            </td>
-                                            <td class="py-4 text-center">
-                                                <input type="checkbox" id="notify-tp-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                                             </td>
                                             <td class="py-4 text-center">
                                                 <input type="checkbox" id="notify-tp-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
@@ -609,9 +605,6 @@
                                                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Soglia massima di perdita raggiunta</div>
                                             </td>
                                             <td class="py-4 text-center">
-                                                <input type="checkbox" id="notify-sl-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
-                                            </td>
-                                            <td class="py-4 text-center">
                                                 <input type="checkbox" id="notify-sl-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                                             </td>
                                             <td class="py-4 text-center">
@@ -625,9 +618,6 @@
                                             <td class="py-4 px-2">
                                                 <div class="font-bold text-sm">Volatilità Alert</div>
                                                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Sbalzi repentini giornalieri di prezzo</div>
-                                            </td>
-                                            <td class="py-4 text-center">
-                                                <input type="checkbox" id="notify-vol-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                                             </td>
                                             <td class="py-4 text-center">
                                                 <input type="checkbox" id="notify-vol-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
@@ -645,9 +635,6 @@
                                                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Riepilogo serale dei portafogli (22:15)</div>
                                             </td>
                                             <td class="py-4 text-center">
-                                                <input type="checkbox" id="notify-daily-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
-                                            </td>
-                                            <td class="py-4 text-center">
                                                 <input type="checkbox" id="notify-daily-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                                             </td>
                                             <td class="py-4 text-center">
@@ -661,9 +648,6 @@
                                             <td class="py-4 px-2">
                                                 <div class="font-bold text-sm">Stato Mercato</div>
                                                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Update periodico durante la sessione</div>
-                                            </td>
-                                            <td class="py-4 text-center">
-                                                <input type="checkbox" id="notify-status-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                                             </td>
                                             <td class="py-4 text-center">
                                                 <input type="checkbox" id="notify-status-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
@@ -681,9 +665,6 @@
                                                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Stacco e accredito flussi cedolari</div>
                                             </td>
                                             <td class="py-4 text-center">
-                                                <input type="checkbox" id="notify-dividend-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
-                                            </td>
-                                            <td class="py-4 text-center">
                                                 <input type="checkbox" id="notify-dividend-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                                             </td>
                                             <td class="py-4 text-center">
@@ -697,9 +678,6 @@
                                             <td class="py-4 px-2">
                                                 <div class="font-bold text-sm text-blue-500">News Alert</div>
                                                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Notizie rilevanti sui titoli monitorati</div>
-                                            </td>
-                                            <td class="py-4 text-center">
-                                                <input type="checkbox" id="notify-news-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                                             </td>
                                             <td class="py-4 text-center">
                                                 <input type="checkbox" id="notify-news-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
@@ -802,90 +780,6 @@
                     </div>
                 </div>
 
-                <!-- ========================================================================= -->
-                <!-- 8. TELEGRAM NOTIFICATIONS -->
-                <!-- ========================================================================= -->
-                <div class="bg-white dark:bg-surface-dark rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <button onclick="toggleAdminSection('section-telegram')" class="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                        <h2 class="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[#0088cc] text-lg">send</span> Configurazione Telegram Bot &amp; Log
-                        </h2>
-                        <span id="section-telegram-arrow" class="material-symbols-outlined transition-transform">expand_more</span>
-                    </button>
-                    <div id="section-telegram" class="collapsible-content px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
-                        <div class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Bot Token</label>
-                                        <input id="telegram-bot-token" type="password" placeholder="123456789:ABCDefgh..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-[#0088cc]/30 focus:border-[#0088cc]"/>
-                                    </div>
-                                    <div>
-                                        <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Chat ID</label>
-                                        <input id="telegram-chat-id" type="text" placeholder="e.g. 123456789" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-[#0088cc]/30 focus:border-[#0088cc]"/>
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                                        <div>
-                                            <div class="font-bold text-sm">Abilita Notifiche Telegram</div>
-                                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Interruttore Globale Bot</div>
-                                        </div>
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="telegram-enabled-check" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#0088cc]"></div>
-                                        </label>
-                                    </div>
-                                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                                        <div>
-                                            <div class="font-bold text-sm">Riepilogo Mercato Periodico</div>
-                                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Invio info durante il giorno</div>
-                                        </div>
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="telegram-market-status-check" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#0088cc]"></div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Test Notifiche Telegram</p>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                                    <button onclick="sendDailyReport()" class="px-3 py-2 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 text-[#0088cc] rounded-lg text-xs font-bold transition-all border border-[#0088cc]/20 flex items-center justify-center gap-1.5">
-                                        <span class="material-symbols-outlined text-sm">assignment</span> Daily
-                                    </button>
-                                    <button onclick="sendTestTelegram('tp')" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
-                                        <span class="material-symbols-outlined text-sm">notifications_active</span> TP
-                                    </button>
-                                    <button onclick="sendTestTelegram('sl')" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
-                                        <span class="material-symbols-outlined text-sm">warning</span> SL
-                                    </button>
-                                    <button onclick="sendTestTelegram('status')" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
-                                        <span class="material-symbols-outlined text-sm">query_stats</span> Status
-                                    </button>
-                                    <button onclick="sendTestTelegram('news')" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
-                                        <span class="material-symbols-outlined text-sm">newspaper</span> News
-                                    </button>
-                                    <button onclick="toggleTelegramLogs()" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
-                                        <span class="material-symbols-outlined text-sm">terminal</span> Logs
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Telegram Logs Section (Hidden by default) -->
-                            <div id="telegram-logs-section" class="hidden pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <div class="flex items-center justify-between mb-3">
-                                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Registro Eventi Telegram</p>
-                                    <button onclick="loadTelegramLogs()" class="text-[#0088cc] hover:underline text-[10px] font-bold uppercase tracking-widest">Ricarica Log</button>
-                                </div>
-                                <div id="telegram-logs-container" class="bg-slate-900 rounded-xl p-4 font-mono text-[10px] overflow-y-auto max-h-60 space-y-1 custom-scrollbar text-slate-300">
-                                    <p class="text-slate-500 italic">Nessun log disponibile.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- ========================================================================= -->
                 <!-- 9. WEB PUSH NOTIFICATIONS -->
@@ -1855,7 +1749,6 @@
                 if (id === 'section-security') { loadSessions(); loadAuditLogs(); loadSecuritySettings(); loadBannedIps(); }
                 if (id === 'section-ai') { loadAiSettings(); loadAiHistoryCount(); }
                 if (id === 'section-notifications') loadNotificationParams();
-                if (id === 'section-telegram') loadTelegramSettings();
                 if (id === 'section-smtp') loadSmtpSettings();
                 if (id === 'section-transactions') loadMgmtTransactions();
                 if (id === 'section-sltp') loadSltpData();
@@ -2330,10 +2223,14 @@
                 if (notifs) {
                     const keys = ['tp', 'sl', 'vol', 'daily', 'status', 'dividend', 'news'];
                     keys.forEach(k => {
-                        const tg = document.getElementById(`notify-${k}-telegram`);
                         const ps = document.getElementById(`notify-${k}-push`);
-                        if (tg) tg.checked = notifs[`${k}_telegram`] === 1 || notifs[`${k}_telegram`] === true;
-                        if (ps) ps.checked = notifs[`${k}_push`] === 1 || notifs[`${k}_push`] === true;
+                        if (ps) {
+                            if (notifs[k] && typeof notifs[k].push !== 'undefined') {
+                                ps.checked = !!notifs[k].push;
+                            } else {
+                                ps.checked = notifs[`${k}_push`] === 1 || notifs[`${k}_push`] === true;
+                            }
+                        }
                     });
                 }
             } catch (e) {}
@@ -2343,8 +2240,9 @@
             const keys = ['tp', 'sl', 'vol', 'daily', 'status', 'dividend', 'news'];
             const payload = {};
             keys.forEach(k => {
-                payload[`${k}_telegram`] = document.getElementById(`notify-${k}-telegram`)?.checked ? 1 : 0;
-                payload[`${k}_push`] = document.getElementById(`notify-${k}-push`)?.checked ? 1 : 0;
+                payload[k] = {
+                    push: !!document.getElementById(`notify-${k}-push`)?.checked
+                };
             });
             try {
                 await fetchAdmin('/api/settings/notifications', {
@@ -2386,78 +2284,14 @@
 
         window.sendTestNotify = async (type) => {
             try {
-                const res = await fetchAdmin(`/api/settings/telegram/test-${type}`, { method: 'POST' });
+                const res = await fetchAdmin('/api/notify/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event: type })
+                });
                 if (res?.success) alert(`Notifica di test [${type.toUpperCase()}] inviata!`);
                 else alert('Errore: ' + (res?.error || 'Invio fallito'));
             } catch (e) { alert('Errore: ' + e.message); }
-        };
-
-        // =========================================================================
-        // 7. TELEGRAM CONFIG & LOGS
-        // =========================================================================
-        async function loadTelegramSettings() {
-            try {
-                const s = await fetchAdmin('/api/settings');
-                if (!s) return;
-                if (document.getElementById('telegram-bot-token')) document.getElementById('telegram-bot-token').value = s.telegramBotToken || '';
-                if (document.getElementById('telegram-chat-id')) document.getElementById('telegram-chat-id').value = s.telegramChatId || '';
-                if (document.getElementById('telegram-enabled-check')) document.getElementById('telegram-enabled-check').checked = s.telegramEnabled === 'true';
-                if (document.getElementById('telegram-market-status-check')) document.getElementById('telegram-market-status-check').checked = s.marketStatusTelegramEnabled === 'true';
-            } catch (e) {}
-        }
-
-        const saveTelegramSettings = async () => {
-            const token = document.getElementById('telegram-bot-token')?.value.trim();
-            const chatId = document.getElementById('telegram-chat-id')?.value.trim();
-            const enabled = document.getElementById('telegram-enabled-check')?.checked ? 'true' : 'false';
-            const marketStatus = document.getElementById('telegram-market-status-check')?.checked ? 'true' : 'false';
-
-            if (window.updateAppSettings) {
-                window.updateAppSettings({
-                    telegramBotToken: token,
-                    telegramChatId: chatId,
-                    telegramEnabled: enabled,
-                    marketStatusTelegramEnabled: marketStatus
-                });
-            }
-        };
-
-        document.getElementById('telegram-bot-token')?.addEventListener('change', saveTelegramSettings);
-        document.getElementById('telegram-chat-id')?.addEventListener('change', saveTelegramSettings);
-        document.getElementById('telegram-enabled-check')?.addEventListener('change', saveTelegramSettings);
-        document.getElementById('telegram-market-status-check')?.addEventListener('change', saveTelegramSettings);
-
-        window.sendTestTelegram = async (type) => {
-            try {
-                const res = await fetchAdmin(`/api/settings/telegram/test-${type}`, { method: 'POST' });
-                if (res?.success) alert('Test Telegram inviato con successo!');
-                else alert('Errore: ' + (res?.error || 'Invio fallito'));
-            } catch (e) { alert('Errore: ' + e.message); }
-        };
-
-        window.sendDailyReport = async () => {
-            try {
-                const res = await fetchAdmin('/api/settings/telegram/test-status', { method: 'POST' });
-                if (res?.success) alert('Report Giornaliero Telegram inviato!');
-                else alert('Errore: ' + (res?.error || 'Invio fallito'));
-            } catch (e) { alert('Errore: ' + e.message); }
-        };
-
-        window.toggleTelegramLogs = () => {
-            const el = document.getElementById('telegram-logs-section');
-            if (!el) return;
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) loadTelegramLogs();
-        };
-
-        window.loadTelegramLogs = async () => {
-            try {
-                const data = await fetchAdmin('/api/admin/logs?type=app&lines=100');
-                const cont = document.getElementById('telegram-logs-container');
-                if (!cont) return;
-                const lines = (data.logs || '').split('\n').filter(l => l.includes('Telegram') || l.includes('TG'));
-                cont.innerHTML = lines.length > 0 ? lines.map(l => `<div>${l}</div>`).join('') : '<p class="text-slate-500 italic">Nessun log Telegram registrato recentemente.</p>';
-            } catch (e) {}
         };
 
         // =========================================================================

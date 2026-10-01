@@ -11,11 +11,7 @@ module.exports = function (dependencies) {
         database,
         logger,
         resetTransporter,
-        sendTelegramMessage,
-        sendStatusNotification,
-        escapeV2,
-        escapeCodeV2,
-        TELEGRAM_LOG_FILE
+        sendStatusNotification
     } = dependencies;
 
     // GET /api/admin/smtp-settings
@@ -251,13 +247,13 @@ IMPORTANTE:
         try {
             const settings = database.getSettings(req.user.id);
             const matrix = {
-                tp: { telegram: settings.notify_tp_telegram === 'true', push: settings.notify_tp_push === 'true' },
-                sl: { telegram: settings.notify_sl_telegram === 'true', push: settings.notify_sl_push === 'true' },
-                vol: { telegram: settings.notify_vol_telegram === 'true', push: settings.notify_vol_push === 'true' },
-                daily: { telegram: settings.notify_daily_telegram === 'true', push: settings.notify_daily_push === 'true' },
-                status: { telegram: settings.notify_status_telegram === 'true', push: settings.notify_status_push === 'true' },
-                dividend: { telegram: settings.notify_dividend_telegram === 'true', push: settings.notify_dividend_push === 'true' },
-                news: { telegram: settings.notify_news_telegram === 'true', push: settings.notify_news_push === 'true' }
+                tp: { push: settings.notify_tp_push === 'true' },
+                sl: { push: settings.notify_sl_push === 'true' },
+                vol: { push: settings.notify_vol_push === 'true' },
+                daily: { push: settings.notify_daily_push === 'true' },
+                status: { push: settings.notify_status_push === 'true' },
+                dividend: { push: settings.notify_dividend_push === 'true' },
+                news: { push: settings.notify_news_push === 'true' }
             };
             res.json(matrix);
         } catch (e) {
@@ -272,8 +268,9 @@ IMPORTANTE:
             const userId = req.user.id;
             const updates = [];
             for (const [event, channels] of Object.entries(matrix)) {
-                updates.push({ key: `notify_${event}_telegram`, value: String(channels.telegram) });
-                updates.push({ key: `notify_${event}_push`, value: String(channels.push) });
+                if (channels.push !== undefined) {
+                    updates.push({ key: `notify_${event}_push`, value: String(channels.push) });
+                }
             }
             
             database.db.transaction(() => {
@@ -286,152 +283,6 @@ IMPORTANTE:
             res.json({ success: true });
         } catch (e) {
             res.status(500).json({ error: e.message });
-        }
-    });
-
-    // POST /api/settings/telegram/test-tp
-    router.post('/settings/telegram/test-tp', requireAuth, async (req, res) => {
-        try {
-            const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-            const msg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
-                        `\`${escapeCodeV2('AAPL     $ 190,50')}\`\n` +
-                        `*${escapeV2('Target:')}* \`${escapeCodeV2('$ 190,00')}\`\n\n` +
-                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
-            await sendTelegramMessage(msg);
-            res.json({ success: true, message: 'Test TP sent' });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // POST /api/settings/telegram/test-sl
-    router.post('/settings/telegram/test-sl', requireAuth, async (req, res) => {
-        try {
-            const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-            const msg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
-                        `\`${escapeCodeV2('TSLA     $ 165,20')}\`\n` +
-                        `*${escapeV2('Soglia:')}* \`${escapeCodeV2('$ 170,00')}\`\n\n` +
-                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
-            await sendTelegramMessage(msg);
-            res.json({ success: true, message: 'Test SL sent' });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // POST /api/settings/telegram/test-volatility
-    router.post('/settings/telegram/test-volatility', requireAuth, async (req, res) => {
-        try {
-            const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-            const msg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
-                        `${escapeV2('📈')} \`${escapeCodeV2('BTC.USD  $ 68.340,50')}\`\n` +
-                        `*${escapeV2('Var.:')}* \`${escapeCodeV2('+5,20%')}\` ${escapeV2('(Soglia: 5%)')}\n\n` +
-                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
-            await sendTelegramMessage(msg);
-            res.json({ success: true, message: 'Test Volatility sent' });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // POST /api/settings/telegram/test-status
-    router.post('/settings/telegram/test-status', requireAuth, async (req, res) => {
-        try {
-            await sendStatusNotification(req.user.id, 'STATUS');
-            res.json({ success: true, message: 'Test Status sent' });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // POST /api/settings/telegram/test-news
-    router.post('/settings/telegram/test-news', requireAuth, async (req, res) => {
-        try {
-            const userId = req.user.id;
-            const { notifyUser } = require('../services/notificationService');
-
-            // 1. Get last 3 news
-            let news = database.db.prepare('SELECT title, link, pubDate, source_name FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 3').all(userId);
-            if (news.length === 0) {
-                news = database.db.prepare('SELECT title, link, pubDate, publisher AS source_name FROM global_news ORDER BY publishedAt DESC LIMIT 3').all();
-            }
-
-            if (news.length === 0) {
-                return res.status(404).json({ error: 'Nessuna notizia disponibile nel database per eseguire il test.' });
-            }
-
-            // 2. Get user's tickers
-            const userTickersRows = database.db.prepare(`
-                SELECT DISTINCT assetTicker FROM transactions
-                WHERE portfolioId IN (SELECT portfolio_id FROM portfolio_users WHERE user_id = ?)
-                  AND assetTicker IS NOT NULL AND assetTicker != 'CASH' AND assetTicker != ''
-            `).all(userId);
-
-            const userTickers = userTickersRows.map(r => r.assetTicker);
-            let assets = [];
-            if (userTickers.length > 0) {
-                const placeholders = userTickers.map(() => '?').join(',');
-                assets = database.db.prepare(`
-                    SELECT ticker, name FROM assets WHERE ticker IN (${placeholders})
-                `).all(...userTickers);
-            }
-
-            const escapeV2 = (text) => {
-                if (typeof text !== 'string') text = String(text || '');
-                return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
-            };
-
-            let sentCount = 0;
-
-            for (const item of news) {
-                let matchedTicker = 'TEST';
-                const titleLower = item.title.toLowerCase();
-
-                // Find a match
-                for (const asset of assets) {
-                    const cleanT = asset.ticker.split('.')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    if (cleanT.length >= 3 && titleLower.includes(cleanT)) {
-                        matchedTicker = asset.ticker;
-                        break;
-                    }
-                    if (titleLower.includes(asset.ticker.toLowerCase())) {
-                        matchedTicker = asset.ticker;
-                        break;
-                    }
-                    if (asset.name) {
-                        const cleanName = asset.name.toLowerCase().replace(/inc\.|corp\.|ltd\.|spa|s\.p\.a\./g, '').trim();
-                        if (cleanName.length >= 4 && titleLower.includes(cleanName)) {
-                            matchedTicker = asset.ticker;
-                            break;
-                        }
-                    }
-                }
-
-                if (matchedTicker === 'TEST' && userTickers.length > 0) {
-                    matchedTicker = userTickers[0]; // fallback to first ticker of the user
-                }
-
-                const cleanTitle = escapeV2(item.title);
-                const cleanTicker = escapeV2(matchedTicker);
-                const cleanLink = item.link.replace(/([\\)])/g, '\\$1');
-
-                const payload = {
-                    title: `News Alert (Test): ${matchedTicker}`,
-                    body: `${item.title}`,
-                    ticker: matchedTicker,
-                    data: {
-                        url: item.link
-                    },
-                    telegramMessage: `📰 *News Alert (Test): ${cleanTicker}*\n\n${cleanTitle}\n\n[Leggi notizia completa](${cleanLink})`
-                };
-
-                await notifyUser(userId, 'NEWS', payload, true); // force send
-                sentCount++;
-            }
-
-            res.json({ success: true, message: `Inviati ${sentCount} test alert di notizie.` });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
         }
     });
 
@@ -457,15 +308,6 @@ IMPORTANTE:
         }
     });
 
-    // POST /api/telegram/send-report
-    router.post('/telegram/send-report', requireAuth, async (req, res) => {
-        try {
-            await sendStatusNotification(req.user.id, 'DAILY');
-            res.json({ success: true });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
 
     // GET /api/admin/gemini-models
     router.get('/admin/gemini-models', requireAuth, requireAdmin, (req, res) => {
@@ -535,35 +377,6 @@ IMPORTANTE:
         }
     });
 
-    // GET /api/debug/telegram-market
-    router.get('/debug/telegram-market', requireAuth, requireAdmin, async (req, res) => {
-        try {
-            const settings = database.getSettings(1);
-            if (settings.telegramEnabled !== 'true') {
-                return res.json({ success: false, error: 'Telegram is globally disabled in settings.' });
-            }
-            if (!settings.telegramBotToken || !settings.telegramChatId) {
-                return res.json({ success: false, error: 'Missing Bot Token or Chat ID in settings.' });
-            }
-            await sendStatusNotification(req.user.id, 'STATUS');
-            res.json({ success: true, message: 'Notification sent successfully.' });
-        } catch (err) {
-            logger.error('Debug Telegram failed', err);
-            res.json({ success: false, error: err.message || 'Unknown error' });
-        }
-    });
-
-    // GET /api/logs/telegram
-    router.get('/logs/telegram', requireAuth, requireAdmin, (req, res) => {
-        try {
-            if (!fs.existsSync(TELEGRAM_LOG_FILE)) return res.json([]);
-            const content = fs.readFileSync(TELEGRAM_LOG_FILE, 'utf8');
-            const lines = content.trim().split('\n').filter(Boolean);
-            res.json(lines.slice(-200).reverse()); // Last 200 lines
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
 
     // GET /api/tax-rates
     router.get('/tax-rates', requireAuth, (req, res) => {

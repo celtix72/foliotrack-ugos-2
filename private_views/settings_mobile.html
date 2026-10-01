@@ -165,34 +165,6 @@
       <div class="mob-settings-group">
           <div class="mob-settings-group-title">Connections</div>
           <div class="mob-settings-card">
-              <!-- Telegram Toggle Row -->
-              <div class="mob-settings-row" onclick="toggleMobSection('mob-tg-config')">
-                  <div class="mob-settings-icon bg-telegram"><span class="material-symbols-outlined text-white">send</span></div>
-                  <div class="mob-settings-label">Telegram Alerts</div>
-                  <div class="mob-settings-value" id="mob-tg-status-label">Setup <span id="mob-tg-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
-              </div>
-              <!-- Collapsible Content -->
-              <div id="mob-tg-config" class="hidden bg-slate-50/50 dark:bg-black/20 px-5 py-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
-                  <div>
-                      <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Bot Token</label>
-                      <input id="mob-telegram-bot-token" type="password" placeholder="Token" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
-                  </div>
-                  <div>
-                      <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Chat ID</label>
-                      <input id="mob-telegram-chat-id" type="text" placeholder="Chat ID" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
-                  </div>
-                  <div class="flex items-center justify-between" onclick="document.getElementById('mob-telegram-enabled-check').click()">
-                      <span class="text-xs font-bold">Enabled</span>
-                      <div class="mob-toggle">
-                          <input type="checkbox" id="mob-telegram-enabled-check" onclick="event.stopPropagation()">
-                          <div class="mob-toggle-slider"></div>
-                      </div>
-                  </div>
-                  <div class="flex gap-2">
-                      <button onclick="sendDailyReport()" class="flex-1 py-2 bg-primary/10 text-primary text-[10px] font-black uppercase rounded-lg border border-primary/20">Test Report</button>
-                      <button onclick="sendTestTelegram('tp')" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase rounded-lg">Test TP</button>
-                  </div>
-              </div>
               <!-- Centro Notifiche, Matrice & Alert Asset Unified Row -->
               <div class="mob-settings-row" onclick="toggleMobSection('mob-notification-matrix')">
                   <div class="mob-settings-icon bg-emerald-500"><span class="material-symbols-outlined text-white">notifications_active</span></div>
@@ -297,7 +269,6 @@
                           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipo di Evento</span>
                               <div class="flex gap-4">
-                                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">TG</span>
                                   <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">PUSH</span>
                                   <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-8 text-center">TEST</span>
                               </div>
@@ -308,7 +279,6 @@
                               <div class="flex items-center justify-between py-1">
                                   <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Target Profit (TP)</span>
                                   <div class="flex gap-4">
-                                      <input type="checkbox" id="mob-notify-tp-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <input type="checkbox" id="mob-notify-tp-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <button onclick="sendTestNotifyMob('tp')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
                                   </div>
@@ -316,7 +286,6 @@
                               <div class="flex items-center justify-between py-1">
                                   <span class="text-xs font-bold text-rose-500">Stop Loss (SL)</span>
                                   <div class="flex gap-4">
-                                      <input type="checkbox" id="mob-notify-sl-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <input type="checkbox" id="mob-notify-sl-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <button onclick="sendTestNotifyMob('sl')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
                                   </div>
@@ -324,7 +293,6 @@
                               <div class="flex items-center justify-between py-1">
                                   <span class="text-xs font-bold text-amber-500">Volatilità</span>
                                   <div class="flex gap-4">
-                                      <input type="checkbox" id="mob-notify-vol-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <input type="checkbox" id="mob-notify-vol-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <button onclick="sendTestNotifyMob('vol')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
                                   </div>
@@ -332,7 +300,6 @@
                               <div class="flex items-center justify-between py-1">
                                   <span class="text-xs font-bold text-slate-800 dark:text-slate-100">Daily Report</span>
                                   <div class="flex gap-4">
-                                      <input type="checkbox" id="mob-notify-daily-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <input type="checkbox" id="mob-notify-daily-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <button onclick="sendTestNotifyMob('daily')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
                                   </div>
@@ -340,7 +307,6 @@
                               <div class="flex items-center justify-between py-1">
                                   <span class="text-xs font-bold text-slate-800 dark:text-slate-100">Stato Mercato</span>
                                   <div class="flex gap-4">
-                                      <input type="checkbox" id="mob-notify-status-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <input type="checkbox" id="mob-notify-status-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <button onclick="sendTestNotifyMob('status')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
                                   </div>
@@ -348,7 +314,6 @@
                               <div class="flex items-center justify-between py-1">
                                   <span class="text-xs font-bold text-indigo-500">Dividendi</span>
                                   <div class="flex gap-4">
-                                      <input type="checkbox" id="mob-notify-dividend-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <input type="checkbox" id="mob-notify-dividend-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                                       <button onclick="sendTestNotifyMob('dividend')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
                                   </div>
@@ -582,11 +547,6 @@
         const fontSelect = document.getElementById('mob-font-family-select');
         const sizeSelect = document.getElementById('mob-font-size-select');
         const freqSelect = document.getElementById('mob-update-frequency-select');
-        
-        const mobTgEnabled = document.getElementById('mob-telegram-enabled-check');
-        const mobTgToken = document.getElementById('mob-telegram-bot-token');
-        const mobTgChat = document.getElementById('mob-telegram-chat-id');
-        const mobTgStatusLabel = document.getElementById('mob-tg-status-label');
         const mobVolThreshold = document.getElementById('mob-volatility-threshold');
         const mobVolEnabled = document.getElementById('mob-volatility-enabled-check');
         const mobVolStatusLabel = document.getElementById('mob-vol-status-label');
@@ -600,16 +560,6 @@
             if (fontSelect && settings.mobFont) fontSelect.value = settings.mobFont;
             if (sizeSelect && settings.mobSize) sizeSelect.value = settings.mobSize;
             if (freqSelect && settings.updateFrequency) freqSelect.value = settings.updateFrequency;
-
-            if (mobTgEnabled) mobTgEnabled.checked = settings.telegramEnabled === 'true';
-            if (mobTgToken) mobTgToken.value = settings.telegramBotToken || '';
-            if (mobTgChat) mobTgChat.value = settings.telegramChatId || '';
-            
-            if (mobTgStatusLabel) {
-                const isActive = settings.telegramEnabled === 'true' && settings.telegramBotToken && settings.telegramChatId;
-                mobTgStatusLabel.innerHTML = (isActive ? 'Active' : 'Setup') + ' <span class="material-symbols-outlined text-[14px]">expand_more</span>';
-                mobTgStatusLabel.className = 'mob-settings-value ' + (isActive ? 'text-emerald-500' : 'text-slate-400');
-            }
 
             loadNotificationMatrixMob();
             
@@ -726,9 +676,6 @@
                     updateFrequency: freqSelect.value,
                     theme: themeToggle.checked ? 'dark' : 'light',
                     privacyMode: String(privacyToggle.checked),
-                    telegramEnabled: String(mobTgEnabled.checked),
-                    telegramBotToken: mobTgToken.value,
-                    telegramChatId: mobTgChat.value,
                     volatilityNotificationsEnabled: String(mobVolEnabled.checked),
                     volatilityThreshold: mobVolThreshold.value
                 });
@@ -736,10 +683,10 @@
         };
 
         // --- Listeners ---
-        [themeToggle, privacyToggle, fontSelect, sizeSelect, freqSelect, mobTgEnabled, mobVolEnabled].forEach(el => {
+        [themeToggle, privacyToggle, fontSelect, sizeSelect, freqSelect, mobVolEnabled].forEach(el => {
             if (el) el.addEventListener('change', saveSettings);
         });
-        [mobTgToken, mobTgChat, mobVolThreshold].forEach(el => {
+        [mobVolThreshold].forEach(el => {
             if (el) el.addEventListener('blur', saveSettings);
         });
 
@@ -756,22 +703,6 @@
                 loadMobSltpData();
                 loadNotificationMatrixMob();
             }
-        };
-
-        window.sendTestTelegram = async (type) => {
-            try {
-                const res = await fetch(`/api/settings/telegram/test-${type}`, { method: 'POST' });
-                const data = await res.json();
-                alert(data.success ? 'Test notification sent!' : 'Failed: ' + data.error);
-            } catch (err) { alert('Error: ' + err.message); }
-        };
-
-        window.sendDailyReport = async () => {
-            try {
-                const res = await fetch('/api/telegram/send-report', { method: 'POST' });
-                const data = await res.json();
-                alert(data.success ? 'Daily Report sent!' : 'Failed: ' + data.error);
-            } catch (err) { alert('Error: ' + err.message); }
         };
 
         async function loadBackups() {
@@ -1057,10 +988,8 @@
             const matrix = await res.json();
             if (res.ok) {
                 for (const [event, channels] of Object.entries(matrix)) {
-                    const tel = document.getElementById(`mob-notify-${event}-telegram`);
                     const psh = document.getElementById(`mob-notify-${event}-push`);
-                    if (tel) tel.checked = channels.telegram;
-                    if (psh) psh.checked = channels.push;
+                    if (psh && channels) psh.checked = !!channels.push;
                 }
                 updateNotificationBadge();
             }
@@ -1081,9 +1010,9 @@
         const events = ['tp', 'sl', 'vol', 'daily', 'status', 'dividend'];
         const matrix = {};
         events.forEach(ev => {
+            const psh = document.getElementById(`mob-notify-${ev}-push`);
             matrix[ev] = {
-                telegram: document.getElementById(`mob-notify-${ev}-telegram`).checked,
-                push: document.getElementById(`mob-notify-${ev}-push`).checked
+                push: psh ? psh.checked : false
             };
         });
 

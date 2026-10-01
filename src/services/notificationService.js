@@ -1,6 +1,5 @@
 const database = require('../db');
 const { logger } = require('../utils/logger');
-const { sendTelegramMessage } = require('./telegramService');
 const { sendPushNotification } = require('./pushService');
 
 /**
@@ -21,14 +20,7 @@ async function notifyUser(userId, event, payload, force = false) {
         logger.error('Failed to log internal notification', e);
     }
 
-    // 2. Telegram
-    const tgEnabled = force || (settings.telegramEnabled === 'true' && settings[`notify_${eventKey}_telegram`] === 'true');
-    if (tgEnabled && settings.telegram_chat_id) {
-        const tgMsg = payload.telegramMessage || payload.body;
-        sendTelegramMessage(tgMsg, null, userId).catch(e => logger.error(`Telegram notify failed for ${event}`, e));
-    }
-
-    // 3. Web Push
+    // 2. Web Push
     const pushEnabled = force || settings[`notify_${eventKey}_push`] === 'true';
     if (pushEnabled) {
         const pushPayload = {

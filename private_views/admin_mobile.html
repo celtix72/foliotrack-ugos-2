@@ -424,35 +424,6 @@
                     </div>
                 </div>
 
-                <!-- Telegram Config Accordion -->
-                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-telegram')">
-                    <div class="mob-settings-icon bg-[#0088cc]"><span class="material-symbols-outlined text-white">send</span></div>
-                    <div class="mob-settings-label">Configurazione Telegram</div>
-                    <span id="acc-telegram-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
-                </div>
-                <div id="acc-telegram" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                    <div>
-                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Bot Token</label>
-                        <input type="password" id="mob-tg-token" placeholder="123456789:ABC..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Chat ID</label>
-                        <input type="text" id="mob-tg-chat" placeholder="123456789" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold">Abilita Bot Telegram</span>
-                        <label class="mob-toggle" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="mob-tg-enable">
-                            <div class="mob-toggle-slider"></div>
-                        </label>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 pt-2">
-                        <button onclick="sendTestTelegram('status')" class="py-2 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold uppercase rounded">Test Stato</button>
-                        <button onclick="sendTestTelegram('tp')" class="py-2 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold uppercase rounded">Test TP</button>
-                        <button onclick="sendTestTelegram('sl')" class="py-2 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold uppercase rounded">Test SL</button>
-                    </div>
-                </div>
-
                 <!-- Web Push Accordion -->
                 <div class="mob-settings-row" onclick="toggleMobAccordion('acc-push')">
                     <div class="mob-settings-icon bg-blue-500"><span class="material-symbols-outlined text-white">cell_tower</span></div>
@@ -706,7 +677,6 @@
                 loadMobNotifications();
                 loadSltpData();
             }
-            if (id === 'acc-telegram') loadMobTelegram();
             if (id === 'acc-smtp') loadMobSmtp();
             if (id === 'acc-transactions') loadMgmtTransactions();
             if (id === 'acc-sltp') {
@@ -1021,19 +991,18 @@
                 { id: 'news', name: 'News Alert' }
             ];
 
-            cont.innerHTML = events.map(ev => `
+            cont.innerHTML = events.map(ev => {
+                const isPush = notifs[ev.id] && typeof notifs[ev.id].push !== 'undefined' ? notifs[ev.id].push : (notifs[ev.id + '_push'] ? true : false);
+                return `
                 <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
                     <span class="font-bold text-xs">${ev.name}</span>
                     <div class="flex items-center gap-3">
-                        <label class="flex items-center gap-1 text-[10px] font-bold text-[#0088cc]">
-                            TG <input type="checkbox" id="mob-notif-${ev.id}-tg" ${notifs[ev.id + '_telegram'] ? 'checked' : ''} onchange="saveMobNotifMatrix()" class="rounded text-[#0088cc]">
-                        </label>
                         <label class="flex items-center gap-1 text-[10px] font-bold text-blue-500">
-                            Push <input type="checkbox" id="mob-notif-${ev.id}-ps" ${notifs[ev.id + '_push'] ? 'checked' : ''} onchange="saveMobNotifMatrix()" class="rounded text-blue-500">
+                            Push <input type="checkbox" id="mob-notif-${ev.id}-ps" ${isPush ? 'checked' : ''} onchange="saveMobNotifMatrix()" class="rounded text-blue-500">
                         </label>
                     </div>
                 </div>
-            `).join('');
+            `;}).join('');
         } catch(e) {}
     }
 
@@ -1041,8 +1010,9 @@
         const events = ['tp', 'sl', 'vol', 'daily', 'status', 'dividend', 'news'];
         const payload = {};
         events.forEach(ev => {
-            payload[ev + '_telegram'] = document.getElementById(`mob-notif-${ev}-tg`)?.checked ? 1 : 0;
-            payload[ev + '_push'] = document.getElementById(`mob-notif-${ev}-ps`)?.checked ? 1 : 0;
+            payload[ev] = {
+                push: !!document.getElementById(`mob-notif-${ev}-ps`)?.checked
+            };
         });
         try {
             await fetchAdminMob('/api/settings/notifications', {
@@ -1075,39 +1045,6 @@
                 })
             });
             alert('Parametri notifiche intelligenti salvati con successo!');
-        } catch(e) { alert('Errore: ' + e.message); }
-    };
-
-    // --- Telegram ---
-    async function loadMobTelegram() {
-        try {
-            const s = await fetchAdminMob('/api/settings');
-            if (s) {
-                if (document.getElementById('mob-tg-token')) document.getElementById('mob-tg-token').value = s.telegramBotToken || '';
-                if (document.getElementById('mob-tg-chat')) document.getElementById('mob-tg-chat').value = s.telegramChatId || '';
-                if (document.getElementById('mob-tg-enable')) document.getElementById('mob-tg-enable').checked = s.telegramEnabled === 'true';
-            }
-        } catch(e) {}
-    }
-
-    const saveMobTelegram = () => {
-        if (window.updateAppSettings) {
-            window.updateAppSettings({
-                telegramBotToken: document.getElementById('mob-tg-token')?.value.trim(),
-                telegramChatId: document.getElementById('mob-tg-chat')?.value.trim(),
-                telegramEnabled: document.getElementById('mob-tg-enable')?.checked ? 'true' : 'false'
-            });
-        }
-    };
-    document.getElementById('mob-tg-token')?.addEventListener('change', saveMobTelegram);
-    document.getElementById('mob-tg-chat')?.addEventListener('change', saveMobTelegram);
-    document.getElementById('mob-tg-enable')?.addEventListener('change', saveMobTelegram);
-
-    window.sendTestTelegram = async (type) => {
-        try {
-            const res = await fetchAdminMob(`/api/settings/telegram/test-${type}`, { method: 'POST' });
-            if (res?.success) alert('Test inviato!');
-            else alert('Errore: ' + (res?.error || 'Fallito'));
         } catch(e) { alert('Errore: ' + e.message); }
     };
 
