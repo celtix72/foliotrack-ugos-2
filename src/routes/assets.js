@@ -1,6 +1,6 @@
 const express = require('express');
 const axios   = require('axios');
-const { isValidQuotePrice } = require('../utils/finance');
+const { isValidQuotePrice, isBondAsset } = require('../utils/finance');
 const { mapYahooToGoogleTicker, mapGoogleToYahooTicker } = require('../services/googleFinance');
 
 /**
@@ -31,7 +31,87 @@ module.exports = function(dependencies) {
         isValidISIN,
         sanitizeTicker,
         B_ITA,
+        fetchBorsaItalianaHistory,
     } = dependencies;
+
+    /**
+     * Cleans bond historical quotes:
+     * - Removes weekend entries (markets closed on Sat/Sun)
+     * - Removes prices < 20 (coupons/yields) and > 200 (anomalous bounds)
+     * - Filters and smooths isolated 1-day or 2-day spikes and par 100.0 fallback leaks
+     */
+    function cleanBondQuotes(quotes) {
+        if (!quotes || !Array.isArray(quotes) || quotes.length === 0) return [];
+        
+        let list = [];
+        for (const q of quotes) {
+            if (!q || q.price === null || q.price === undefined) continue;
+            const p = typeof q.price === 'number' ? q.price : parseFloat(q.price);
+            if (isNaN(p) || p < 20.0 || p > 200.0) continue;
+            
+            let ds = q.date;
+            if (typeof ds === 'string') {
+                ds = ds.split('T')[0].split(' ')[0];
+            }
+            if (!ds) continue;
+            
+            const dt = new Date(ds);
+            const day = dt.getDay();
+            if (day === 0 || day === 6) continue; // Bonds never trade on weekends
+            
+            list.push({ date: ds, price: p });
+        }
+
+        if (list.length < 3) return list;
+
+        // Deduplicate by date if necessary, keeping latest
+        const dateMap = new Map();
+        for (const item of list) {
+            dateMap.set(item.date, item.price);
+        }
+        list = Array.from(dateMap.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([date, price]) => ({ date, price }));
+
+        if (list.length < 3) return list;
+
+        // Detect & smooth isolated 1-day spikes
+        for (let i = 1; i < list.length - 1; i++) {
+            const prev = list[i - 1].price;
+            const curr = list[i].price;
+            const next = list[i + 1].price;
+            const nDiff = Math.abs(prev - next) / Math.min(prev, next);
+            const nAvg = (prev + next) / 2;
+
+            if (nDiff < 0.035) {
+                const jump = Math.abs(curr - nAvg) / nAvg;
+                if (jump > 0.035) {
+                    list[i].price = parseFloat(nAvg.toFixed(4));
+                } else if (Math.abs(curr - 100.0) < 0.001 && Math.abs(nAvg - 100.0) > 2.0) {
+                    list[i].price = parseFloat(nAvg.toFixed(4));
+                }
+            }
+        }
+
+        // Detect & smooth 2-day consecutive anomaly spikes (e.g. 2 rogue days at 100)
+        for (let i = 1; i < list.length - 2; i++) {
+            const p0 = list[i - 1].price;
+            const p1 = list[i].price;
+            const p2 = list[i + 1].price;
+            const p3 = list[i + 2].price;
+            const diff03 = Math.abs(p0 - p3) / Math.min(p0, p3);
+            const avg03 = (p0 + p3) / 2;
+
+            if (diff03 < 0.035) {
+                if (Math.abs(p1 - avg03) / avg03 > 0.035 && Math.abs(p2 - avg03) / avg03 > 0.035) {
+                    list[i].price = parseFloat(avg03.toFixed(4));
+                    list[i + 1].price = parseFloat(avg03.toFixed(4));
+                }
+            }
+        }
+
+        return list;
+    }
 
     const fundamentalsCache = new Map();
     const FUNDAMENTALS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -1151,7 +1231,13 @@ router.get('/asset-quotes/:ticker', requireAuth, (req, res) => {
             sql = `SELECT date, price FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) AND date >= ? AND date <= ? ORDER BY date ASC`;
             params.push(from, to);
         }
-        const rows = database.db.prepare(sql).all(...params);
+        let rows = database.db.prepare(sql).all(...params);
+
+        const assetMeta = database.db.prepare('SELECT type, isin, dataSource, ticker, currentPrice FROM assets WHERE UPPER(ticker) = UPPER(?)').get(ticker) || { ticker };
+        if (isBondAsset(assetMeta) && rows && rows.length > 0) {
+            rows = cleanBondQuotes(rows);
+        }
+
         res.json(rows);
     } catch (err) {
         logger.error('Error fetching asset quotes', err);
@@ -1217,7 +1303,7 @@ router.post('/debug/borsa-italiana', requireAuth, requireAdmin, async (req, res)
     res.json(result);
 });
 
-// Import historical data (usually from frontend scraper)
+// Import historical data (from scraper or frontend)
 router.post('/assets/import-history', requireAuth, (req, res) => {
     const { ticker, history } = req.body; // history: [{dt, closePx}, ...]
     if (!ticker || !history || !Array.isArray(history)) {
@@ -1225,30 +1311,142 @@ router.post('/assets/import-history', requireAuth, (req, res) => {
     }
 
     try {
-        const insert = database.db.prepare('INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)');
-        const assetMeta = database.db.prepare('SELECT type, isin, dataSource, ticker FROM assets WHERE ticker = ?').get(ticker) || { ticker };
-        let validCount = 0;
-        database.db.transaction(() => {
-            for (const entry of history) {
-                // Handle different date formats (YYYYMMDD from Bitaly or YYYY-MM-DD)
-                let dateStr = entry.dt || entry.date;
-                if (dateStr && String(dateStr).length === 8 && !String(dateStr).includes('-')) {
-                    const s = String(dateStr);
-                    dateStr = `${s.substring(0,4)}-${s.substring(4,6)}-${s.substring(6,8)}`;
-                }
-                const price = parseFloat(entry.closePx || entry.price);
-                if (dateStr && isValidQuotePrice(price, assetMeta).valid) {
-                    insert.run(ticker, dateStr, price);
-                    validCount++;
-                }
+        const assetMeta = database.db.prepare('SELECT type, isin, dataSource, ticker, currentPrice FROM assets WHERE UPPER(ticker) = UPPER(?)').get(ticker) || { ticker };
+        const isBond = isBondAsset(assetMeta);
+
+        // Normalize and filter entries
+        const cleanEntries = [];
+        for (const entry of history) {
+            let dateStr = entry.dt || entry.date;
+            if (dateStr && String(dateStr).length === 8 && !String(dateStr).includes('-')) {
+                const s = String(dateStr);
+                dateStr = `${s.substring(0,4)}-${s.substring(4,6)}-${s.substring(6,8)}`;
+            } else if (dateStr && typeof dateStr === 'string') {
+                dateStr = dateStr.split('T')[0].split(' ')[0];
             }
-        })();
+            if (!dateStr) continue;
+
+            // Discard weekends for bonds (markets closed)
+            if (isBond) {
+                const day = new Date(dateStr).getDay();
+                if (day === 0 || day === 6) continue;
+            }
+
+            const price = parseFloat(entry.closePx || entry.price);
+            if (isValidQuotePrice(price, assetMeta).valid) {
+                cleanEntries.push({ date: dateStr, price });
+            }
+        }
+
+        // Deduplicate and sort
+        const dateMap = new Map();
+        for (const e of cleanEntries) {
+            dateMap.set(e.date, e.price);
+        }
+        let sorted = Array.from(dateMap.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([date, price]) => ({ date, price }));
+
+        if (isBond && sorted.length > 0) {
+            sorted = cleanBondQuotes(sorted);
+        }
+
+        let validCount = 0;
+        let lastPrice = null;
+        let lastDate = null;
+
+        if (sorted.length > 0) {
+            const minDate = sorted[0].date;
+            const maxDate = sorted[sorted.length - 1].date;
+            const insert = database.db.prepare('INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)');
+
+            database.db.transaction(() => {
+                // If it's a bond, delete pre-existing quotes in the imported range to wipe old orphan weekend/corrupted rows
+                if (isBond) {
+                    database.db.prepare('DELETE FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) AND date >= ? AND date <= ?').run(ticker, minDate, maxDate);
+                }
+                for (const item of sorted) {
+                    insert.run(ticker, item.date, item.price);
+                    validCount++;
+                    lastPrice = item.price;
+                    lastDate = item.date;
+                }
+            })();
+
+            if (isBond && lastPrice) {
+                database.db.prepare(`
+                    UPDATE assets 
+                    SET hasHistoryInconsistency = 0, isVirtualHistory = 0 
+                    WHERE UPPER(ticker) = UPPER(?)
+                `).run(ticker);
+            }
+        }
         
         logger.info(`Imported ${validCount} valid historical quotes for ${ticker} (out of ${history.length} submitted)`);
         clearPerformanceCache();
-        res.json({ success: true, count: validCount });
+        res.json({ success: true, count: validCount, latestPrice: lastPrice, latestDate: lastDate });
     } catch (err) {
         logger.error(`Failed to import history for ${ticker}`, err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Restore/Refresh B_ITA history directly via server-side scraper with bearer token
+router.post('/assets/:ticker/restore-bita-history', requireAuth, async (req, res) => {
+    const { ticker } = req.params;
+    let { isin } = req.body || {};
+    try {
+        const asset = database.db.prepare('SELECT ticker, isin, type, dataSource, currentPrice FROM assets WHERE UPPER(ticker) = UPPER(?)').get(ticker);
+        const targetIsin = (isin || (asset && asset.isin) || ticker).trim().toUpperCase();
+        if (!targetIsin) {
+            return res.status(400).json({ error: 'ISIN or ticker required' });
+        }
+
+        if (typeof fetchBorsaItalianaHistory !== 'function') {
+            return res.status(500).json({ error: 'fetchBorsaItalianaHistory not available' });
+        }
+
+        const historyMap = await fetchBorsaItalianaHistory(ticker, targetIsin);
+        if (!historyMap || Object.keys(historyMap).length === 0) {
+            return res.status(404).json({ error: `No history found on Borsa Italiana for ${targetIsin}` });
+        }
+
+        const dates = Object.keys(historyMap).sort();
+        const minDate = dates[0];
+        const maxDate = dates[dates.length - 1];
+
+        const insert = database.db.prepare('INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)');
+        let validCount = 0;
+        let lastPrice = null;
+
+        database.db.transaction(() => {
+            // Delete old quotes in range to prevent orphan weekend/corrupted rows
+            database.db.prepare('DELETE FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) AND date >= ? AND date <= ?').run(ticker, minDate, maxDate);
+            
+            for (const d of dates) {
+                const day = new Date(d).getDay();
+                if (day === 0 || day === 6) continue; // Exclude weekends
+                const p = historyMap[d];
+                if (p >= 20.0 && p <= 200.0) {
+                    insert.run(ticker, d, p);
+                    validCount++;
+                    lastPrice = p;
+                }
+            }
+        })();
+
+        if (lastPrice && asset) {
+            database.db.prepare(`
+                UPDATE assets 
+                SET currentPrice = ?, quoteDate = ?, isVirtualHistory = 0, hasHistoryInconsistency = 0, updatedAt = datetime('now')
+                WHERE UPPER(ticker) = UPPER(?)
+            `).run(lastPrice, maxDate, ticker);
+        }
+
+        clearPerformanceCache();
+        res.json({ success: true, count: validCount, latestPrice: lastPrice, latestDate: maxDate });
+    } catch (err) {
+        logger.error(`Error restoring B_ITA history for ${ticker}`, err);
         res.status(500).json({ error: err.message });
     }
 });

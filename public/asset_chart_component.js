@@ -348,16 +348,67 @@
                 }
             }
 
-            // Append latest live price if valid and not already the last point
+            const isBond = !!(
+                (assetInfo && ((assetInfo.type && (assetInfo.type.toLowerCase().includes('bond') || assetInfo.type.toLowerCase().includes('obblig') || assetInfo.type.toLowerCase() === 'btp')) ||
+                               assetInfo.dataSource === 'B_ITA' ||
+                               (assetInfo.isin && (assetInfo.isin.startsWith('IT') || assetInfo.isin.startsWith('XS'))))) ||
+                (_chartTicker && (_chartTicker.startsWith('BTP') || _chartTicker.startsWith('BOT') || _chartTicker.startsWith('CCT') || _chartTicker.startsWith('IT') || _chartTicker.startsWith('XS')))
+            );
+
+            if (isBond && _allChartData && _allChartData.length > 0) {
+                // 1. Filter out weekend dates and prices < 20 or > 200
+                _allChartData = _allChartData.filter(d => {
+                    if (!d || d.price === null || d.price === undefined) return false;
+                    const p = typeof d.price === 'number' ? d.price : parseFloat(d.price);
+                    if (isNaN(p) || p < 20.0 || p > 200.0) return false;
+                    const dt = new Date(d.date);
+                    const day = dt.getDay();
+                    return day !== 0 && day !== 6;
+                });
+
+                // 2. Smooth isolated spikes
+                for (let i = 1; i < _allChartData.length - 1; i++) {
+                    const p0 = _allChartData[i - 1].price;
+                    const p1 = _allChartData[i].price;
+                    const p2 = _allChartData[i + 1].price;
+                    const nDiff = Math.abs(p0 - p2) / Math.min(p0, p2);
+                    const nAvg = (p0 + p2) / 2;
+                    if (nDiff < 0.035) {
+                        const jump = Math.abs(p1 - nAvg) / nAvg;
+                        if (jump > 0.035 || (Math.abs(p1 - 100.0) < 0.001 && Math.abs(nAvg - 100.0) > 2.0)) {
+                            _allChartData[i].price = parseFloat(nAvg.toFixed(4));
+                        }
+                    }
+                }
+            }
+
+            // Append latest live price if valid and consistent
             if (assetInfo && assetInfo.currentPrice > 0) {
-                const quoteDateStr = (assetInfo.quoteDate && assetInfo.quoteDate.length === 10) 
-                    ? assetInfo.quoteDate 
-                    : new Date().toISOString().split('T')[0];
-                const lastPoint = _allChartData[_allChartData.length - 1];
-                if (lastPoint && lastPoint.date === quoteDateStr) {
-                    lastPoint.price = assetInfo.currentPrice;
-                } else if (!lastPoint || lastPoint.date < quoteDateStr) {
-                    _allChartData.push({ date: quoteDateStr, price: assetInfo.currentPrice });
+                let allowAppend = true;
+                if (isBond) {
+                    if (assetInfo.currentPrice < 20.0 || assetInfo.currentPrice > 200.0) {
+                        allowAppend = false;
+                    } else if (_allChartData.length > 0) {
+                        const lastP = _allChartData[_allChartData.length - 1].price;
+                        if (Math.abs(assetInfo.currentPrice - lastP) / lastP > 0.08) {
+                            allowAppend = false; // Disallow anomalous live price jump (e.g. 100 fallback)
+                        }
+                    }
+                }
+
+                if (allowAppend) {
+                    const quoteDateStr = (assetInfo.quoteDate && assetInfo.quoteDate.length === 10) 
+                        ? assetInfo.quoteDate 
+                        : new Date().toISOString().split('T')[0];
+                    const lastPoint = _allChartData[_allChartData.length - 1];
+                    if (lastPoint && lastPoint.date === quoteDateStr) {
+                        lastPoint.price = assetInfo.currentPrice;
+                    } else if (!lastPoint || lastPoint.date < quoteDateStr) {
+                        const day = new Date(quoteDateStr).getDay();
+                        if (!isBond || (day !== 0 && day !== 6)) {
+                            _allChartData.push({ date: quoteDateStr, price: assetInfo.currentPrice });
+                        }
+                    }
                 }
             }
 

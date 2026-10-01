@@ -1317,7 +1317,26 @@
     window.fetchBorsaItalianaHistory = async function(ticker, isin) {
         console.log(`[B_ITA] Fetching history: ${ticker} (${isin})`);
         try {
-            // QuantHouse API (Borsa Italiana) - 5 Years
+            // Priority 1: Use server-side endpoint with Bearer token authentication and resilient suffix fallback
+            const srvRes = await fetch(`/api/assets/${encodeURIComponent(ticker)}/restore-bita-history`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isin })
+            }).catch(() => null);
+
+            if (srvRes && srvRes.ok) {
+                const data = await srvRes.json();
+                if (data.success) {
+                    window.showNotification(`Storico Borsa Italiana ripristinato con successo per ${ticker} (${data.count} punti)`, 'success');
+                    window.dispatchEvent(new CustomEvent('asset-history-updated', { detail: { ticker } }));
+                    if (typeof loadAssetChart === 'function' && document.getElementById('asset-chart-modal')?.style.display !== 'none') {
+                        loadAssetChart(ticker);
+                    }
+                    return true;
+                }
+            }
+
+            // Priority 2: Direct browser fallback if backend endpoint was unreachable
             const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
             
             const response = await fetch(url);
@@ -1329,7 +1348,7 @@
                 const history = data.history.historyDt.filter(h => {
                     const px = parseFloat(h.closePx || h.price || 0);
                     if (px <= 0.0001) return false;
-                    if (isBond && px < 20.0) return false;
+                    if (isBond && (px < 20.0 || px > 200.0)) return false;
                     return true;
                 });
                 
@@ -1342,6 +1361,9 @@
                 if (importRes.ok) {
                     window.showNotification(`Successfully restored ${history.length} price points for ${ticker}`, 'success');
                     window.dispatchEvent(new CustomEvent('asset-history-updated', { detail: { ticker } }));
+                    if (typeof loadAssetChart === 'function' && document.getElementById('asset-chart-modal')?.style.display !== 'none') {
+                        loadAssetChart(ticker);
+                    }
                     return true;
                 }
             }

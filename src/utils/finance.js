@@ -108,10 +108,11 @@ function isBondAsset(assetMeta) {
     const isin = (assetMeta.isin || '').toUpperCase();
     const source = (assetMeta.dataSource || '').toUpperCase();
 
-    if (type.includes('bond') || type.includes('obblig') || type === 'btp') return true;
+    if (type.includes('bond') || type.includes('obblig') || type.includes('btp') || type.includes('titolo di stato')) return true;
     if (ticker.startsWith('BTP') || ticker.startsWith('BOT') || ticker.startsWith('CCT') || ticker.startsWith('CTZ')) return true;
-    if (source === 'B_ITA' && (isin.startsWith('IT') || isin.startsWith('XS'))) return true;
-    if (ticker.startsWith('ROM') || ticker.startsWith('IT000') || ticker.startsWith('XS')) return true;
+    if (source === 'B_ITA') return true;
+    if (ticker.startsWith('IT') || ticker.startsWith('XS') || ticker.startsWith('ROM')) return true;
+    if (isin.startsWith('IT') || isin.startsWith('XS')) return true;
     return false;
 }
 
@@ -133,16 +134,18 @@ function isValidQuotePrice(price, assetMeta = null, lastValidPrice = null) {
     // Bond price sanity checks:
     // Bonds are quoted in % of nominal par (usually around 100).
     // Values < 20 (like 0.81, 0.83, 2.50) are coupons or rates, NOT quotes.
+    // Values > 200 are unrealistic outliers for government and standard corporate bonds.
     if (isBond) {
         if (p < 20.0) {
             return { valid: false, reason: `bond_price_too_low_${p}_likely_coupon_or_rate` };
         }
-        if (p > 300.0) {
+        if (p > 200.0) {
             return { valid: false, reason: `bond_price_too_high_${p}` };
         }
-        if (lastValidPrice && lastValidPrice >= 20.0) {
+        if (lastValidPrice && lastValidPrice >= 20.0 && lastValidPrice <= 200.0) {
             const ratio = p / lastValidPrice;
-            if (ratio < 0.6 || ratio > 1.4) {
+            // Bonds move by small daily percentages; a swing > 10% in a single step is anomalous
+            if (ratio < 0.90 || ratio > 1.10) {
                 return { valid: false, reason: `bond_price_unrealistic_variation_${lastValidPrice}_to_${p}` };
             }
         }
@@ -188,6 +191,12 @@ function sanitizeQuotePrice(candidatePrice, assetMeta = null, fallbackPrice = nu
         const fallbackCheck = isValidQuotePrice(fallbackPrice, assetMeta, null);
         if (fallbackCheck.valid) {
             return typeof fallbackPrice === 'number' ? fallbackPrice : parseFloat(fallbackPrice);
+        }
+    }
+    if (assetMeta && assetMeta.currentPrice) {
+        const metaCheck = isValidQuotePrice(assetMeta.currentPrice, assetMeta, null);
+        if (metaCheck.valid) {
+            return typeof assetMeta.currentPrice === 'number' ? assetMeta.currentPrice : parseFloat(assetMeta.currentPrice);
         }
     }
     if (isBondAsset(assetMeta)) {

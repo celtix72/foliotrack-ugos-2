@@ -556,7 +556,7 @@ const assetsRouter = require('./routes/assets')({
     getEurUsdRate, getMarketStatus, isUSMarket, fetchAssetMetadata,
     clearPerformanceCache, callAIModel, parseAIResponse, notifyUser, APP_VERSION,
     triggerHistoryRebuild, recalculateAllPortfoliosWithOverrides, historicalPricesCache,
-    isValidISIN, sanitizeTicker, B_ITA
+    isValidISIN, sanitizeTicker, B_ITA, fetchBorsaItalianaHistory
 });
 app.use('/api', assetsRouter);
 
@@ -1331,6 +1331,78 @@ async function B_ITA(isin, assetType = '') {
 
     logger.warn(`B_ITA Scraper: No price found for ${cleanIsin} across intraday and all history periods`);
     return { success: false, error: 'Price not found in API response', url: finalUrl, isin: cleanIsin };
+}
+
+async function fetchBorsaItalianaHistory(ticker, isin) {
+    if (!isin || typeof isin !== 'string') return null;
+    const cleanIsin = isin.trim().toUpperCase();
+    const suffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
+    const headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0',
+        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+    };
+
+    let summaryUrl = null;
+    let token = null;
+    let exchcode = 'XMIL';
+
+    for (const sfx of suffixes) {
+        const u = `https://grafici.borsaitaliana.it/summary-chart/${cleanIsin}${sfx}?lang=it`;
+        try {
+            const resp = await axios.get(u, { headers, timeout: 5000 });
+            if (resp.data) {
+                const tokenMatch = resp.data.match(/token="([^"]+)"/);
+                const exchMatch = resp.data.match(/exchcode="([^"]+)"/);
+                if (tokenMatch) {
+                    token = tokenMatch[1];
+                    summaryUrl = u;
+                    if (exchMatch && exchMatch[1]) exchcode = exchMatch[1];
+                    break;
+                }
+            }
+        } catch (e) {}
+    }
+
+    if (!token) {
+        logger.warn(`B_ITA history fetch: Token not found for ${ticker} (${cleanIsin}) across suffixes`);
+        return null;
+    }
+
+    for (const period of ['5Y', '1Y']) {
+        try {
+            const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${cleanIsin},${exchcode},ISIN/history/period?period=${period}&adjustment=true&add-last-price=true`;
+            const resp = await axios.get(apiUrl, {
+                headers: {
+                    ...headers,
+                    'Authorization': `Bearer ${token}`,
+                    'Referer': summaryUrl,
+                    'Accept': 'application/json, text/plain, */*'
+                },
+                timeout: 15000
+            });
+
+            if (resp.data && resp.data.history && resp.data.history.historyDt && resp.data.history.historyDt.length > 0) {
+                const map = {};
+                resp.data.history.historyDt.forEach(h => {
+                    if (h.dt && h.closePx) {
+                        const valCheck = isValidQuotePrice(h.closePx, { ticker, isin: cleanIsin, type: 'Bond', dataSource: 'B_ITA' });
+                        if (valCheck.valid) {
+                            const d = h.dt.toString();
+                            const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
+                            map[dateStr] = parseFloat(h.closePx);
+                        }
+                    }
+                });
+                if (Object.keys(map).length > 0) {
+                    logger.info(`Successfully scraped B_ITA history for ${ticker}: ${Object.keys(map).length} points`);
+                    return map;
+                }
+            }
+        } catch (err) {
+            // Try next period
+        }
+    }
+    return null;
 }
 // ─── VALIDATION HELPERS ───────────────────────────────────────────────────
 function isValidISIN(isin) {
@@ -2249,79 +2321,6 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const historicalPrices = {};
     const fxRates = {};
 
-    // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
-    const fetchBorsaItalianaHistory = async (ticker, isin) => {
-        if (!isin || typeof isin !== 'string') return null;
-        const cleanIsin = isin.trim().toUpperCase();
-        const suffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
-        const headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0',
-            'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
-        };
-
-        let summaryUrl = null;
-        let token = null;
-        let exchcode = 'XMIL';
-
-        for (const sfx of suffixes) {
-            const u = `https://grafici.borsaitaliana.it/summary-chart/${cleanIsin}${sfx}?lang=it`;
-            try {
-                const resp = await axios.get(u, { headers, timeout: 5000 });
-                if (resp.data) {
-                    const tokenMatch = resp.data.match(/token="([^"]+)"/);
-                    const exchMatch = resp.data.match(/exchcode="([^"]+)"/);
-                    if (tokenMatch) {
-                        token = tokenMatch[1];
-                        summaryUrl = u;
-                        if (exchMatch && exchMatch[1]) exchcode = exchMatch[1];
-                        break;
-                    }
-                }
-            } catch (e) {}
-        }
-
-        if (!token) {
-            logger.warn(`B_ITA history fetch: Token not found for ${ticker} (${cleanIsin}) across suffixes`);
-            return null;
-        }
-
-        for (const period of ['5Y', '1Y']) {
-            try {
-                const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${cleanIsin},${exchcode},ISIN/history/period?period=${period}&adjustment=true&add-last-price=true`;
-                const resp = await axios.get(apiUrl, {
-                    headers: {
-                        ...headers,
-                        'Authorization': `Bearer ${token}`,
-                        'Referer': summaryUrl,
-                        'Accept': 'application/json, text/plain, */*'
-                    },
-                    timeout: 15000
-                });
-
-                if (resp.data && resp.data.history && resp.data.history.historyDt && resp.data.history.historyDt.length > 0) {
-                    const map = {};
-                    resp.data.history.historyDt.forEach(h => {
-                        if (h.dt && h.closePx) {
-                            const valCheck = isValidQuotePrice(h.closePx, { ticker, isin: cleanIsin, type: 'Bond', dataSource: 'B_ITA' });
-                            if (valCheck.valid) {
-                                const d = h.dt.toString();
-                                const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
-                                map[dateStr] = parseFloat(h.closePx);
-                            }
-                        }
-                    });
-                    if (Object.keys(map).length > 0) {
-                        logger.info(`Successfully scraped B_ITA history for ${ticker}: ${Object.keys(map).length} points`);
-                        return map;
-                    }
-                }
-            } catch (err) {
-                // Try next period
-            }
-        }
-        return null;
-    };
-
     const isWeekend = today.getDay() === 0 || today.getDay() === 6;
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -2446,7 +2445,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             if (lastValid === null) {
                 lastValid = (assetMeta && isValidQuotePrice(assetMeta.currentPrice, assetMeta).valid)
                     ? assetMeta.currentPrice
-                    : (isBondAsset(assetMeta) ? 100.0 : pricesMap[dates[0]]);
+                    : (isBondAsset(assetMeta) ? (assetMeta?.currentPrice || pricesMap[dates[0]] || 100.0) : pricesMap[dates[0]]);
             }
 
             const fullMap = {};
@@ -2470,9 +2469,14 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             historicalPrices[ticker] = pricesMap;
 
             // Save to DB
+            const isBond = isBondAsset(assetMeta);
             const insertQuote = database.db.prepare(`INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)`);
             database.db.transaction(() => {
                 for (const [date, price] of Object.entries(pricesMap)) {
+                    if (isBond) {
+                        const day = new Date(date).getDay();
+                        if (day === 0 || day === 6) continue; // Bonds never trade on weekends
+                    }
                     if (isValidQuotePrice(price, assetMeta).valid) {
                         insertQuote.run(ticker, date, price);
                     }
@@ -4277,13 +4281,93 @@ async function repairInconsistentAssetQuotesAndPrices() {
             }
         }
 
-        // Also clean up any orphan corrupted bond quotes in asset_quotes
-        const bondAssets = database.db.prepare("SELECT ticker FROM assets WHERE type IN ('Bond', 'Obbligazioni') OR ticker LIKE 'BTP%' OR isin LIKE 'IT%'").all();
+        // Also clean up any orphan corrupted bond quotes, weekend quotes and rogue spikes in asset_quotes
+        const bondAssets = database.db.prepare(`
+            SELECT ticker, isin, type, dataSource, currentPrice 
+            FROM assets 
+            WHERE type IN ('Bond', 'Obbligazioni', 'BTP', 'BOT', 'CCT', 'CTZ')
+               OR ticker LIKE 'BTP%' OR ticker LIKE 'BOT%' OR ticker LIKE 'IT000%'
+               OR isin LIKE 'IT%' OR isin LIKE 'XS%'
+               OR dataSource = 'B_ITA'
+        `).all();
+
         for (const b of bondAssets) {
-            const del = database.db.prepare('DELETE FROM asset_quotes WHERE ticker = ? AND price < 20').run(b.ticker);
-            if (del.changes > 0) {
-                logger.info(`[REPAIR] Purged ${del.changes} corrupted quotes (< 20) for ${b.ticker}`);
+            // 1. Purge prices < 20 and > 200
+            const delBounds = database.db.prepare('DELETE FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) AND (price < 20 OR price > 200 OR price IS NULL)').run(b.ticker);
+            if (delBounds.changes > 0) {
+                logger.info(`[REPAIR] Purged ${delBounds.changes} out-of-bound quotes (< 20 or > 200) for bond ${b.ticker}`);
                 repairedAny = true;
+            }
+
+            // 2. Purge weekend quotes (Saturday and Sunday have no bond market trading)
+            const delWeekends = database.db.prepare("DELETE FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) AND strftime('%w', date) IN ('0', '6')").run(b.ticker);
+            if (delWeekends.changes > 0) {
+                logger.info(`[REPAIR] Purged ${delWeekends.changes} orphan weekend quotes for bond ${b.ticker}`);
+                repairedAny = true;
+            }
+
+            // 3. Purge isolated spikes and par 100.0 leaks
+            const quotes = database.db.prepare('SELECT rowid, date, price FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) ORDER BY date ASC').all(b.ticker);
+            const toDelete = new Set();
+
+            // 1-day spike detection
+            for (let i = 1; i < quotes.length - 1; i++) {
+                const prev = quotes[i - 1].price;
+                const curr = quotes[i].price;
+                const next = quotes[i + 1].price;
+                const nDiff = Math.abs(prev - next) / Math.min(prev, next);
+                const nAvg = (prev + next) / 2;
+
+                if (nDiff < 0.035) {
+                    if (Math.abs(curr - nAvg) / nAvg > 0.035 || (Math.abs(curr - 100.0) < 0.001 && Math.abs(nAvg - 100.0) > 2.0)) {
+                        toDelete.add(quotes[i].rowid);
+                    }
+                }
+            }
+
+            // 2-day cluster spike detection
+            for (let i = 1; i < quotes.length - 2; i++) {
+                const p0 = quotes[i - 1].price;
+                const p1 = quotes[i].price;
+                const p2 = quotes[i + 1].price;
+                const p3 = quotes[i + 2].price;
+                const diff03 = Math.abs(p0 - p3) / Math.min(p0, p3);
+                const avg03 = (p0 + p3) / 2;
+
+                if (diff03 < 0.035) {
+                    if (Math.abs(p1 - avg03) / avg03 > 0.035 && Math.abs(p2 - avg03) / avg03 > 0.035) {
+                        toDelete.add(quotes[i].rowid);
+                        toDelete.add(quotes[i + 1].rowid);
+                    }
+                }
+            }
+
+            if (toDelete.size > 0) {
+                const delStmt = database.db.prepare('DELETE FROM asset_quotes WHERE rowid = ?');
+                database.db.transaction(() => {
+                    for (const rid of toDelete) {
+                        delStmt.run(rid);
+                    }
+                })();
+                logger.info(`[REPAIR] Purged ${toDelete.size} isolated spike quotes for bond ${b.ticker}`);
+                repairedAny = true;
+            }
+
+            // 4. Verify currentPrice sanity against remaining quotes
+            if (b.currentPrice !== null && b.currentPrice !== undefined) {
+                const latestQ = database.db.prepare('SELECT price, date FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) ORDER BY date DESC LIMIT 1').get(b.ticker);
+                if (latestQ && latestQ.price >= 20.0 && latestQ.price <= 200.0) {
+                    const dev = Math.abs(b.currentPrice - latestQ.price) / latestQ.price;
+                    if (dev > 0.08 || b.currentPrice < 20.0 || b.currentPrice > 200.0) {
+                        database.db.prepare(`
+                            UPDATE assets 
+                            SET currentPrice = ?, quoteDate = ?, hasHistoryInconsistency = 0, updatedAt = datetime('now')
+                            WHERE UPPER(ticker) = UPPER(?)
+                        `).run(latestQ.price, latestQ.date, b.ticker);
+                        logger.info(`[REPAIR] Restored bond ${b.ticker} currentPrice from ${b.currentPrice} to latest quote ${latestQ.price}`);
+                        repairedAny = true;
+                    }
+                }
             }
         }
 
