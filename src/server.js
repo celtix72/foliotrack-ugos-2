@@ -332,23 +332,29 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
                                new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
             msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
-            // Compact Push Notification Body for iOS
+            // Compact Push Notification Body for iOS & Android
             const regVar = stats.totalChange || 0;
             const pmVar = stats.totalChangePrePost || 0;
             const totalVarEUR = regVar + pmVar;
             
-            let totalVarStr = (totalVarEUR >= 0 ? '+' : '') + '€' + Math.round(totalVarEUR).toLocaleString('it-IT');
+            const totalSign = totalVarEUR >= 0 ? '+' : '-';
+            let totalVarStr = `${totalSign}€${Math.round(Math.abs(totalVarEUR)).toLocaleString('it-IT')}`;
             if (pmVar !== 0) {
-                const pmSign = pmVar >= 0 ? '+' : '';
-                totalVarStr += ` (Pre: ${pmSign}€${Math.round(pmVar).toLocaleString('it-IT')})`;
+                const pmSign = pmVar >= 0 ? '+' : '-';
+                totalVarStr += ` Pre ${pmSign}€${Math.round(Math.abs(pmVar)).toLocaleString('it-IT')}`;
             }
-            const abbreviatedNet = (totalVal / 1000).toFixed(1) + 'K';
+            const abbreviatedNet = '€' + (totalVal / 1000).toFixed(1) + 'K';
 
             // First line (NET) becomes the Title for maximum compactness
-            const pushPrefix = (triggerMeta && triggerMeta.label) ? `${triggerMeta.label} • ` : '';
-            const pushTitle = `${pushPrefix}NET: ${abbreviatedNet} (${totalVarStr})`;
+            let pushPrefix = '';
+            if (triggerMeta && triggerMeta.label) {
+                pushPrefix = `${triggerMeta.label} • `;
+            } else if (eventType === 'DAILY') {
+                pushPrefix = '📊 Daily • ';
+            }
+            const pushTitle = `${pushPrefix}NET ${abbreviatedNet} ${totalVarStr}`.trim();
             
-            // Portfolios for the body: those with variation > 0 (positive or negative)
+            // Portfolios for the body: those with variation != 0 (positive or negative)
             let portfoliosForPush = [];
             if (stats.individualPortfolios && stats.individualPortfolios.length > 0) {
                 // Sort by absolute total EUR variation descending to show most significant moves first
@@ -365,20 +371,21 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
                 });
             }
 
-            let pushBody = '';
+            const pushLines = [];
             portfoliosForPush.forEach(p => {
                 const pReg = p.changeValueEUR || 0;
                 const pPM = p.changeValuePrePostEUR || 0;
                 const pTotal = pReg + pPM;
                 const icon = pTotal >= 0 ? '🟢' : '🔴';
                 const shortName = (p.name || '???').substring(0, 3).toUpperCase();
+                const pSign = pTotal >= 0 ? '+' : '-';
                 
-                let pVarStr = (pTotal >= 0 ? '+' : '') + '€' + Math.round(Math.abs(pTotal)).toLocaleString('it-IT');
+                let pVarStr = `${pSign}€${Math.round(Math.abs(pTotal)).toLocaleString('it-IT')}`;
                 if (pPM !== 0) {
-                    const pPMSign = pPM >= 0 ? '+' : '';
-                    pVarStr += ` (Pre: ${pPMSign}€${Math.round(pPM).toLocaleString('it-IT')})`;
+                    const pPMSign = pPM >= 0 ? '+' : '-';
+                    pVarStr += ` Pre ${pPMSign}€${Math.round(Math.abs(pPM)).toLocaleString('it-IT')}`;
                 }
-                pushBody += `${icon} ${shortName} (${pVarStr})\n`;
+                pushLines.push(`${icon} ${shortName} ${pVarStr}`);
             });
 
             // Find Top and Worst asset by value delta
@@ -387,7 +394,7 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             let maxDelta = -Infinity;
             let minDelta = Infinity;
 
-            // Actually, let's just find them from all assets in categories
+            // Find them from all assets in categories
             for (const cat of Object.values(categories)) {
                 cat.assets.forEach(a => {
                     const delta = (a.diffReg || 0) + (a.diffPP || 0);
@@ -397,11 +404,13 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             }
 
             if (topAsset && maxDelta > 0) {
-                pushBody += `🏆 ${topAsset.ticker} (+€${Math.round(maxDelta).toLocaleString('it-IT')})\n`;
+                pushLines.push(`🏆 ${extractSimpleSymbol(topAsset.ticker)} +€${Math.round(maxDelta).toLocaleString('it-IT')}`);
             }
             if (worstAsset && minDelta < 0) {
-                pushBody += `📉 ${worstAsset.ticker} (-€${Math.round(Math.abs(minDelta)).toLocaleString('it-IT')})\n`;
+                pushLines.push(`📉 ${extractSimpleSymbol(worstAsset.ticker)} -€${Math.round(Math.abs(minDelta)).toLocaleString('it-IT')}`);
             }
+
+            const pushBody = pushLines.join('\n');
 
             notifyUser(userId, eventType, {
                 title: pushTitle,
@@ -3961,10 +3970,10 @@ setInterval(async () => {
         // ── A. CRITICAL MARKET BELL EVENTS (+5 min delay for stabilized data) ──
         if (eventsEnabled && (mode === 'smart' || mode === 'events_only')) {
             const bellEvents = [
-                { id: 'eu_open', timeMin: '09:05', timeMax: '09:09', isHoliday: status.isEUHoliday, label: '🔔 Apertura Borsa UE (09:05)' },
-                { id: 'us_open', timeMin: '15:35', timeMax: '15:39', isHoliday: status.isUSHoliday, label: '🔔 Apertura Wall Street (15:35)' },
-                { id: 'eu_close', timeMin: '17:35', timeMax: '17:39', isHoliday: status.isEUHoliday, label: '🔔 Chiusura Borsa UE (17:35)' },
-                { id: 'us_close', timeMin: '22:05', timeMax: '22:09', isHoliday: status.isUSHoliday, label: '🔔 Chiusura Wall Street (22:05)' }
+                { id: 'eu_open', timeMin: '09:05', timeMax: '09:09', isHoliday: status.isEUHoliday, label: '🔔 OpenUE' },
+                { id: 'us_open', timeMin: '15:35', timeMax: '15:39', isHoliday: status.isUSHoliday, label: '🔔 OpenUSA' },
+                { id: 'eu_close', timeMin: '17:35', timeMax: '17:39', isHoliday: status.isEUHoliday, label: '🔔 CloseUE' },
+                { id: 'us_close', timeMin: '22:05', timeMax: '22:09', isHoliday: status.isUSHoliday, label: '🔔 CloseUSA' }
             ];
 
             for (const ev of bellEvents) {
@@ -3996,10 +4005,10 @@ setInterval(async () => {
                     const gainDelta = currentGain - lastGain;
                     if (gainThreshold > 0 && Math.abs(gainDelta) >= gainThreshold) {
                         if (elapsedMs >= cooldownMin * 60 * 1000) {
-                            const sign = gainDelta >= 0 ? '+' : '';
+                            const sign = gainDelta >= 0 ? '+' : '-';
                             matchedTrigger = {
                                 id: 'gain_change',
-                                label: `📈 Variazione Gain: ${sign}€${Math.round(gainDelta)}`,
+                                label: `📈 ΔGain ${sign}€${Math.round(Math.abs(gainDelta))}`,
                                 stats,
                                 currentGain
                             };
@@ -4012,7 +4021,7 @@ setInterval(async () => {
                     if (gainThreshold <= 0 || lastGain === undefined || Math.abs(gainDelta) >= gainThreshold) {
                         matchedTrigger = {
                             id: 'interval',
-                            label: '📈 Riepilogo Mercato Periodico',
+                            label: '📈 Market',
                             stats,
                             currentGain
                         };
