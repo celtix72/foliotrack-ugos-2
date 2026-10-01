@@ -3591,13 +3591,19 @@ async function _internalUpdateMarketData(force = false) {
                     SELECT 
                         u.id as user_id, 
                         u.telegram_chat_id,
-                        uw.targetPrice,
-                        uw.stopLoss
+                        CASE WHEN uw.ticker IS NOT NULL THEN uw.targetPrice ELSE a.targetPrice END as targetPrice,
+                        CASE WHEN uw.ticker IS NOT NULL THEN uw.stopLoss ELSE a.stopLoss END as stopLoss
                     FROM users u
                     LEFT JOIN user_watchlist uw ON uw.user_id = u.id AND uw.ticker = ?
+                    LEFT JOIN assets a ON a.ticker = ?
                     WHERE uw.ticker IS NOT NULL 
-                       OR u.id IN (SELECT user_id FROM transactions WHERE ticker = ?)
-                `).all(asset.ticker, asset.ticker);
+                       OR u.id IN (
+                           SELECT pu.user_id 
+                           FROM portfolio_users pu 
+                           JOIN transactions t ON t.portfolioId = pu.portfolio_id 
+                           WHERE t.assetTicker = ?
+                       )
+                `).all(asset.ticker, asset.ticker, asset.ticker);
 
                 for (const ua of userAlerts) {
                     // 1. TARGET PROFIT

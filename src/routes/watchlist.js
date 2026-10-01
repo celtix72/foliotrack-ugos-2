@@ -35,7 +35,16 @@ module.exports = function(dependencies) {
                        a.ai_updated_at as aiUpdatedAt,
                        a.ai_engine as aiEngine,
                        a.ai_prompt_type as aiPromptType,
-                       a.targetPrice as aiTargetPrice,
+                       (
+                           SELECT ah.targetPrice FROM asset_ai_history ah 
+                           WHERE ah.ticker = a.ticker AND ah.targetPrice IS NOT NULL AND ah.targetPrice > 0 
+                           ORDER BY ah.is_best DESC, ah.created_at DESC LIMIT 1
+                       ) as aiTargetPrice,
+                       (
+                           SELECT ah.stopLoss FROM asset_ai_history ah 
+                           WHERE ah.ticker = a.ticker AND ah.stopLoss IS NOT NULL AND ah.stopLoss > 0 
+                           ORDER BY ah.is_best DESC, ah.created_at DESC LIMIT 1
+                       ) as aiStopLoss,
                        (SELECT COUNT(*) FROM asset_ai_history ah WHERE ah.ticker = a.ticker) as aiHistoryCount,
                        CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
                  FROM assets a
@@ -203,15 +212,18 @@ module.exports = function(dependencies) {
                      ...a, 
                      totalQuantity: actualTotalQuantity > 0.0001 ? actualTotalQuantity : 0,
                      totalCostAssetCurr: actualTotalCostAssetCurr,
-                     targetPrice: a.userTargetPrice,
-                     stopLoss: a.userStopLoss,
+                     targetPrice: (a.userTargetPrice !== undefined && a.userTargetPrice !== null) ? a.userTargetPrice : (a.targetPrice || null),
+                     stopLoss: (a.userStopLoss !== undefined && a.userStopLoss !== null) ? a.userStopLoss : (a.stopLoss || null),
+                     userTargetPrice: a.userTargetPrice,
+                     userStopLoss: a.userStopLoss,
                      aiEngine: a.aiEngine,
                      aiPromptType: a.aiPromptType,
                      aiTargetPrice: a.aiTargetPrice,
+                     aiStopLoss: a.aiStopLoss,
                      aiAction: a.aiAction,
                      aiReasoning: a.aiReasoning,
                      aiBadges,
-                     volatilityAlert: a.userVolatilityAlert,
+                     volatilityAlert: (a.userVolatilityAlert !== undefined && a.userVolatilityAlert !== null) ? a.userVolatilityAlert : a.volatilityAlert,
                      inWatchlist: 1,
                      sparkline,
                      changePercent: showVariation ? (a.changePercent || 0) : 0,
@@ -284,10 +296,60 @@ module.exports = function(dependencies) {
          try {
              const ticker = req.params.ticker.toUpperCase();
              const result = database.db.prepare('DELETE FROM user_watchlist WHERE user_id = ? AND ticker = ?').run(req.user.id, ticker);
+             
+             // Clear today's locks so no orphan alerts linger
+             try {
+                 database.db.prepare(`
+                     DELETE FROM notifications 
+                     WHERE user_id = ? AND ticker = ? AND type IN ('TP', 'SL', 'VOL') AND date(date) = date('now')
+                 `).run(req.user.id, ticker);
+             } catch(e) {}
+
              logger.info(`Watchlist delete: user ${req.user.id}, ticker ${ticker}, affectedRows: ${result.changes}`);
              res.json({ ok: true, changes: result.changes });
          } catch (err) {
              console.error('Watchlist delete error:', err);
+             res.status(500).json({ error: err.message });
+         }
+     });
+
+     // ─── WATCHLIST ALERTS UPDATE ─────────────────────────────────────────────
+     router.put('/watchlist/:ticker/alerts', requireAuth, (req, res) => {
+         try {
+             const ticker = req.params.ticker.trim().toUpperCase();
+             const { targetPrice, stopLoss, volatilityAlert } = req.body;
+
+             const tpVal = (targetPrice === null || targetPrice === '' || isNaN(parseFloat(targetPrice)) || parseFloat(targetPrice) <= 0) ? null : parseFloat(targetPrice);
+             const slVal = (stopLoss === null || stopLoss === '' || isNaN(parseFloat(stopLoss)) || parseFloat(stopLoss) <= 0) ? null : parseFloat(stopLoss);
+             const volVal = (volatilityAlert === null || volatilityAlert === '' || isNaN(parseFloat(volatilityAlert)) || parseFloat(volatilityAlert) <= 0) ? null : parseFloat(volatilityAlert);
+
+             // 1. Ensure row exists in user_watchlist
+             database.db.prepare(`INSERT OR IGNORE INTO user_watchlist (user_id, ticker) VALUES (?, ?)`).run(req.user.id, ticker);
+
+             // 2. Update user_watchlist
+             database.db.prepare(`
+                 UPDATE user_watchlist 
+                 SET targetPrice = ?, stopLoss = ?, volatilityAlert = ?
+                 WHERE user_id = ? AND ticker = ?
+             `).run(tpVal, slVal, volVal, req.user.id, ticker);
+
+             // 3. Keep assets table in sync
+             database.db.prepare(`
+                 UPDATE assets 
+                 SET targetPrice = ?, stopLoss = ?, volatilityAlert = ?
+                 WHERE ticker = ?
+             `).run(tpVal, slVal, volVal, ticker);
+
+             // 4. Adapt notifications: reset today's lock for this user and ticker so new conditions can trigger
+             database.db.prepare(`
+                 DELETE FROM notifications 
+                 WHERE user_id = ? AND ticker = ? AND type IN ('TP', 'SL', 'VOL') AND date(date) = date('now')
+             `).run(req.user.id, ticker);
+
+             logger.info(`User ${req.user.id} updated alerts for ${ticker}: TP=${tpVal}, SL=${slVal}, VOL=${volVal}`);
+             res.json({ success: true, ticker, targetPrice: tpVal, stopLoss: slVal, volatilityAlert: volVal });
+         } catch (err) {
+             logger.error('Watchlist alerts update error:', err);
              res.status(500).json({ error: err.message });
          }
      });

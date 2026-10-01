@@ -163,10 +163,13 @@
     window.saveModalAlerts = async function () {
         if (!_chartTicker) return;
         const btn = document.getElementById('modal-save-alerts-btn');
-        const tp = parseFloat(document.getElementById('modal-tp-input').value || 0);
-        const tp2 = parseFloat(document.getElementById('modal-tp2-input').value || 0);
-        const sl = parseFloat(document.getElementById('modal-sl-input').value || 0);
-        const vol = parseInt(document.getElementById('modal-vol-input').value || 0);
+        const tpInput = document.getElementById('modal-tp-input');
+        const slInput = document.getElementById('modal-sl-input');
+        const volInput = document.getElementById('modal-vol-input');
+
+        const tp = (tpInput && tpInput.value.trim() !== '' && !isNaN(parseFloat(tpInput.value))) ? parseFloat(tpInput.value) : null;
+        const sl = (slInput && slInput.value.trim() !== '' && !isNaN(parseFloat(slInput.value))) ? parseFloat(slInput.value) : null;
+        const vol = (volInput && volInput.value.trim() !== '' && !isNaN(parseFloat(volInput.value))) ? parseFloat(volInput.value) : null;
 
         const originalText = btn.textContent;
         const originalBg = btn.style.backgroundColor;
@@ -174,12 +177,11 @@
         btn.textContent = 'SAVING...';
 
         try {
-            const res = await fetch(`/api/assets/${encodeURIComponent(_chartTicker)}`, {
+            const res = await fetch(`/api/assets/${encodeURIComponent(_chartTicker)}/sltp`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     targetPrice: tp,
-                    targetPrice2: tp2,
                     stopLoss: sl,
                     volatilityAlert: vol,
                     isMonitored: 1
@@ -420,8 +422,7 @@
                 const currSym = _chartCurrency === 'EUR' ? '€' : (_chartCurrency === 'USD' ? '$' : _chartCurrency);
                 // We'll use these later in the unified grid
                 window._assetTargets = [
-                    { label: 'TG1', type: 'input', id: 'modal-tp-input', val: assetInfo.targetPrice, symbol: currSym },
-                    { label: 'TG2', type: 'input', id: 'modal-tp2-input', val: assetInfo.targetPrice2, symbol: currSym },
+                    { label: 'TP', type: 'input', id: 'modal-tp-input', val: assetInfo.targetPrice, symbol: currSym },
                     { label: 'SL', type: 'input', id: 'modal-sl-input', val: assetInfo.stopLoss, symbol: currSym },
                     { label: 'VOL %', type: 'vol', id: 'modal-vol-input', val: assetInfo.volatilityAlert }
                 ];

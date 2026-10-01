@@ -1084,6 +1084,13 @@ router.post('/assets/bulk-clear-alerts', requireAuth, (req, res) => {
                     SET targetPrice = NULL, stopLoss = NULL, volatilityAlert = NULL 
                     WHERE ticker IN (${placeholders})
                 `).run(...tickerList);
+
+                try {
+                    database.db.prepare(`
+                        DELETE FROM notifications 
+                        WHERE user_id = ? AND ticker IN (${placeholders}) AND type IN ('TP', 'SL', 'VOL') AND date(date) = date('now')
+                    `).run(userId, ...tickerList);
+                } catch(e) {}
             } else {
                 database.db.prepare(`
                     UPDATE user_watchlist 
@@ -1099,6 +1106,13 @@ router.post('/assets/bulk-clear-alerts', requireAuth, (req, res) => {
                       AND ticker NOT LIKE 'CD_%' 
                       AND ticker NOT LIKE 'BP_%'
                 `).run();
+
+                try {
+                    database.db.prepare(`
+                        DELETE FROM notifications 
+                        WHERE user_id = ? AND type IN ('TP', 'SL', 'VOL') AND date(date) = date('now')
+                    `).run(userId);
+                } catch(e) {}
             }
         })();
 
@@ -1164,6 +1178,13 @@ router.post('/assets/bulk-apply-ai', requireAuth, (req, res) => {
                     updatedCount++;
                 }
             }
+
+            try {
+                database.db.prepare(`
+                    DELETE FROM notifications 
+                    WHERE user_id = ? AND type IN ('TP', 'SL') AND date(date) = date('now')
+                `).run(userId);
+            } catch(e) {}
         })();
 
         res.json({ success: true, updatedCount, message: `Suggerimenti AI applicati con successo a ${updatedCount} asset` });
@@ -1608,6 +1629,19 @@ router.put('/assets/:id', requireAuth, (req, res) => {
                         WHERE ticker = ?
                     `).run(...globalAlertParams, ticker);
                 }
+
+                // Reset today's notifications lock so modified conditions can trigger immediately
+                const typesToReset = [];
+                if (targetPrice !== undefined) typesToReset.push('TP');
+                if (stopLoss !== undefined) typesToReset.push('SL');
+                if (volatilityAlert !== undefined) typesToReset.push('VOL');
+                if (typesToReset.length > 0) {
+                    const placeholders = typesToReset.map(() => '?').join(',');
+                    database.db.prepare(`
+                        DELETE FROM notifications 
+                        WHERE user_id = ? AND ticker = ? AND type IN (${placeholders}) AND date(date) = date('now')
+                    `).run(req.user.id, ticker, ...typesToReset);
+                }
             }
         } catch (e) {
             logger.error('Error updating user watchlist in PUT /api/assets', e);
@@ -1670,6 +1704,19 @@ router.put('/assets/:id/sltp', requireAuth, (req, res) => {
                         SET ${globalAlertUpdates.join(', ')} 
                         WHERE ticker = ?
                     `).run(...globalAlertParams, ticker);
+                }
+
+                // Reset today's notifications lock so modified conditions can trigger immediately
+                const typesToReset = [];
+                if (tp !== undefined) typesToReset.push('TP');
+                if (stopLoss !== undefined) typesToReset.push('SL');
+                if (vol !== undefined) typesToReset.push('VOL');
+                if (typesToReset.length > 0) {
+                    const placeholders = typesToReset.map(() => '?').join(',');
+                    database.db.prepare(`
+                        DELETE FROM notifications 
+                        WHERE user_id = ? AND ticker = ? AND type IN (${placeholders}) AND date(date) = date('now')
+                    `).run(req.user.id, ticker, ...typesToReset);
                 }
             }
         } catch (e) {
@@ -2668,6 +2715,13 @@ ${contextData}
                     VALUES (?, ?, ?, ?)
                 `).run(userId, ticker, targetPrice, stopLoss);
             }
+
+            try {
+                database.db.prepare(`
+                    DELETE FROM notifications 
+                    WHERE user_id = ? AND ticker = ? AND type IN ('TP', 'SL') AND date(date) = date('now')
+                `).run(userId, ticker);
+            } catch(e) {}
 
             // Inserisci nello storico
             database.db.prepare(`
