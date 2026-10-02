@@ -2085,39 +2085,54 @@
 
         async function populateAiModelSelects(settings) {
             try {
-                const [geminiModels, orModels, reqModels] = await Promise.all([
-                    fetchAdmin('/api/admin/gemini-models').catch(() => []),
-                    fetchAdmin('/api/admin/openrouter-models').catch(() => []),
-                    fetchAdmin('/api/admin/requesty-models').catch(() => [])
+                const [geminiRes, orRes, reqRes] = await Promise.all([
+                    fetchAdmin('/api/admin/gemini-models').catch(() => null),
+                    fetchAdmin('/api/admin/openrouter-models').catch(() => null),
+                    fetchAdmin('/api/admin/requesty-models').catch(() => null)
                 ]);
 
-                // Gemini selects
+                const geminiModels = Array.isArray(geminiRes) ? geminiRes : (geminiRes?.models || []);
+                const orModels = Array.isArray(orRes) ? orRes : (orRes?.models || []);
+                const reqModels = Array.isArray(reqRes) ? reqRes : (reqRes?.models || []);
+
+                const buildOptions = (models, selectedVal) => {
+                    let hasSelected = false;
+                    let opts = '<option value="">-- Seleziona --</option>';
+                    if (Array.isArray(models)) {
+                        opts += models.map(m => {
+                            const isSel = String(selectedVal || '') === String(m.id);
+                            if (isSel) hasSelected = true;
+                            const tag = m.isFree ? '(Free)' : (m.priceLabel ? `(${m.priceLabel})` : '(Pay)');
+                            return `<option value="${m.id}" ${isSel ? 'selected' : ''}>${m.name} ${tag}</option>`;
+                        }).join('');
+                    }
+                    if (selectedVal && !hasSelected) {
+                        opts += `<option value="${selectedVal}" selected>${selectedVal} (Attuale)</option>`;
+                    }
+                    return opts;
+                };
+
+                // Gemini selects (1..3)
                 for (let i = 1; i <= 3; i++) {
                     const sel = document.getElementById(`ai-gemini-model-${i}`);
-                    if (sel && Array.isArray(geminiModels)) {
-                        sel.innerHTML = '<option value="">-- Seleziona --</option>' + geminiModels.map(m => `
-                            <option value="${m.id}" ${settings[`geminiModel${i}`] === m.id ? 'selected' : ''}>${m.name} ${m.isFree ? '(Free)' : ''}</option>
-                        `).join('');
+                    if (sel) {
+                        sel.innerHTML = buildOptions(geminiModels, settings[`geminiModel${i}`]);
                     }
                 }
 
-                // OpenRouter selects
+                // OpenRouter selects (1..5)
                 for (let i = 1; i <= 5; i++) {
                     const sel = document.getElementById(`ai-openrouter-model-${i}`);
-                    if (sel && Array.isArray(orModels)) {
-                        sel.innerHTML = '<option value="">-- Seleziona --</option>' + orModels.map(m => `
-                            <option value="${m.id}" ${settings[`openrouterModel${i}`] === m.id ? 'selected' : ''}>${m.name} ${m.isFree ? '(Free)' : ''}</option>
-                        `).join('');
+                    if (sel) {
+                        sel.innerHTML = buildOptions(orModels, settings[`openrouterModel${i}`]);
                     }
                 }
 
-                // Requesty selects
+                // Requesty selects (1..5)
                 for (let i = 1; i <= 5; i++) {
                     const sel = document.getElementById(`ai-requesty-model-${i}`);
-                    if (sel && Array.isArray(reqModels)) {
-                        sel.innerHTML = '<option value="">-- Seleziona --</option>' + reqModels.map(m => `
-                            <option value="${m.id}" ${settings[`requestyModel${i}`] === m.id ? 'selected' : ''}>${m.name} ${m.isFree ? '(Free)' : ''}</option>
-                        `).join('');
+                    if (sel) {
+                        sel.innerHTML = buildOptions(reqModels, settings[`requestyModel${i}`]);
                     }
                 }
             } catch (e) { console.error('Error populating AI model selects', e); }

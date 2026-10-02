@@ -5,10 +5,39 @@ let _cachedGeminiModel = null;
 let _geminiModelCachedAt = 0;
 const GEMINI_MODEL_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
+// Modelli statici di fallback Gemini
+const STATIC_GEMINI_FREE_MODELS = [
+    { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',       isFree: true },
+    { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',       isFree: true },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite',  isFree: true },
+    { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',         isFree: false },
+    { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
+    { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',         isFree: false },
+    { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',       isFree: true },
+    { id: 'gemini-2.8-flash',      name: 'Gemini 2.8 Flash',       isFree: true },
+    { id: 'gemini-2.7-flash',      name: 'Gemini 2.7 Flash',       isFree: true },
+];
+
+// Modelli statici di fallback Requesty
+const STATIC_REQUESTY_MODELS = [
+    { id: 'deepseek/deepseek-chat', name: 'DeepSeek: V3 Chat', priceLabel: '$0.14 / $0.28', isFree: false, recommended: true },
+    { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1 Reasoning', priceLabel: '$0.55 / $2.19', isFree: false, recommended: true },
+    { id: 'qwen/qwq-32b', name: 'Qwen: QwQ 32B', priceLabel: '$0.12 / $0.18', isFree: false, recommended: true },
+    { id: 'google/gemini-2.0-flash', name: 'Google: Gemini 2.0 Flash', priceLabel: '$0.10 / $0.40', isFree: false, recommended: true },
+    { id: 'google/gemini-2.5-pro', name: 'Google: Gemini 2.5 Pro', priceLabel: '$1.25 / $5.00', isFree: false, recommended: true },
+    { id: 'anthropic/claude-3-5-sonnet-20241022', name: 'Anthropic: Claude 3.5 Sonnet', priceLabel: '$3.00 / $15.00', isFree: false, recommended: true },
+    { id: 'openai/gpt-4o-2024-11-20', name: 'OpenAI: GPT-4o', priceLabel: '$2.50 / $10.00', isFree: false, recommended: true },
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Meta: Llama 3.3 70B Instruct', priceLabel: '$0.12 / $0.30', isFree: false, recommended: false },
+    { id: 'mistralai/mistral-large-2411', name: 'Mistral: Large 2411', priceLabel: '$2.00 / $6.00', isFree: false, recommended: false }
+];
+
 // Cache per la lista completa dei modelli Gemini disponibili (per la UI admin)
-let _cachedGeminiModels = [];
+let _cachedGeminiModels = [...STATIC_GEMINI_FREE_MODELS];
 let _geminiModelsCachedAt = 0;
 const GEMINI_MODELS_CACHE_MS = 60 * 60 * 1000; // 1 hour
+
+let _cachedRequestyModels = [...STATIC_REQUESTY_MODELS];
+let _requestyModelsCachedAt = 0;
 
 // Modelli statici di fallback — aggiornati agosto 2026
 // Questi vengono usati se la fetch da OpenRouter API fallisce
@@ -137,8 +166,7 @@ function getOpenRouterModels() {
     return _cachedOpenRouterModels;
 }
 
-let _cachedRequestyModels = [];
-let _requestyModelsCachedAt = 0;
+
 
 async function fetchRequestyModels() {
     try {
@@ -221,6 +249,9 @@ async function fetchRequestyModels() {
         }
     } catch (err) {
         aiLogger.error('[Requesty] Failed to fetch models for cache', err.message);
+        if (_cachedRequestyModels.length === 0) {
+            _cachedRequestyModels = [...STATIC_REQUESTY_MODELS];
+        }
     }
 }
 
@@ -231,7 +262,7 @@ function getRequestyModels() {
     if (_cachedRequestyModels.length === 0 || (now - _requestyModelsCachedAt) > 60 * 60 * 1000) {
         fetchRequestyModels().catch(err => aiLogger.error('[Requesty] On-demand fetch failed', err.message));
     }
-    return _cachedRequestyModels;
+    return _cachedRequestyModels.length > 0 ? _cachedRequestyModels : STATIC_REQUESTY_MODELS;
 }
 const DEFAULT_GEMINI_MODEL_PREFERENCE = [
     'gemini-3.8-flash',
@@ -245,20 +276,7 @@ const DEFAULT_GEMINI_MODEL_PREFERENCE = [
     'gemini-2.7-flash',
 ];
 
-/**
- * Fallback statico: modelli Gemini free — usato se l'API non è raggiungibile
- */
-const STATIC_GEMINI_FREE_MODELS = [
-    { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',       isFree: true },
-    { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',       isFree: true },
-    { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',       isFree: true },
-    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite',  isFree: true },
-    { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',         isFree: false },
-    { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
-    { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',         isFree: false },
-    { id: 'gemini-2.8-flash',      name: 'Gemini 2.8 Flash',       isFree: true },
-    { id: 'gemini-2.7-flash',      name: 'Gemini 2.7 Flash',       isFree: true },
-];
+
 
 /**
  * Fetch + caching dei modelli Gemini disponibili dall'API.
@@ -334,7 +352,7 @@ function getGeminiModels() {
         // Ritorna il fallback statico se la cache è vuota
         if (_cachedGeminiModels.length === 0) return STATIC_GEMINI_FREE_MODELS;
     }
-    return _cachedGeminiModels;
+    return _cachedGeminiModels.length > 0 ? _cachedGeminiModels : STATIC_GEMINI_FREE_MODELS;
 }
 
 function getGeminiModelPreference() {
@@ -624,7 +642,7 @@ async function callAIModel(engine, prompt, keys) {
 
     if (isOpenRouter) {
         const apiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
-        if (!apiKey) throw new Error(`OpenRouter API Key mancante.`);
+        if (!apiKey) throw new Error(`OpenRouter API Key mancante. Inseriscila nei Settings dell'amministratore.`);
         
         let orModel = '';
         if (baseEngine === 'OR1') orModel = keys.openrouterModel1;
@@ -636,7 +654,15 @@ async function callAIModel(engine, prompt, keys) {
             orModel = engine.replace(/^openrouter:/, '').replace(/^or:/, '');
         }
         
-        if (!orModel) throw new Error(`Nessun modello configurato per ${engine}. Selezionalo nei Settings dell'amministratore.`);
+        // Fallback predefinito se lo slot non è configurato nei settings
+        if (!orModel) {
+            if (baseEngine === 'OR1') orModel = 'deepseek/deepseek-r1:free';
+            else if (baseEngine === 'OR2') orModel = 'google/gemini-2.0-flash-exp:free';
+            else if (baseEngine === 'OR3') orModel = 'meta-llama/llama-3.3-70b-instruct:free';
+            else if (baseEngine === 'OR4') orModel = 'anthropic/claude-3.5-sonnet';
+            else if (baseEngine === 'OR5') orModel = 'openai/gpt-4o';
+            else orModel = 'deepseek/deepseek-r1:free';
+        }
         
         let res;
         let attempt = 0;
@@ -674,7 +700,7 @@ async function callAIModel(engine, prompt, keys) {
         return { text: content, usage: res.data.usage || {}, modelUsed: orModel };
     } else if (isRequesty) {
         const apiKey = keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
-        if (!apiKey) throw new Error(`Requesty API Key mancante.`);
+        if (!apiKey) throw new Error(`Requesty API Key mancante. Inseriscila nei Settings dell'amministratore.`);
         
         let reqModel = '';
         if (baseEngine === 'REQ1') reqModel = keys.requestyModel1;
@@ -686,7 +712,15 @@ async function callAIModel(engine, prompt, keys) {
             reqModel = engine.replace(/^requesty:/, '').replace(/^req:/, '');
         }
         
-        if (!reqModel) throw new Error(`Nessun modello configurato per ${engine}. Selezionalo nei Settings dell'amministratore.`);
+        // Fallback predefinito se lo slot non è configurato nei settings
+        if (!reqModel) {
+            if (baseEngine === 'REQ1') reqModel = 'deepseek/deepseek-chat';
+            else if (baseEngine === 'REQ2') reqModel = 'deepseek/deepseek-r1';
+            else if (baseEngine === 'REQ3') reqModel = 'google/gemini-2.0-flash';
+            else if (baseEngine === 'REQ4') reqModel = 'anthropic/claude-3-5-sonnet-20241022';
+            else if (baseEngine === 'REQ5') reqModel = 'openai/gpt-4o-2024-11-20';
+            else reqModel = 'deepseek/deepseek-chat';
+        }
         
         let res;
         let attempt = 0;
@@ -755,19 +789,22 @@ async function callAIModel(engine, prompt, keys) {
         const apiKey = keys.geminiApiKeyFree || keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY;
         if (!apiKey) {
             // Check fallback keys if Gemini is missing
-            if (keys.openrouterApiKey || keys.openrouterApiKeyPay || keys.openrouterModel1) {
+            const orApiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
+            if (orApiKey) {
                 aiLogger.info('[AI Fallback] Gemini key missing, falling back to OpenRouter (OR1)');
                 return callAIModel('OR1', prompt, keys);
             }
-            if (keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyModel1) {
+            const reqApiKey = keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
+            if (reqApiKey) {
                 aiLogger.info('[AI Fallback] Gemini key missing, falling back to Requesty (REQ1)');
                 return callAIModel('REQ1', prompt, keys);
             }
-            if (keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey) {
+            const aimlApiKey = keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY;
+            if (aimlApiKey) {
                 aiLogger.info('[AI Fallback] Gemini key missing, falling back to Aimlapi');
                 return callAIModel('Aimlapi_Free', prompt, keys);
             }
-            throw new Error(`Gemini API Key mancante e nessuna altra chiave IA trovata nelle impostazioni.`);
+            throw new Error(`Gemini API Key mancante e nessuna chiave alternativa (OpenRouter / Requesty) configurata nelle impostazioni.`);
         }
 
         let candidateModels = await getGeminiCandidateModels(apiKey);
@@ -840,15 +877,18 @@ async function callAIModel(engine, prompt, keys) {
 
         if (!res || !modelUsed) {
             // Cascade to alternative configured AI engines if all Gemini models failed
-            if (keys.openrouterApiKey || keys.openrouterApiKeyPay || keys.openrouterModel1) {
+            const orApiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
+            if (orApiKey) {
                 aiLogger.warn('[AI Fallback] All Gemini models overloaded (503/429), automatically falling back to OpenRouter (OR1)...');
                 return callAIModel('OR1', prompt, keys);
             }
-            if (keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyModel1) {
+            const reqApiKey = keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
+            if (reqApiKey) {
                 aiLogger.warn('[AI Fallback] All Gemini models overloaded (503/429), automatically falling back to Requesty (REQ1)...');
                 return callAIModel('REQ1', prompt, keys);
             }
-            if (keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey) {
+            const aimlApiKey = keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY;
+            if (aimlApiKey) {
                 aiLogger.warn('[AI Fallback] All Gemini models overloaded (503/429), automatically falling back to Aimlapi...');
                 return callAIModel('Aimlapi_Free', prompt, keys);
             }

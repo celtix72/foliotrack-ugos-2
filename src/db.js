@@ -1178,6 +1178,21 @@ function getSettings(userId) {
     if (settings.updateFrequency === undefined) settings.updateFrequency = '5';
     if (settings.notify_news_telegram === undefined) settings.notify_news_telegram = 'true';
     if (settings.notify_news_push === undefined) settings.notify_news_push = 'true';
+
+    // Default AI model slots if not configured
+    if (!settings.geminiModel1) settings.geminiModel1 = 'gemini-2.0-flash';
+    if (!settings.geminiModel2) settings.geminiModel2 = 'gemini-1.5-flash';
+    if (!settings.geminiModel3) settings.geminiModel3 = 'gemini-2.0-flash-lite';
+    if (!settings.openrouterModel1) settings.openrouterModel1 = 'deepseek/deepseek-r1:free';
+    if (!settings.openrouterModel2) settings.openrouterModel2 = 'google/gemini-2.0-flash-exp:free';
+    if (!settings.openrouterModel3) settings.openrouterModel3 = 'meta-llama/llama-3.3-70b-instruct:free';
+    if (!settings.openrouterModel4) settings.openrouterModel4 = 'anthropic/claude-3.5-sonnet';
+    if (!settings.openrouterModel5) settings.openrouterModel5 = 'openai/gpt-4o';
+    if (!settings.requestyModel1) settings.requestyModel1 = 'deepseek/deepseek-chat';
+    if (!settings.requestyModel2) settings.requestyModel2 = 'deepseek/deepseek-r1';
+    if (!settings.requestyModel3) settings.requestyModel3 = 'google/gemini-2.0-flash';
+    if (!settings.requestyModel4) settings.requestyModel4 = 'anthropic/claude-3-5-sonnet-20241022';
+    if (!settings.requestyModel5) settings.requestyModel5 = 'openai/gpt-4o-2024-11-20';
     
     return settings;
 }
