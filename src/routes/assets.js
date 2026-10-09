@@ -2563,7 +2563,7 @@ ${contextData}
             }
         }
 
-        const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
+        const engine = req.query.engine || globalSettings.aiEngine || 'REQ1';
         let parsedResponse = null;
         let tokensUsed = 0;
         let usage = {};

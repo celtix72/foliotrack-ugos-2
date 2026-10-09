@@ -256,6 +256,8 @@
                     <div>
                         <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Motore AI di Default</label>
                         <select id="mob-ai-engine" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold">
+                            <option value="REQ1" selected>Requesty (REQ1 - Nemotron 3 Ultra)</option>
+                            <option value="REQ2">Requesty (REQ2)</option>
                             <option value="Gemini_3.8">Gemini 3.8 Flash</option>
                             <option value="Gemini_2.8">Gemini 2.8</option>
                             <option value="Gemini_2.7">Gemini 2.7</option>
@@ -263,7 +265,6 @@
                             <option value="Gemini_Pay">Gemini (Pay)</option>
                             <option value="OR1">OpenRouter (OR1)</option>
                             <option value="OR2">OpenRouter (OR2)</option>
-                            <option value="REQ1">Requesty (REQ1)</option>
                         </select>
                     </div>
                     <div>
@@ -923,7 +924,7 @@
         try {
             const s = await fetchAdminMob('/api/admin/ai-settings');
             if (!s) return;
-            if (document.getElementById('mob-ai-engine')) document.getElementById('mob-ai-engine').value = s.aiEngine || 'Gemini_Free';
+            if (document.getElementById('mob-ai-engine')) document.getElementById('mob-ai-engine').value = s.aiEngine || 'REQ1';
             if (document.getElementById('mob-ai-gemini-free')) document.getElementById('mob-ai-gemini-free').value = s.geminiApiKeyFree || '';
             if (document.getElementById('mob-ai-openrouter')) document.getElementById('mob-ai-openrouter').value = s.openrouterApiKey || '';
             if (document.getElementById('mob-ai-requesty')) document.getElementById('mob-ai-requesty').value = s.requestyApiKey || '';

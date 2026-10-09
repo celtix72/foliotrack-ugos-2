@@ -15,3 +15,9 @@ scratch/
 # Backups and runtime database storage
 backups/
 data/
+
+# Legacy root files (migrated to src/ and private_views/)
+/server.js
+/market.js
+/market_mobile.html
+/market_overview.html

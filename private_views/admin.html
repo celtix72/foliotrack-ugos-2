@@ -343,6 +343,11 @@
                             <div>
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Motore AI di Default</label>
                                 <select id="ai-engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none">
+                                    <option value="REQ1" selected>Requesty (REQ1 - Nemotron 3 Ultra 550B)</option>
+                                    <option value="REQ2">Requesty (Modello 2)</option>
+                                    <option value="REQ3">Requesty (Modello 3)</option>
+                                    <option value="REQ4">Requesty (Modello 4)</option>
+                                    <option value="REQ5">Requesty (Modello 5)</option>
                                     <option value="Gemini_3.8">Gemini 3.8 Flash</option>
                                     <option value="Gemini_2.8">Gemini 2.8</option>
                                     <option value="Gemini_2.7">Gemini 2.7</option>
@@ -353,11 +358,6 @@
                                     <option value="OR3">OpenRouter (Modello 3)</option>
                                     <option value="OR4">OpenRouter (Modello 4)</option>
                                     <option value="OR5">OpenRouter (Modello 5)</option>
-                                    <option value="REQ1">Requesty (Modello 1)</option>
-                                    <option value="REQ2">Requesty (Modello 2)</option>
-                                    <option value="REQ3">Requesty (Modello 3)</option>
-                                    <option value="REQ4">Requesty (Modello 4)</option>
-                                    <option value="REQ5">Requesty (Modello 5)</option>
                                 </select>
                                 <p class="text-[10px] text-slate-500 mt-1">Scegli quale motore usare per le analisi dei portafogli e dei singoli asset.</p>
                             </div>
@@ -2072,7 +2072,7 @@
                 const res = await fetchAdmin('/api/admin/ai-settings');
                 if (!res) return;
 
-                if (document.getElementById('ai-engine')) document.getElementById('ai-engine').value = res.aiEngine || 'Gemini_Free';
+                if (document.getElementById('ai-engine')) document.getElementById('ai-engine').value = res.aiEngine || 'REQ1';
                 if (document.getElementById('ai-gemini-key-free')) document.getElementById('ai-gemini-key-free').value = res.geminiApiKeyFree || '';
                 if (document.getElementById('ai-gemini-key-pay')) document.getElementById('ai-gemini-key-pay').value = res.geminiApiKeyPay || '';
                 if (document.getElementById('ai-openrouter-key')) document.getElementById('ai-openrouter-key').value = res.openrouterApiKey || '';

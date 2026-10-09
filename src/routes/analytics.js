@@ -1926,7 +1926,7 @@ module.exports = function (dependencies) {
             const userSettings = database.getSettings(req.user ? req.user.id : 1);
             const settings = { ...adminSettings, ...userSettings };
             
-            const engine = settings.aiReportEngine || settings.aiEngine || 'Gemini_Free';
+            const engine = settings.aiReportEngine || settings.aiEngine || 'REQ1';
             aiLogger.info(`[AI Report] Selected engine: ${engine}`);
 
             const promptTemplate = settings.aiReportPrompt || `Sei un analista finanziario esperto. Analizza il seguente portafoglio.
@@ -2078,9 +2078,19 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
             
             let reportData;
             try {
-                // Pulizia json se l'AI mette i backtick
-                let cleanText = aiResponse.text.replace(/```json/gi, '').replace(/```/g, '').trim();
-                reportData = JSON.parse(cleanText);
+                // Pulizia json se l'AI mette i backtick o tag think
+                let cleanText = (aiResponse.text || '')
+                    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                    .replace(/```json/gi, '')
+                    .replace(/```/g, '')
+                    .trim();
+                const firstBrace = cleanText.indexOf('{');
+                const lastBrace = cleanText.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                    reportData = JSON.parse(cleanText.substring(firstBrace, lastBrace + 1));
+                } else {
+                    reportData = JSON.parse(cleanText);
+                }
             } catch(e) {
                 aiLogger.warn('[AI Report] JSON parse failed, falling back to dummy scores');
                 reportData = {

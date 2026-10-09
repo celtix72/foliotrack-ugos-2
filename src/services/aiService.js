@@ -20,6 +20,7 @@ const STATIC_GEMINI_FREE_MODELS = [
 
 // Modelli statici di fallback Requesty
 const STATIC_REQUESTY_MODELS = [
+    { id: 'nvidia/nemotron-3-ultra-550b-a55b', name: 'NVIDIA: Nemotron 3 Ultra 550B', priceLabel: 'Best Value', isFree: true, recommended: true },
     { id: 'deepseek/deepseek-chat', name: 'DeepSeek: V3 Chat', priceLabel: '$0.14 / $0.28', isFree: false, recommended: true },
     { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1 Reasoning', priceLabel: '$0.55 / $2.19', isFree: false, recommended: true },
     { id: 'qwen/qwq-32b', name: 'Qwen: QwQ 32B', priceLabel: '$0.12 / $0.18', isFree: false, recommended: true },
@@ -217,7 +218,8 @@ async function fetchRequestyModels() {
                 let score = 0;
                 const id = m.id.toLowerCase();
                 if (isFree) score += 20; 
-                if (/gpt-5|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro|deepseek-v4-pro/.test(id)) score += 200;
+                if (id.includes('nemotron-3-ultra-550b-a55b') || id.includes('nemotron-3-ultra')) score += 500;
+                else if (/gpt-5|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro|deepseek-v4-pro|nemotron/.test(id)) score += 200;
                 else if (/qwen-?[23]|qwen3\.7|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)|deepseek-v4-flash/.test(id)) score += 100;
                 else if (/mini|flash|haiku|8b|nano/.test(id)) score += 30;
 
@@ -232,6 +234,8 @@ async function fetchRequestyModels() {
             });
 
             mappedModels.sort((a, b) => {
+                if (a.id.includes('nemotron-3-ultra-550b-a55b')) return -1;
+                if (b.id.includes('nemotron-3-ultra-550b-a55b')) return 1;
                 if (a.score !== b.score) return b.score - a.score;
                 if (a.costScore !== b.costScore) return a.costScore - b.costScore;
                 return a.name.localeCompare(b.name);
@@ -239,6 +243,8 @@ async function fetchRequestyModels() {
             
             _cachedRequestyModels = mappedModels.slice(0, 300);
             _cachedRequestyModels.sort((a, b) => {
+                if (a.id.includes('nemotron-3-ultra-550b-a55b')) return -1;
+                if (b.id.includes('nemotron-3-ultra-550b-a55b')) return 1;
                 if (a.isFree && !b.isFree) return -1;
                 if (!a.isFree && b.isFree) return 1;
                 return a.name.localeCompare(b.name);
@@ -601,7 +607,23 @@ const checkNewGeminiModels = checkNewAIModels;
 
 
 function parseAIResponse(rawText) {
-    let cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    let cleanText = (rawText || '')
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/```json/gi, '')
+        .replace(/```/g, '')
+        .trim();
+
+    // Prova prima l'estrazione dell'oggetto JSON più esterno
+    const firstBrace = cleanText.indexOf('{');
+    const lastBrace = cleanText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        try {
+            return JSON.parse(cleanText.substring(firstBrace, lastBrace + 1));
+        } catch (e) {
+            // fallback al parsing standard o regex
+        }
+    }
+
     try {
         return JSON.parse(cleanText);
     } catch (e) {
@@ -631,14 +653,15 @@ function parseAIResponse(rawText) {
 }
 
 async function callAIModel(engine, prompt, keys) {
+    if (!engine) engine = 'REQ1';
     const parts = engine.split('_');
-    const baseEngine = parts[0] || 'Gemini';
+    const baseEngine = parts[0] || 'REQ1';
     const tier = parts[1] || 'Pay';
 
     aiLogger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
     aiLogger.info(`[AI Prompt] \n${prompt}`);
-    const isOpenRouter = baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3' || baseEngine === 'OR4' || baseEngine === 'OR5' || engine.startsWith('openrouter:') || engine.startsWith('or:') || (engine.includes('/') && !engine.startsWith('gemini-'));
-    const isRequesty = baseEngine === 'REQ1' || baseEngine === 'REQ2' || baseEngine === 'REQ3' || baseEngine === 'REQ4' || baseEngine === 'REQ5' || engine.startsWith('requesty:') || engine.startsWith('req:');
+    const isRequesty = baseEngine === 'REQ1' || baseEngine === 'REQ2' || baseEngine === 'REQ3' || baseEngine === 'REQ4' || baseEngine === 'REQ5' || baseEngine === 'Requesty' || engine.startsWith('requesty:') || engine.startsWith('req:') || engine.includes('nemotron') || engine === 'nvidia/nemotron-3-ultra-550b-a55b' || engine === 'nemotron-3-ultra-550b-a55b';
+    const isOpenRouter = !isRequesty && (baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3' || baseEngine === 'OR4' || baseEngine === 'OR5' || engine.startsWith('openrouter:') || engine.startsWith('or:') || (engine.includes('/') && !engine.startsWith('gemini-')));
 
     if (isOpenRouter) {
         const apiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
@@ -714,12 +737,15 @@ async function callAIModel(engine, prompt, keys) {
         
         // Fallback predefinito se lo slot non è configurato nei settings
         if (!reqModel) {
-            if (baseEngine === 'REQ1') reqModel = 'deepseek/deepseek-chat';
-            else if (baseEngine === 'REQ2') reqModel = 'deepseek/deepseek-r1';
-            else if (baseEngine === 'REQ3') reqModel = 'google/gemini-2.0-flash';
-            else if (baseEngine === 'REQ4') reqModel = 'anthropic/claude-3-5-sonnet-20241022';
-            else if (baseEngine === 'REQ5') reqModel = 'openai/gpt-4o-2024-11-20';
-            else reqModel = 'deepseek/deepseek-chat';
+            if (baseEngine === 'REQ1') reqModel = 'nvidia/nemotron-3-ultra-550b-a55b';
+            else if (baseEngine === 'REQ2') reqModel = 'deepseek/deepseek-chat';
+            else if (baseEngine === 'REQ3') reqModel = 'deepseek/deepseek-r1';
+            else if (baseEngine === 'REQ4') reqModel = 'google/gemini-2.0-flash';
+            else if (baseEngine === 'REQ5') reqModel = 'anthropic/claude-3-5-sonnet-20241022';
+            else reqModel = 'nvidia/nemotron-3-ultra-550b-a55b';
+        }
+        if (reqModel === 'nemotron-3-ultra-550b-a55b') {
+            reqModel = 'nvidia/nemotron-3-ultra-550b-a55b';
         }
         
         let res;
@@ -751,7 +777,8 @@ async function callAIModel(engine, prompt, keys) {
                 await new Promise(resolve => setTimeout(resolve, attempt * 2000));
             }
         }
-        const content = res.data.choices?.[0]?.message?.content || '{}';
+        const choice = res.data.choices?.[0];
+        const content = choice?.message?.content || choice?.message?.reasoning_content || '{}';
         aiLogger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: reqModel };
     } else if (baseEngine === 'Aimlapi') {
@@ -907,6 +934,7 @@ async function callAIModel(engine, prompt, keys) {
 
 // Modelli Requesty consigliati (statici)
 const RECOMMENDED_REQUESTY_FREE = [
+    { id: 'nvidia/nemotron-3-ultra-550b-a55b', name: 'NVIDIA: Nemotron 3 Ultra 550B', priceLabel: 'Best Value', isFree: true, recommended: true },
     { id: 'deepseek/deepseek-chat', name: 'DeepSeek: V3 Chat', priceLabel: 'Best Value', isFree: true, recommended: true },
     { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1 Reasoning', priceLabel: 'Best Value', isFree: true, recommended: true },
     { id: 'qwen/qwq-32b', name: 'Qwen: QwQ 32B', priceLabel: 'Best Value', isFree: true, recommended: true },

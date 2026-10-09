@@ -1086,14 +1086,16 @@ function initDb() {
         aimlapiApiKeyPay: '',
         openrouterApiKeyFree: '',
         openrouterApiKeyPay: '',
+        aiEngine: 'REQ1',
+        aiReportEngine: 'REQ1',
         requestyApiKey: '',
         requestyApiKeyFree: '',
         requestyApiKeyPay: '',
-        requestyModel1: '',
-        requestyModel2: '',
-        requestyModel3: '',
-        requestyModel4: '',
-        requestyModel5: '',
+        requestyModel1: 'nvidia/nemotron-3-ultra-550b-a55b',
+        requestyModel2: 'deepseek/deepseek-chat',
+        requestyModel3: 'deepseek/deepseek-r1',
+        requestyModel4: 'google/gemini-2.0-flash',
+        requestyModel5: 'anthropic/claude-3-5-sonnet-20241022',
         tavilyApiKey: '',
         aiAssetPrompt: '',
         aiAssetPromptGarp: '',
@@ -1179,6 +1181,10 @@ function getSettings(userId) {
     if (settings.notify_news_telegram === undefined) settings.notify_news_telegram = 'true';
     if (settings.notify_news_push === undefined) settings.notify_news_push = 'true';
 
+    // Default AI engine if not configured
+    if (!settings.aiEngine) settings.aiEngine = 'REQ1';
+    if (!settings.aiReportEngine) settings.aiReportEngine = 'REQ1';
+
     // Default AI model slots if not configured
     if (!settings.geminiModel1) settings.geminiModel1 = 'gemini-2.0-flash';
     if (!settings.geminiModel2) settings.geminiModel2 = 'gemini-1.5-flash';
@@ -1188,11 +1194,11 @@ function getSettings(userId) {
     if (!settings.openrouterModel3) settings.openrouterModel3 = 'meta-llama/llama-3.3-70b-instruct:free';
     if (!settings.openrouterModel4) settings.openrouterModel4 = 'anthropic/claude-3.5-sonnet';
     if (!settings.openrouterModel5) settings.openrouterModel5 = 'openai/gpt-4o';
-    if (!settings.requestyModel1) settings.requestyModel1 = 'deepseek/deepseek-chat';
-    if (!settings.requestyModel2) settings.requestyModel2 = 'deepseek/deepseek-r1';
-    if (!settings.requestyModel3) settings.requestyModel3 = 'google/gemini-2.0-flash';
-    if (!settings.requestyModel4) settings.requestyModel4 = 'anthropic/claude-3-5-sonnet-20241022';
-    if (!settings.requestyModel5) settings.requestyModel5 = 'openai/gpt-4o-2024-11-20';
+    if (!settings.requestyModel1) settings.requestyModel1 = 'nvidia/nemotron-3-ultra-550b-a55b';
+    if (!settings.requestyModel2) settings.requestyModel2 = 'deepseek/deepseek-chat';
+    if (!settings.requestyModel3) settings.requestyModel3 = 'deepseek/deepseek-r1';
+    if (!settings.requestyModel4) settings.requestyModel4 = 'google/gemini-2.0-flash';
+    if (!settings.requestyModel5) settings.requestyModel5 = 'anthropic/claude-3-5-sonnet-20241022';
     
     return settings;
 }

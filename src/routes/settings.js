@@ -56,19 +56,38 @@ module.exports = function (dependencies) {
             const orKey = settings.openrouterApiKey || settings.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
             const reqKey = settings.requestyApiKey || settings.requestyApiKeyPay || settings.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
 
-            let defaultEngine = settings.aiEngine || 'Gemini_Free';
+            let defaultEngine = settings.aiEngine || 'REQ1';
             if (defaultEngine === 'Gemini_Pay') defaultEngine = 'Gemini_Free';
 
             const engines = [];
 
             // 1. Motore Predefinito di Sistema
+            let defaultLabel = defaultEngine;
+            if (defaultEngine === 'REQ1') defaultLabel = 'Requesty: Nemotron 3 Ultra 550B';
+            else defaultLabel = defaultEngine.replace('_', ' ');
+
             engines.push({
                 id: defaultEngine,
-                label: `⚙️ Predefinito di Sistema (${defaultEngine.replace('_', ' ')})`,
+                label: `⚙️ Predefinito di Sistema (${defaultLabel})`,
                 group: 'Predefinito'
             });
 
-            // 2. Modelli Google Gemini (se chiave configurata)
+            // 2. Modelli Requesty (REQ1..REQ5)
+            const reqModels = aiService.getRequestyModels();
+            for (let i = 1; i <= 5; i++) {
+                const slotModel = settings[`requestyModel${i}`] || (i === 1 ? 'nvidia/nemotron-3-ultra-550b-a55b' : '');
+                if (slotModel) {
+                    const m = reqModels.find(x => x.id === slotModel);
+                    const mName = m ? m.name : (slotModel === 'nvidia/nemotron-3-ultra-550b-a55b' ? 'NVIDIA: Nemotron 3 Ultra 550B' : slotModel.split('/').pop());
+                    engines.push({
+                        id: `REQ${i}`,
+                        label: `Slot REQ${i}: ${mName} (Requesty)`,
+                        group: 'Piattaforma Requesty'
+                    });
+                }
+            }
+
+            // 3. Modelli Google Gemini (se chiave configurata)
             if (geminiKey) {
                 engines.push({ id: 'gemini-2.0-flash', label: '🥇 Gemini 2.0 Flash (Consigliato Free)', group: 'Google Gemini' });
                 engines.push({ id: 'gemini-3.8-flash', label: '⚡ Gemini 3.8 Flash', group: 'Google Gemini' });
@@ -78,7 +97,7 @@ module.exports = function (dependencies) {
                 engines.push({ id: 'Gemini_Free', label: '🔄 Gemini Waterfall Automatico', group: 'Google Gemini' });
             }
 
-            // 3. Modelli OpenRouter Free (se chiave configurata)
+            // 4. Modelli OpenRouter Free (se chiave configurata)
             if (orKey) {
                 engines.push({ id: 'deepseek/deepseek-r1:free', label: '🧠 DeepSeek R1 Reasoning (Free)', group: 'OpenRouter Free' });
                 engines.push({ id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🌐 Meta Llama 3.3 70B (Free)', group: 'OpenRouter Free' });
@@ -86,7 +105,7 @@ module.exports = function (dependencies) {
                 engines.push({ id: 'google/gemini-2.0-flash-exp:free', label: '✨ Gemini 2.0 Flash (OpenRouter)', group: 'OpenRouter Free' });
             }
 
-            // 4. Slot Personalizzati OpenRouter (OR1..OR5)
+            // 5. Slot Personalizzati OpenRouter (OR1..OR5)
             const orModels = aiService.getOpenRouterModels();
             if (orKey) {
                 for (let i = 1; i <= 5; i++) {
@@ -104,23 +123,6 @@ module.exports = function (dependencies) {
                 }
             }
 
-            // 5. Slot Personalizzati Requesty (REQ1..REQ5)
-            const reqModels = aiService.getRequestyModels();
-            if (reqKey) {
-                for (let i = 1; i <= 5; i++) {
-                    const slotModel = settings[`requestyModel${i}`];
-                    if (slotModel) {
-                        const m = reqModels.find(x => x.id === slotModel);
-                        const mName = m ? m.name : slotModel.split('/').pop();
-                        engines.push({
-                            id: `REQ${i}`,
-                            label: `Slot REQ${i}: ${mName}`,
-                            group: 'Slot Personalizzati Requesty'
-                        });
-                    }
-                }
-            }
-
             res.json({ engines, default: defaultEngine });
         } catch (e) {
             res.status(500).json({ error: e.message });
@@ -132,7 +134,7 @@ module.exports = function (dependencies) {
         try {
             const settings = database.getSettings(1);
             res.json({
-                aiEngine: settings.aiEngine || 'Gemini_Free',
+                aiEngine: settings.aiEngine || 'REQ1',
                 geminiApiKeyFree: settings.geminiApiKeyFree || '',
                 geminiApiKeyPay: settings.geminiApiKeyPay || settings.geminiApiKey || '',
                 geminiModel1: settings.geminiModel1 || 'gemini-2.0-flash',
@@ -145,11 +147,11 @@ module.exports = function (dependencies) {
                 openrouterModel4: settings.openrouterModel4 || 'anthropic/claude-3.5-sonnet',
                 openrouterModel5: settings.openrouterModel5 || 'openai/gpt-4o',
                 requestyApiKey: settings.requestyApiKey || settings.requestyApiKeyPay || settings.requestyApiKeyFree || '',
-                requestyModel1: settings.requestyModel1 || 'deepseek/deepseek-chat',
-                requestyModel2: settings.requestyModel2 || 'deepseek/deepseek-r1',
-                requestyModel3: settings.requestyModel3 || 'google/gemini-2.0-flash',
-                requestyModel4: settings.requestyModel4 || 'anthropic/claude-3-5-sonnet-20241022',
-                requestyModel5: settings.requestyModel5 || 'openai/gpt-4o-2024-11-20',
+                requestyModel1: settings.requestyModel1 || 'nvidia/nemotron-3-ultra-550b-a55b',
+                requestyModel2: settings.requestyModel2 || 'deepseek/deepseek-chat',
+                requestyModel3: settings.requestyModel3 || 'deepseek/deepseek-r1',
+                requestyModel4: settings.requestyModel4 || 'google/gemini-2.0-flash',
+                requestyModel5: settings.requestyModel5 || 'anthropic/claude-3-5-sonnet-20241022',
                 tavilyApiKey: settings.tavilyApiKey || '',
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiAssetPromptGarp: settings.aiAssetPromptGarp || '',
@@ -167,7 +169,7 @@ IMPORTANTE:
    - Analisi posizioni aperte (rischio, diversificazione, duration, home bias Italia).
    - Analisi posizioni chiuse e dividendi per anno.
    - Matrice di Rebalancing ed indicazioni operative concrete.`,
-                aiReportEngine: settings.aiReportEngine || 'Gemini_Free',
+                aiReportEngine: settings.aiReportEngine || 'REQ1',
                 aiTokensUsedToday: settings.aiTokensUsedToday || '0',
                 aiTokensDate: settings.aiTokensDate || '',
                 geminiModelPreferences: settings.geminiModelPreferences || ''

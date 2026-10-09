@@ -135,7 +135,7 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
                 .replace('{PERF_1D}', portfolio.changePercent.toFixed(2))
                 .replace('{ASSETS_JSON}', JSON.stringify(assetsList, null, 2));
 
-            const engine = globalSettings.aiEngine || 'Gemini_Free';
+            const engine = globalSettings.aiEngine || 'REQ1';
             
             sendEvent('status', { message: 'Inizializzazione AI...', progress: 20 });
             
@@ -145,8 +145,18 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
 
             let parsed;
             try {
-                const cleanText = aiRes.text.replace(/```json/gi, '').replace(/```/g, '').trim();
-                parsed = JSON.parse(cleanText);
+                const cleanText = (aiRes.text || '')
+                    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                    .replace(/```json/gi, '')
+                    .replace(/```/g, '')
+                    .trim();
+                const firstBrace = cleanText.indexOf('{');
+                const lastBrace = cleanText.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                    parsed = JSON.parse(cleanText.substring(firstBrace, lastBrace + 1));
+                } else {
+                    parsed = JSON.parse(cleanText);
+                }
             } catch (e) {
                 parsed = {
                     riskScore: 5,
