@@ -36,6 +36,7 @@ module.exports = function (dependencies) {
                     investedCapital: stats.investedCapital,
                     changeValue: stats.totalChange,
                     changeValuePrePost: stats.totalChangePrePost,
+                    totalChangeFX: stats.totalChangeFX,
                     changePercent: stats.changePercent,
                     topWinners: stats.topWinners,
                     topLosers: stats.topLosers,

@@ -449,7 +449,7 @@ let watchlistPerformanceCache = { data: {}, lastUpdated: 0 };
 const WATCHLIST_PERF_CACHE_TTL = 3600 * 1000; // 1 hour
 let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
 performanceResultsCache = {}; // Clear cache to apply date fix immediately
-let eurUsdCache = { rate: 1.08, timestamp: 0 };
+let eurUsdCache = { rate: 1.08, prevRate: 1.08, changePercent: 0, timestamp: 0 };
 const EUR_USD_TTL = 5 * 60 * 1000; // 5 minutes
 let globalLastMarketUpdate = Date.now();
 let isUpdatingMarketData = false;
@@ -1089,23 +1089,37 @@ async function recalculateAllPortfoliosWithOverrides(liveRate = null) {
 }
 
 async function getEurUsdRate() {
-    if (Date.now() - eurUsdCache.timestamp < EUR_USD_TTL) {
+    if (Date.now() - eurUsdCache.timestamp < EUR_USD_TTL && eurUsdCache.rate > 0) {
         return eurUsdCache.rate;
     }
     try {
         const quote = await yahooFinance.quote('EURUSD=X');
         if (quote && quote.regularMarketPrice) {
-            eurUsdCache = { rate: quote.regularMarketPrice, timestamp: Date.now() };
+            const currentPrice = quote.regularMarketPrice;
+            const prevClose = quote.regularMarketPreviousClose || 
+                              (quote.regularMarketChange ? currentPrice - quote.regularMarketChange : currentPrice);
+            const changePct = quote.regularMarketChangePercent ?? 
+                              (prevClose > 0 ? ((currentPrice - prevClose) / prevClose) * 100 : 0);
+            const changeVal = quote.regularMarketChange ?? (currentPrice - prevClose);
+
+            eurUsdCache = { 
+                rate: currentPrice, 
+                prevRate: prevClose > 0 ? prevClose : currentPrice,
+                changePercent: changePct,
+                timestamp: Date.now() 
+            };
             
-            // Persist to database as a reliable fallback
+            // Persist to database as a reliable fallback with full FX metrics
             try {
                 database.db.prepare(`
-                    INSERT INTO assets (id, ticker, name, currency, currentPrice, dataSource, updatedAt)
-                    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                    INSERT INTO assets (id, ticker, name, currency, currentPrice, changePercent, changeValue, dataSource, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                     ON CONFLICT(ticker) DO UPDATE SET 
                         currentPrice = excluded.currentPrice,
+                        changePercent = excluded.changePercent,
+                        changeValue = excluded.changeValue,
                         updatedAt = excluded.updatedAt
-                `).run('EURUSD=X', 'EURUSD=X', 'EUR/USD Rate', 'USD', quote.regularMarketPrice, 'YF');
+                `).run('EURUSD=X', 'EURUSD=X', 'EUR/USD Rate', 'USD', currentPrice, changePct, changeVal, 'YF');
             } catch (dbErr) {
                 console.warn('Failed to persist EUR/USD rate to DB:', dbErr.message);
             }
@@ -1119,16 +1133,79 @@ async function getEurUsdRate() {
     // Fallback 1: Last known in-memory rate
     if (eurUsdCache.rate > 0) return eurUsdCache.rate;
 
-    // Fallback 2: Last known database rate
+    // Fallback 2: Last known database rate + historical quotes
     try {
-        const saved = database.db.prepare("SELECT currentPrice FROM assets WHERE ticker = 'EURUSD=X'").get();
+        const saved = database.db.prepare("SELECT currentPrice, changePercent, changeValue FROM assets WHERE ticker = 'EURUSD=X'").get();
         if (saved && saved.currentPrice > 0) {
             eurUsdCache.rate = saved.currentPrice;
+            eurUsdCache.changePercent = saved.changePercent || 0;
+            const quotes = database.db.prepare("SELECT price FROM asset_quotes WHERE ticker = 'EURUSD=X' ORDER BY date DESC LIMIT 2").all();
+            if (quotes.length >= 2 && quotes[1].price > 0) {
+                eurUsdCache.prevRate = quotes[1].price;
+                if (!eurUsdCache.changePercent) {
+                    eurUsdCache.changePercent = ((quotes[0].price - quotes[1].price) / quotes[1].price) * 100;
+                }
+            } else if (saved.changePercent) {
+                eurUsdCache.prevRate = saved.currentPrice / (1 + saved.changePercent / 100);
+            } else {
+                eurUsdCache.prevRate = saved.currentPrice;
+            }
             return saved.currentPrice;
         }
     } catch (e) {}
 
     return 1.0; // Ultimate fallback
+}
+
+async function getEurUsdFxRates() {
+    await getEurUsdRate();
+    let rateToday = eurUsdCache.rate || 1.0;
+    let rateYesterday = eurUsdCache.prevRate || rateToday;
+    let changePct = eurUsdCache.changePercent || 0;
+
+    // 1. If prevRate is identical to rateToday or changePct is 0, check asset_quotes for EURUSD=X
+    if (rateYesterday === rateToday || !rateYesterday || changePct === 0) {
+        try {
+            const quotes = database.db.prepare("SELECT price, date FROM asset_quotes WHERE ticker = 'EURUSD=X' ORDER BY date DESC LIMIT 2").all();
+            if (quotes.length >= 2 && quotes[1].price > 0) {
+                rateYesterday = quotes[1].price;
+                changePct = ((rateToday - rateYesterday) / rateYesterday) * 100;
+                eurUsdCache.prevRate = rateYesterday;
+                eurUsdCache.changePercent = changePct;
+            }
+        } catch (e) {}
+    }
+
+    // 2. Fallback to assets table
+    if (rateYesterday === rateToday || !rateYesterday) {
+        try {
+            const saved = database.db.prepare("SELECT currentPrice, changePercent FROM assets WHERE ticker = 'EURUSD=X'").get();
+            if (saved && saved.changePercent && saved.changePercent !== 0) {
+                changePct = saved.changePercent;
+                rateYesterday = rateToday / (1 + changePct / 100);
+                eurUsdCache.prevRate = rateYesterday;
+                eurUsdCache.changePercent = changePct;
+            }
+        } catch (e) {}
+    }
+
+    // 3. Fallback: Query Yahoo Finance directly if still identical
+    if (rateYesterday === rateToday) {
+        try {
+            const q = await yahooFinance.quote('EURUSD=X');
+            if (q && q.regularMarketPreviousClose && q.regularMarketPreviousClose > 0) {
+                rateToday = q.regularMarketPrice || rateToday;
+                rateYesterday = q.regularMarketPreviousClose;
+                changePct = q.regularMarketChangePercent ?? (((rateToday - rateYesterday) / rateYesterday) * 100);
+                eurUsdCache.rate = rateToday;
+                eurUsdCache.prevRate = rateYesterday;
+                eurUsdCache.changePercent = changePct;
+                eurUsdCache.timestamp = Date.now();
+            }
+        } catch (e) {}
+    }
+
+    return { rateToday, rateYesterday, changePct };
 }
 
 function clearPerformanceCache() {
@@ -1420,11 +1497,8 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         `).all(p.id);
     }
     
-    // Get FX Variation metadata for EURUSD
-    const fxData = database.db.prepare("SELECT changePercent FROM assets WHERE ticker='EURUSD=X'").get() || { changePercent: 0 };
-    const eurUsdChangePct = fxData.changePercent || 0;
-    const rateToday = liveRate;
-    const rateYesterday = rateToday / (1 + eurUsdChangePct/100);
+    // Get accurate FX rates and 24h variation for EUR/USD
+    const { rateToday, rateYesterday, changePct: eurUsdChangePct } = await getEurUsdFxRates();
 
     const pIds = rows.map(r => r.id);
     const perfData = await calculatePerformanceHistory(pIds, 'ALL', false, true, null, userId, tagIds);
@@ -1462,31 +1536,62 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         const vDelta = p.changeValue + p.changeValuePrePost;
         const vPrev = vCurr - vDelta;
 
-        // Calculate real EUR variation including FX move on whole equity
-        const vCurrEUR = vCurr / rate;
-        const vPrevEUR = vPrev / prevRate;
-        const vDeltaEUR_Total = vCurrEUR - vPrevEUR;
-        p.totalValueEUR = vCurrEUR;
-        p.netValueEUR = p.netValue / rate;
-        p.netValue = p.totalValue - p.totalTax;
-        
-        // Split between regular/PP for the Hero pill
-        const ratioReg = vDelta !== 0 ? (p.performance1D / vDelta) : 1;
-        p.changeValueEUR = vDeltaEUR_Total * ratioReg;
-        p.changeValuePrePostEUR = vDeltaEUR_Total * (1 - ratioReg);
+        let fxChangeEUR = 0;
+        let assetChangeRegEUR = p.performance1D || 0;
 
-        // Calculate the pure FX impact component for this portfolio in EUR
-        const assetChangeRegEUR = (p.currency === 'USD' && rate > 0) ? (p.performance1D / rate) : p.performance1D;
-        const fxChangeEUR = (p.currency === 'USD') ? (p.changeValueEUR - assetChangeRegEUR) : 0;
+        if (p.currency === 'USD') {
+            // Calculate real EUR variation including FX move on whole equity
+            const vCurrEUR = vCurr / rate;
+            const vPrevEUR = vPrev / prevRate;
+            const vDeltaEUR_Total = vCurrEUR - vPrevEUR;
+            p.totalValueEUR = vCurrEUR;
+            p.netValueEUR = p.netValue / rate;
+            
+            // Split between regular/PP for the Hero pill
+            const ratioReg = vDelta !== 0 ? (p.performance1D / vDelta) : 1;
+            p.changeValueEUR = vDeltaEUR_Total * ratioReg;
+            p.changeValuePrePostEUR = vDeltaEUR_Total * (1 - ratioReg);
+
+            assetChangeRegEUR = (rate > 0) ? (p.performance1D / rate) : p.performance1D;
+            fxChangeEUR = p.changeValueEUR - assetChangeRegEUR;
+        } else {
+            // Portfolio is in EUR: check if it holds USD assets to compute currency impact
+            p.totalValueEUR = vCurr;
+            p.netValueEUR = p.netValue;
+            p.changeValueEUR = p.changeValue;
+            p.changeValuePrePostEUR = p.changeValuePrePost;
+
+            if (rateToday > 0 && rateYesterday > 0 && rateToday !== rateYesterday) {
+                try {
+                    const usdAssets = database.db.prepare(`
+                        SELECT a.ticker, a.currentPrice, (a.currentPrice - IFNULL(a.changeValue, 0)) as prevPrice, SUM(
+                            CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END
+                        ) as netQty
+                        FROM transactions t
+                        JOIN assets a ON t.assetTicker = a.ticker
+                        WHERE t.portfolioId = ? AND a.currency = 'USD' AND t.assetTicker != 'CASH'
+                        GROUP BY a.ticker
+                        HAVING netQty > 0.001
+                    `).all(p.id);
+
+                    for (const ua of usdAssets) {
+                        const prevValUSD = ua.netQty * (ua.prevPrice || ua.currentPrice);
+                        fxChangeEUR += prevValUSD * (1 / rateToday - 1 / rateYesterday);
+                    }
+                    p.changeValueEUR += fxChangeEUR;
+                } catch (e) {}
+            }
+        }
+
         p.changeValueFX_EUR = Math.round(fxChangeEUR * 100) / 100;
         p.assetChangeEUR = Math.round(assetChangeRegEUR * 100) / 100;
         
         // Aggregate totals
-        totalValueEUR += vCurrEUR;
+        totalValueEUR += p.totalValueEUR;
         totalTaxEUR += p.totalTax / rate;
-        totalNetValueEUR += p.netValue / rate;
-        globalChangeEUR += vDeltaEUR_Total * ratioReg;
-        globalChangePrePostEUR += vDeltaEUR_Total * (1 - ratioReg);
+        totalNetValueEUR += p.netValueEUR;
+        globalChangeEUR += p.changeValueEUR;
+        globalChangePrePostEUR += p.changeValuePrePostEUR;
         globalChangeFX_EUR += fxChangeEUR;
 
         const history = individual[p.id] || [];

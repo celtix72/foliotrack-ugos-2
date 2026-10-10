@@ -762,6 +762,20 @@
         const isRegPos = changeReg >= 0;
         const isPPPos = changePP >= 0;
 
+        const changeFX = (pData.global && pData.global.totalChangeFX !== undefined) ? Number(pData.global.totalChangeFX) : 0;
+        let fxHtml = '';
+        let fxMobHtml = '';
+        let fxTooltip = '';
+        if (Math.abs(changeFX) >= 1) {
+            const isFxPos = changeFX >= 0;
+            const signFX = isFxPos ? '+' : '-';
+            const strFX = formatSafe(Math.abs(changeFX), 0);
+            const fxCol = isFxPos ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400';
+            fxHtml = `<span class="inline-flex items-center gap-0.5 ml-1 px-1 py-0.2 rounded text-[10px] font-black bg-white/70 dark:bg-slate-800/80 ${fxCol} border border-slate-200/60 dark:border-slate-700/60" title="Impatto cambio EUR/USD: ${signFX}${strFX}"><span class="material-symbols-outlined text-[11px] text-blue-500">currency_exchange</span><span>${signFX}${strFX}</span></span>`;
+            fxMobHtml = `<span style="margin-left:2px; font-weight:800; font-size:10px; color:${isFxPos ? '#34d399' : '#fb7185'};">💱${signFX}${strFX}</span>`;
+            fxTooltip = ` | Cambio EUR/USD: ${signFX}${strFX}`;
+        }
+
         // Desktop
         const portfolioVar = document.getElementById('header-portfolio-var');
         if (portfolioVar) {
@@ -785,13 +799,14 @@
                 : 'text-rose-700 dark:text-rose-500 font-bold';
 
             portfolioVar.innerHTML = `
-                <span class="flex items-center gap-1 ${pillClass} font-bold px-2.5 py-1 rounded-full border shadow-sm select-none" title="Variazione Giornaliera - Totale: ${strTot} | Mercati Aperti: ${strReg} | Mercati Chiusi: ${strPP}">
+                <span class="flex items-center gap-1 ${pillClass} font-bold px-2.5 py-1 rounded-full border shadow-sm select-none" title="Variazione Giornaliera - Totale: ${strTot} | Mercati Aperti: ${strReg} | Mercati Chiusi: ${strPP}${fxTooltip}">
                     <span class="material-symbols-outlined text-[15px] ${isPos ? 'text-emerald-400 dark:text-emerald-300' : 'text-rose-400 dark:text-rose-300'}">${isPos ? 'trending_up' : 'trending_down'}</span>
                     <span class="text-[12px] tracking-tight ${totColorClass}">${strTot}</span>
                     <span class="text-[11px] opacity-40 font-bold mx-0.5">:</span>
                     <span class="text-[11px] ${regColorClass}">${strReg}</span>
                     <span class="text-[11px] opacity-40 font-bold mx-0.5">/</span>
                     <span class="text-[11px] ${ppColorClass}">${strPP}</span>
+                    ${fxHtml}
                 </span>
             `;
         }
@@ -813,8 +828,8 @@
             mobVar.style.backgroundColor = bg;
             mobVar.style.color = totCol;
             mobVar.style.border = `1px solid ${border}`;
-            mobVar.setAttribute('title', `Totale: ${strTot} | Mercati aperti: ${strReg} | Mercati chiusi: ${strPP}`);
-            mobVar.innerHTML = `<span style="font-size:11px; letter-spacing:-0.2px; white-space:nowrap;"><span style="color:${totCol}; font-weight:900;">${strTot}</span><span style="opacity:0.4; margin:0 1px;">:</span><span style="color:${regCol}; font-weight:700;">${strReg}</span><span style="opacity:0.4; margin:0 1px;">/</span><span style="color:${ppCol}; font-weight:800;">${strPP}</span></span>`;
+            mobVar.setAttribute('title', `Totale: ${strTot} | Mercati aperti: ${strReg} | Mercati chiusi: ${strPP}${fxTooltip}`);
+            mobVar.innerHTML = `<span style="font-size:11px; letter-spacing:-0.2px; white-space:nowrap;"><span style="color:${totCol}; font-weight:900;">${strTot}</span><span style="opacity:0.4; margin:0 1px;">:</span><span style="color:${regCol}; font-weight:700;">${strReg}</span><span style="opacity:0.4; margin:0 1px;">/</span><span style="color:${ppCol}; font-weight:800;">${strPP}</span>${fxMobHtml}</span>`;
         }
     };
 

@@ -508,6 +508,45 @@
         }
     }
 
+    function renderHeroDayVar(metrics) {
+        const heroVar = document.getElementById('hero-day-var');
+        if (!heroVar || !metrics) return;
+        const totalMove = (metrics.changeReg || 0) + (metrics.changePP || 0);
+        const isPos = totalMove >= 0;
+        
+        const formattedReg = formatCurrency(metrics.changeReg || 0, 'EUR', 0);
+        const formattedPP = formatCurrency(metrics.changePP || 0, 'EUR', 0);
+
+        const signReg = (metrics.changeReg || 0) >= 0 ? '+' : '';
+        const signPP = (metrics.changePP || 0) >= 0 ? '+' : '';
+        heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm inline-flex items-center gap-1.5 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+        
+        let html = `<span>${signReg}${formattedReg}</span>`;
+        if (metrics.changePP !== 0) {
+            html += ` <span class="opacity-80 text-[10px]">(${signPP}${formattedPP})</span>`;
+        }
+
+        // Badge conciso con icona per la componente cambio EUR/USD
+        const changeFX = metrics.changeFX || 0;
+        if (Math.abs(changeFX) >= 1) {
+            const isFxPos = changeFX >= 0;
+            const signFX = isFxPos ? '+' : '-';
+            const formattedFX = formatCurrency(Math.abs(changeFX), 'EUR', 0);
+            const assetOnlyGain = (metrics.changeReg || 0) - changeFX;
+            const signAsset = assetOnlyGain >= 0 ? '+' : '-';
+            const formattedAsset = formatCurrency(Math.abs(assetOnlyGain), 'EUR', 0);
+
+            html += `<span class="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded text-[11px] font-bold bg-white/80 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 shadow-2xs select-none cursor-help"
+                           title="Impatto cambio EUR/USD: ${signFX}${formattedFX} (Variazione titoli: ${signAsset}${formattedAsset})">
+                <span class="material-symbols-outlined text-[13px] text-blue-500 dark:text-blue-400">currency_exchange</span>
+                <span class="${isFxPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} font-extrabold">${signFX}${formattedFX}</span>
+            </span>`;
+        }
+
+        heroVar.innerHTML = html;
+        heroVar.classList.remove('hidden');
+    }
+
     function updateDashboardUI(data) {
         const portfolios = data.portfolios || [];
         
@@ -522,50 +561,16 @@
             totalGain: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.totalGainEUR) || parseFloat(p.totalGain) || 0), 0),
             changeReg: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValueEUR) || parseFloat(p.changeValue) || 0), 0),
             changePP: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0),
-            changeFX: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValueFX_EUR) || 0), 0)
+            changeFX: (selectedPortfolioIds.length === 0 && data.global && data.global.totalChangeFX !== undefined)
+                ? Number(data.global.totalChangeFX)
+                : filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValueFX_EUR) || 0), 0)
         };
+        window._dashboardMetrics = metrics;
 
         document.getElementById('total-net-worth').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
         document.getElementById('total-gross-worth').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
         
-
-        const heroVar = document.getElementById('hero-day-var');
-        if (heroVar) {
-            const totalMove = metrics.changeReg + metrics.changePP;
-            const isPos = totalMove >= 0;
-            
-            // La variazione giornaliera NON è soggetta alla modalità privacy nella top bar
-            const formattedReg = formatCurrency(metrics.changeReg, 'EUR', 0);
-            const formattedPP = formatCurrency(metrics.changePP, 'EUR', 0);
-
-            const signReg = metrics.changeReg >= 0 ? '+' : '';
-            const signPP = metrics.changePP >= 0 ? '+' : '';
-            heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm inline-flex items-center gap-1.5 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-            
-            let html = `<span>${signReg}${formattedReg}</span>`;
-            if (metrics.changePP !== 0) {
-                html += ` <span class="opacity-80 text-[10px]">(${signPP}${formattedPP})</span>`;
-            }
-
-            // Badge conciso con icona per la componente cambio EUR/USD
-            if (Math.abs(metrics.changeFX) >= 1) {
-                const isFxPos = metrics.changeFX >= 0;
-                const signFX = isFxPos ? '+' : '';
-                const formattedFX = formatCurrency(metrics.changeFX, 'EUR', 0);
-                const assetOnlyGain = metrics.changeReg - metrics.changeFX;
-                const signAsset = assetOnlyGain >= 0 ? '+' : '';
-                const formattedAsset = formatCurrency(assetOnlyGain, 'EUR', 0);
-
-                html += `<span class="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded text-[11px] font-bold bg-white/80 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 shadow-2xs select-none cursor-help"
-                               title="Impatto cambio EUR/USD: ${signFX}${formattedFX} (Variazione titoli: ${signAsset}${formattedAsset})">
-                    <span class="material-symbols-outlined text-[13px] text-blue-500 dark:text-blue-400">currency_exchange</span>
-                    <span class="${isFxPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} font-extrabold">${signFX}${formattedFX}</span>
-                </span>`;
-            }
-
-            heroVar.innerHTML = html;
-            heroVar.classList.remove('hidden');
-        }
+        renderHeroDayVar(metrics);
 
         const pContainer = document.getElementById('portfolio-container');
         if (pContainer) {
@@ -794,6 +799,18 @@
                 const isPos = weekTotal >= 0;
                 totalLabel.style.color = isPos ? '#10b981' : '#f43f5e';
                 totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(weekTotal, 'EUR', 0);
+            }
+
+            // Fallback: If changeFX is not already showing on Hero card, check against last trading day gain
+            if (days.length > 0 && window._dashboardMetrics) {
+                const lastDayGain = days[days.length - 1].gain;
+                if (Math.abs(window._dashboardMetrics.changeFX || 0) < 1 && lastDayGain !== undefined) {
+                    const diff = Math.round((window._dashboardMetrics.changeReg || 0) - lastDayGain);
+                    if (Math.abs(diff) >= 5) {
+                        window._dashboardMetrics.changeFX = diff;
+                        renderHeroDayVar(window._dashboardMetrics);
+                    }
+                }
             }
         } catch (err) {
             console.error('Daily gains chart error:', err);
