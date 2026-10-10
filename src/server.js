@@ -1436,6 +1436,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
     let totalTaxEUR = 0;
     let globalChangeEUR = 0;
     let globalChangePrePostEUR = 0;
+    let globalChangeFX_EUR = 0;
 
     const today = new Date();
 
@@ -1473,6 +1474,12 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         const ratioReg = vDelta !== 0 ? (p.performance1D / vDelta) : 1;
         p.changeValueEUR = vDeltaEUR_Total * ratioReg;
         p.changeValuePrePostEUR = vDeltaEUR_Total * (1 - ratioReg);
+
+        // Calculate the pure FX impact component for this portfolio in EUR
+        const assetChangeRegEUR = (p.currency === 'USD' && rate > 0) ? (p.performance1D / rate) : p.performance1D;
+        const fxChangeEUR = (p.currency === 'USD') ? (p.changeValueEUR - assetChangeRegEUR) : 0;
+        p.changeValueFX_EUR = Math.round(fxChangeEUR * 100) / 100;
+        p.assetChangeEUR = Math.round(assetChangeRegEUR * 100) / 100;
         
         // Aggregate totals
         totalValueEUR += vCurrEUR;
@@ -1480,6 +1487,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         totalNetValueEUR += p.netValue / rate;
         globalChangeEUR += vDeltaEUR_Total * ratioReg;
         globalChangePrePostEUR += vDeltaEUR_Total * (1 - ratioReg);
+        globalChangeFX_EUR += fxChangeEUR;
 
         const history = individual[p.id] || [];
         if (history.length > 0) {
@@ -1578,6 +1586,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         totalTax: totalTaxEUR,
         totalChange: globalChangeEUR,
         totalChangePrePost: globalChangePrePostEUR,
+        totalChangeFX: Math.round(globalChangeFX_EUR * 100) / 100,
         totalGain: lastPoint.profit || 0,
         investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
         changePercent: (totalValueEUR - globalChangeEUR - globalChangePrePostEUR) > 0 

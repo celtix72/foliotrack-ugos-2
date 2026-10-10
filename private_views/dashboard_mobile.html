@@ -394,7 +394,8 @@
               totalValue: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValueEUR) || parseFloat(p.totalValue) || 0), 0),
               totalGain: filtered.reduce((sum, p) => sum + (parseFloat(p.totalGainEUR) || parseFloat(p.totalGain) || 0), 0),
               changeReg: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueEUR) || parseFloat(p.changeValue) || 0), 0),
-              changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0)
+              changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0),
+              changeFX: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueFX_EUR) || 0), 0)
           };
 
           document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
@@ -404,7 +405,7 @@
           if (varEl) {
               const totalMove = metrics.changeReg + metrics.changePP;
               const isPos = totalMove >= 0;
-              varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+              varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm inline-flex items-center gap-1 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
               
               // Usa formatCurrency direttamente — il delta giornaliero NON è soggetto alla modalità privacy
               const formattedReg = formatCurrency(metrics.changeReg, 'EUR', 0);
@@ -413,10 +414,27 @@
               const signReg = metrics.changeReg >= 0 ? '+' : '';
               const signPP = metrics.changePP >= 0 ? '+' : '';
               
-              let html = `${signReg}${formattedReg}`;
+              let html = `<span>${signReg}${formattedReg}</span>`;
               if (metrics.changePP !== 0) {
-                  html += ` <span class="opacity-80 text-[11px] ml-1">(${signPP}${formattedPP})</span>`;
+                  html += ` <span class="opacity-80 text-[11px] ml-0.5">(${signPP}${formattedPP})</span>`;
               }
+
+              // Badge conciso con icona per la componente cambio EUR/USD
+              if (Math.abs(metrics.changeFX) >= 1) {
+                  const isFxPos = metrics.changeFX >= 0;
+                  const signFX = isFxPos ? '+' : '';
+                  const formattedFX = formatCurrency(metrics.changeFX, 'EUR', 0);
+                  const assetOnlyGain = metrics.changeReg - metrics.changeFX;
+                  const signAsset = assetOnlyGain >= 0 ? '+' : '';
+                  const formattedAsset = formatCurrency(assetOnlyGain, 'EUR', 0);
+
+                  html += `<span class="inline-flex items-center gap-0.5 ml-1 px-1 py-0.2 rounded text-[10px] font-bold bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700"
+                                 title="Impatto cambio EUR/USD: ${signFX}${formattedFX} (Variazione titoli: ${signAsset}${formattedAsset})">
+                      <span class="material-symbols-outlined text-[11px] text-blue-500">currency_exchange</span>
+                      <span class="${isFxPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} font-black">${signFX}${formattedFX}</span>
+                  </span>`;
+              }
+
               varEl.innerHTML = html;
               varEl.classList.remove('hidden');
           }
