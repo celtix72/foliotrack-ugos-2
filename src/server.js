@@ -1046,7 +1046,11 @@ function calculateVariationOverrides(marketStatus) {
             }
 
             // 1. Regular Session Variation
-            if (openedToday && isToday) {
+            // On weekends, preserve the last trading session's variation (Friday's close)
+            // On weekdays before market opens, reset to 0 to avoid showing yesterday's variation as today's
+            if (marketStatus.isWeekend) {
+                overrides.regular[a.ticker] = a.changeValue || 0;
+            } else if (openedToday && isToday) {
                 overrides.regular[a.ticker] = a.changeValue || 0;
             } else {
                 overrides.regular[a.ticker] = 0;
@@ -2540,13 +2544,22 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         const todayStr = today.toISOString().split('T')[0];
         const isToday = dateStr === todayStr;
 
+        // Calculate the last trading day (if today is Saturday/Sunday, Friday; else today)
+        const dayOfWeekNow = today.getDay();
+        const daysToSubtract = (dayOfWeekNow === 6) ? 1 : (dayOfWeekNow === 0) ? 2 : 0;
+        const lastTradingDayObj = new Date(today);
+        lastTradingDayObj.setDate(today.getDate() - daysToSubtract);
+        const lastTradingDayStr = lastTradingDayObj.toISOString().split('T')[0];
+        const isLatestTradingOrToday = (dateStr >= lastTradingDayStr);
+
         // Check for manual overrides for this specific date
-        // CRITICAL FIX: For the CURRENT day, we skip the snapshot and use live calculation 
-        // to avoid discrepancies between outdated snapshots and new transactions.
+        // CRITICAL FIX: For the CURRENT day (and recent trading sessions on weekends), we skip snapshots
+        // and use live calculation to avoid discrepancies between outdated snapshots and recent trading sessions.
         // ALSO: for aggregate history (multiple pIds), we only use snapshots if we have them for ALL portfolios to avoid jumps.
-        const historyRecords = (!isToday && !hasAssetTypeFilter && pIds.length > 0) ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
+        const shouldSkipSnapshot = isLatestTradingOrToday || hasAssetTypeFilter || pIds.length === 0;
+        const historyRecords = !shouldSkipSnapshot ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
         
-        if (!isToday && historyRecords.length > 0 && historyRecords.length === pIds.length) {
+        if (!shouldSkipSnapshot && historyRecords.length > 0 && historyRecords.length === pIds.length) {
             // Correctly aggregate snapshots with currency conversion
             for (const rec of historyRecords) {
                 const p = portfolios.find(port => port.id === rec.portfolioId);
@@ -2624,6 +2637,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
                 let pAssets = 0;
                 const isTodayNow = dateStr === today.toISOString().split('T')[0];
+                const isLatestTradingOrTodayNow = (dateStr >= lastTradingDayStr);
 
                 for (const [ticker, shares] of Object.entries(state.holdings)) {
                     if (shares <= 0.0001) continue;
@@ -2631,8 +2645,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     const assetMeta = (assetMetadataCache && assetMetadataCache[ticker]) || { currency: 'EUR' };
                     let price = 0;
 
-                    // Priority 1: If today, use live currentPrice from assetMetadataCache if available
-                    if (isTodayNow && assetMeta && isValidQuotePrice(assetMeta.currentPrice, assetMeta).valid) {
+                    // Priority 1: If today or last active trading day on weekends, use live currentPrice from assetMetadataCache if available
+                    if ((isTodayNow || isLatestTradingOrTodayNow) && assetMeta && isValidQuotePrice(assetMeta.currentPrice, assetMeta).valid) {
                         price = assetMeta.currentPrice;
                     }
 
@@ -3680,6 +3694,21 @@ async function _internalUpdateMarketData(force = false) {
     globalLastMarketUpdate = Date.now();
     marketUpdateProgress.current = targetAssets.length;
     logger.info(`Market data update cycle completed.`);
+
+    // Refresh daily snapshots for today so portfolio_history reflects the latest end-of-day values
+    try {
+        const todayStrNow = new Date().toISOString().split('T')[0];
+        const users = database.db.prepare(`SELECT id FROM users`).all();
+        for (const u of users) {
+            const userPortfolios = database.db.prepare(`SELECT portfolio_id as id FROM portfolio_users WHERE user_id = ?`).all(u.id);
+            userPortfolios.forEach(p => database.savePortfolioSnapshot(p.id, liveRate, u.id));
+            database.savePortfolioSnapshot(null, liveRate, u.id);
+        }
+        lastSnapshotDate = todayStrNow;
+        logger.info(`Daily snapshots refreshed after market data update.`);
+    } catch (snapErr) {
+        logger.warn('Non-fatal: Failed to refresh daily snapshots after market update: ' + snapErr.message);
+    }
 }
 
 // ─── Scheduler ──────────────────────────────────────────────────────────────

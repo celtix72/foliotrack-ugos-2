@@ -821,7 +821,13 @@
                 const monthNum = parseInt(sortedKeys[i].split('-')[1], 10);
                 months.push({ key: sortedKeys[i], monthNum, gain });
             }
-            // Take last 6 months
+            if (months.length === 0 && sortedKeys.length === 1) {
+                const curr = monthMap[sortedKeys[0]];
+                const gain = curr.last - curr.first;
+                const monthNum = parseInt(sortedKeys[0].split('-')[1], 10);
+                months.push({ key: sortedKeys[0], monthNum, gain });
+            }
+            // Take last 12 months
             const bars = months.slice(-12);
 
             if (bars.length === 0) {

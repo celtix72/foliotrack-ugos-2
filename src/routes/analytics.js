@@ -704,63 +704,96 @@ module.exports = function (dependencies) {
 
             if (pIds.length === 0) return res.json({ days: [] });
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            // 1. Calculate 1-month continuous daily performance points using the core calculation engine
+            // This is transaction-backed, cash-adjusted, FX-aware, and properly attributes latest trading session prices.
+            let tradingDays = [];
+            try {
+                const perfData = await calculatePerformanceHistory(pIds, '1M', false, false, null, req.user.id, null, false);
+                const points = Array.isArray(perfData) ? perfData : (perfData?.dataPoints || []);
 
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - 15);
-            const cutoffStr = cutoff.toISOString().split('T')[0];
+                if (points.length >= 2) {
+                    for (let i = 1; i < points.length; i++) {
+                        const prev = points[i - 1];
+                        const curr = points[i];
+                        if (!curr.date) continue;
 
-            const placeholders = pIds.map(() => '?').join(',');
-            const rows = database.db.prepare(`
-                SELECT date,
-                       SUM(totalValue)   AS totalValue,
-                       SUM(netDeposits)  AS netDeposits
-                FROM portfolio_history
-                WHERE portfolioId IN (${placeholders})
-                  AND date >= ?
-                  AND date < ?
-                GROUP BY date
-                ORDER BY date ASC
-            `).all(...pIds, cutoffStr, todayStr);
+                        const [y, m, d] = curr.date.split('-').map(Number);
+                        const dateObj = new Date(y, m - 1, d);
+                        const dayOfWeek = dateObj.getDay();
+                        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
-            const days = [];
-            for (let i = 1; i < rows.length; i++) {
-                const prev = rows[i - 1];
-                const curr = rows[i];
-                const depositsDelta = (curr.netDeposits || 0) - (prev.netDeposits || 0);
-                const gain = (curr.totalValue || 0) - (prev.totalValue || 0) - depositsDelta;
-                days.push({ date: curr.date, gain: Math.round(gain * 100) / 100 });
+                        // Skip weekends entirely - markets are closed on Saturday and Sunday
+                        if (isWeekend) continue;
+
+                        const depositsDelta = (curr.netDeposits || 0) - (prev.netDeposits || 0);
+                        const gain = Math.round(((curr.value || 0) - (prev.value || 0) - depositsDelta) * 100) / 100;
+
+                        tradingDays.push({ date: curr.date, gain });
+                    }
+                }
+            } catch (calcErr) {
+                logger.warn('calculatePerformanceHistory fallback in daily-gains: ' + calcErr.message);
             }
 
-            const liveRows = database.db.prepare(`
-                SELECT performance1D, performance1DPrePost, currency
-                FROM portfolios
-                WHERE id IN (${placeholders})
-            `).all(...pIds);
+            // Fallback: If calculatePerformanceHistory returned no points, use portfolio_history + live rows
+            if (tradingDays.length === 0) {
+                const today = new Date();
+                const dayOfWeekNow = today.getDay();
+                const daysToSub = (dayOfWeekNow === 6) ? 1 : (dayOfWeekNow === 0) ? 2 : 0;
+                const lastTradingObj = new Date(today);
+                lastTradingObj.setDate(today.getDate() - daysToSub);
+                const lastTradingStr = lastTradingObj.toISOString().split('T')[0];
 
-            const liveGain = liveRows.reduce((sum, p) => sum + (p.performance1D || 0), 0);
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - 15);
+                const cutoffStr = cutoff.toISOString().split('T')[0];
 
-            if (liveRows.length > 0) {
-                days.push({ date: todayStr, gain: Math.round(liveGain * 100) / 100 });
-            } else if (rows.length >= 2) {
-                const last = rows[rows.length - 1];
-                const prev = rows[rows.length - 2];
-                const depositsDelta = (last.netDeposits || 0) - (prev.netDeposits || 0);
-                const gain = (last.totalValue || 0) - (prev.totalValue || 0) - depositsDelta;
-                days.push({ date: last.date, gain: Math.round(gain * 100) / 100 });
+                const placeholders = pIds.map(() => '?').join(',');
+                const rows = database.db.prepare(`
+                    SELECT date,
+                           SUM(totalValue)   AS totalValue,
+                           SUM(netDeposits)  AS netDeposits
+                    FROM portfolio_history
+                    WHERE portfolioId IN (${placeholders})
+                      AND date >= ?
+                      AND date <= ?
+                    GROUP BY date
+                    ORDER BY date ASC
+                `).all(...pIds, cutoffStr, lastTradingStr);
+
+                const fallbackDays = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const prev = rows[i - 1];
+                    const curr = rows[i];
+                    const [y, m, d] = curr.date.split('-').map(Number);
+                    const dow = new Date(y, m - 1, d).getDay();
+                    if (dow === 0 || dow === 6) continue;
+
+                    const depositsDelta = (curr.netDeposits || 0) - (prev.netDeposits || 0);
+                    const gain = (curr.totalValue || 0) - (prev.totalValue || 0) - depositsDelta;
+                    fallbackDays.push({ date: curr.date, gain: Math.round(gain * 100) / 100 });
+                }
+
+                const liveRows = database.db.prepare(`
+                    SELECT performance1D, currency
+                    FROM portfolios
+                    WHERE id IN (${placeholders})
+                `).all(...pIds);
+                const liveGain = liveRows.reduce((sum, p) => sum + (p.performance1D || 0), 0);
+
+                if (liveGain !== 0 || fallbackDays.length === 0) {
+                    const existingIdx = fallbackDays.findIndex(d => d.date === lastTradingStr);
+                    if (existingIdx >= 0) {
+                        fallbackDays[existingIdx].gain = Math.round(liveGain * 100) / 100;
+                    } else {
+                        fallbackDays.push({ date: lastTradingStr, gain: Math.round(liveGain * 100) / 100 });
+                    }
+                }
+
+                return res.json({ days: fallbackDays.slice(-7) });
             }
 
-            const validDays = days.filter(d => {
-                const dateObj = new Date(d.date);
-                const dayOfWeek = dateObj.getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                // Exclude weekends, and exclude exactly 0 gain days (which are likely holidays)
-                // We keep 0 gain if it's the current live day which just hasn't moved yet.
-                const isHoliday = !isWeekend && d.gain === 0 && d.date !== todayStr;
-                return !isWeekend && !isHoliday;
-            });
-
-            res.json({ days: validDays.slice(-7) });
+            res.json({ days: tradingDays.slice(-7) });
         } catch (err) {
             logger.error('Daily gains error:', err);
             res.status(500).json({ error: err.message });
