@@ -1067,10 +1067,10 @@ function initDb() {
         telegramEnabled: 'false',
         marketStatusTelegramEnabled: 'false',
         marketStatusInterval: '60',
-        marketStatusMinVariation: '100',
+        marketStatusMinVariation: '200',
         marketStatusMode: 'smart',
         marketStatusEventsEnabled: 'true',
-        marketStatusMinCooldown: '30',
+        marketStatusMinCooldown: '5',
         disabledNewsSources: '[]',
         schemaVersion: '1.0',
         geminiApiKey: '',
@@ -1180,6 +1180,18 @@ function getSettings(userId) {
     if (settings.updateFrequency === undefined) settings.updateFrequency = '5';
     if (settings.notify_news_telegram === undefined) settings.notify_news_telegram = 'true';
     if (settings.notify_news_push === undefined) settings.notify_news_push = 'true';
+    if (settings.marketStatusMinVariation === undefined || settings.marketStatusMinVariation === '0' || settings.marketStatusMinVariation === '') {
+        settings.marketStatusMinVariation = '200';
+    }
+    if (settings.marketStatusMinCooldown === undefined || settings.marketStatusMinCooldown === '') {
+        settings.marketStatusMinCooldown = '5';
+    }
+    if (settings.marketStatusMode === undefined) {
+        settings.marketStatusMode = 'smart';
+    }
+    if (settings.marketStatusEventsEnabled === undefined) {
+        settings.marketStatusEventsEnabled = 'true';
+    }
 
     // Default AI engine if not configured
     if (!settings.aiEngine) settings.aiEngine = 'REQ1';

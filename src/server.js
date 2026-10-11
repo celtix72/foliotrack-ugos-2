@@ -4052,18 +4052,53 @@ setInterval(async () => {
 
         const mode = uSettings.marketStatusMode || 'smart'; // 'smart', 'interval', 'events_only'
         const eventsEnabled = uSettings.marketStatusEventsEnabled !== 'false';
-        const gainThreshold = parseFloat(uSettings.marketStatusMinVariation !== undefined ? uSettings.marketStatusMinVariation : 100);
-        const cooldownMin = parseInt(uSettings.marketStatusMinCooldown || 30);
+        
+        // Ensure gainThreshold defaults to 200€ if invalid, <= 0, or missing
+        let gainThreshold = parseFloat(uSettings.marketStatusMinVariation);
+        if (isNaN(gainThreshold) || gainThreshold <= 0) {
+            gainThreshold = 200;
+        }
+
+        // Ensure cooldownMin defaults to 5 minutes
+        let cooldownMin = parseInt(uSettings.marketStatusMinCooldown);
+        if (isNaN(cooldownMin) || cooldownMin < 0) {
+            cooldownMin = 5;
+        }
+
         const intervalMin = parseInt(uSettings.marketStatusInterval || 60);
 
         const lastStatusTimeKey = `last_status_time_${u.id}`;
         const lastStatusGainKey = `last_status_gain_${u.id}`;
         const lastStatusDateKey = `last_status_date_${u.id}`;
 
+        // Restore baseline from database if not present in memory (e.g. after container restart)
+        if (global[lastStatusDateKey] === undefined) {
+            const dbDate = uSettings[lastStatusDateKey];
+            if (dbDate === todayStr) {
+                global[lastStatusDateKey] = todayStr;
+                if (uSettings[lastStatusGainKey] !== undefined && uSettings[lastStatusGainKey] !== '') {
+                    global[lastStatusGainKey] = parseFloat(uSettings[lastStatusGainKey]);
+                }
+                if (uSettings[lastStatusTimeKey] !== undefined && uSettings[lastStatusTimeKey] !== '') {
+                    global[lastStatusTimeKey] = parseInt(uSettings[lastStatusTimeKey], 10);
+                }
+            } else {
+                global[lastStatusDateKey] = todayStr;
+                delete global[lastStatusGainKey];
+                delete global[lastStatusTimeKey];
+            }
+        }
+
         // Reset baseline on new day
         if (global[lastStatusDateKey] !== todayStr) {
             global[lastStatusDateKey] = todayStr;
             delete global[lastStatusGainKey];
+            delete global[lastStatusTimeKey];
+            try {
+                database.setSetting(u.id, lastStatusDateKey, todayStr);
+                database.setSetting(u.id, lastStatusGainKey, '');
+                database.setSetting(u.id, lastStatusTimeKey, '0');
+            } catch (e) {}
         }
 
         let matchedTrigger = null;
@@ -4080,8 +4115,10 @@ setInterval(async () => {
             for (const ev of bellEvents) {
                 if (!ev.isHoliday && cetTime >= ev.timeMin && cetTime <= ev.timeMax) {
                     const trigKey = `bell_trig_${u.id}_${ev.id}_${todayStr}`;
-                    if (!global[trigKey]) {
+                    const alreadySent = global[trigKey] || uSettings[trigKey] === 'true';
+                    if (!alreadySent) {
                         global[trigKey] = true;
+                        try { database.setSetting(u.id, trigKey, 'true'); } catch (e) {}
                         matchedTrigger = ev;
                         break;
                     }
@@ -4102,14 +4139,20 @@ setInterval(async () => {
                     // Set initial baseline for the day without spamming
                     global[lastStatusGainKey] = currentGain;
                     global[lastStatusTimeKey] = Date.now();
+                    try {
+                        database.setSetting(u.id, lastStatusGainKey, String(currentGain));
+                        database.setSetting(u.id, lastStatusTimeKey, String(Date.now()));
+                        database.setSetting(u.id, lastStatusDateKey, todayStr);
+                    } catch (e) {}
                 } else {
                     const gainDelta = currentGain - lastGain;
-                    if (gainThreshold > 0 && Math.abs(gainDelta) >= gainThreshold) {
+                    if (Math.abs(gainDelta) >= gainThreshold) {
                         if (elapsedMs >= cooldownMin * 60 * 1000) {
                             const sign = gainDelta >= 0 ? '+' : '-';
+                            const icon = gainDelta >= 0 ? '📈' : '📉';
                             matchedTrigger = {
                                 id: 'gain_change',
-                                label: `📈 ΔGain ${sign}€${Math.round(Math.abs(gainDelta))}`,
+                                label: `${icon} ΔGain ${sign}€${Math.round(Math.abs(gainDelta))}`,
                                 stats,
                                 currentGain
                             };
@@ -4138,9 +4181,16 @@ setInterval(async () => {
                 ? matchedTrigger.currentGain 
                 : ((stats.totalChange || 0) + (stats.totalChangePrePost || 0));
 
+            logger.info(`[MARKET STATUS] Trigger '${matchedTrigger.label || matchedTrigger.id}' matched for user ${u.id}. CurrentGain: €${Math.round(currentGain)}, PreviousGain: ${global[lastStatusGainKey] !== undefined ? '€' + Math.round(global[lastStatusGainKey]) : 'N/A'}`);
+
             sendStatusNotification(u.id, 'STATUS', stats, matchedTrigger).catch(e => logger.error(`Status notify failed for user ${u.id}`, e));
             global[lastStatusTimeKey] = Date.now();
             global[lastStatusGainKey] = currentGain;
+            try {
+                database.setSetting(u.id, lastStatusTimeKey, String(Date.now()));
+                database.setSetting(u.id, lastStatusGainKey, String(currentGain));
+                database.setSetting(u.id, lastStatusDateKey, todayStr);
+            } catch (e) {}
         }
 
         // ── C. DAILY SUMMARY (22:15 CET) ──

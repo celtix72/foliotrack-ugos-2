@@ -352,13 +352,13 @@
                           <div class="grid grid-cols-2 gap-2">
                               <div>
                                   <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Min Variazione Gain (€)</label>
-                                  <input type="number" id="mob-status-min-variation" placeholder="100" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
-                                  <span class="text-[8px] text-slate-400 block mt-0.5">Evita notifiche ripetitive</span>
+                                  <input type="number" id="mob-status-min-variation" min="1" placeholder="200" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
+                                  <span class="text-[8px] text-slate-400 block mt-0.5">Default 200€ vs notifica prec.</span>
                               </div>
                               <div>
                                   <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Cooldown Minimo (Min)</label>
-                                  <input type="number" id="mob-status-cooldown" placeholder="30" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
-                                  <span class="text-[8px] text-slate-400 block mt-0.5">Tempo minimo tra invii</span>
+                                  <input type="number" id="mob-status-cooldown" min="0" placeholder="5" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
+                                  <span class="text-[8px] text-slate-400 block mt-0.5">Tempo minimo (default 5 min)</span>
                               </div>
                           </div>
 
@@ -1000,8 +1000,14 @@
             if (document.getElementById('mob-volatility-threshold')) document.getElementById('mob-volatility-threshold').value = settings.volatilityThreshold || 5.0;
             if (document.getElementById('mob-status-mode')) document.getElementById('mob-status-mode').value = settings.marketStatusMode || 'smart';
             if (document.getElementById('mob-status-events')) document.getElementById('mob-status-events').checked = settings.marketStatusEventsEnabled !== 'false';
-            if (document.getElementById('mob-status-min-variation')) document.getElementById('mob-status-min-variation').value = settings.marketStatusMinVariation !== undefined ? settings.marketStatusMinVariation : 100;
-            if (document.getElementById('mob-status-cooldown')) document.getElementById('mob-status-cooldown').value = settings.marketStatusMinCooldown || 30;
+            if (document.getElementById('mob-status-min-variation')) {
+                const v = parseInt(settings.marketStatusMinVariation);
+                document.getElementById('mob-status-min-variation').value = (!isNaN(v) && v > 0) ? v : 200;
+            }
+            if (document.getElementById('mob-status-cooldown')) {
+                const c = parseInt(settings.marketStatusMinCooldown);
+                document.getElementById('mob-status-cooldown').value = (!isNaN(c) && c >= 0) ? c : 5;
+            }
             if (document.getElementById('mob-status-interval')) document.getElementById('mob-status-interval').value = settings.marketStatusInterval || 60;
         } catch (e) { console.error(e); }
     };
@@ -1041,8 +1047,10 @@
         const volatilityThreshold = document.getElementById('mob-volatility-threshold')?.value;
         const marketStatusMode = document.getElementById('mob-status-mode')?.value;
         const marketStatusEventsEnabled = document.getElementById('mob-status-events')?.checked ? 'true' : 'false';
-        const marketStatusMinVariation = document.getElementById('mob-status-min-variation')?.value;
-        const marketStatusMinCooldown = document.getElementById('mob-status-cooldown')?.value;
+        const rawVar = document.getElementById('mob-status-min-variation')?.value;
+        const marketStatusMinVariation = (rawVar && parseInt(rawVar) > 0) ? rawVar : '200';
+        const rawCool = document.getElementById('mob-status-cooldown')?.value;
+        const marketStatusMinCooldown = (rawCool !== undefined && rawCool !== '' && parseInt(rawCool) >= 0) ? rawCool : '5';
         const marketStatusInterval = document.getElementById('mob-status-interval')?.value;
 
         try {
