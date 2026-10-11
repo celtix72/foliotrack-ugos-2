@@ -2000,6 +2000,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button onclick="window.viewAiReportDetail(${item.id})" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer">
                             <span class="material-symbols-outlined text-sm">visibility</span> Visualizza Report Completo
                         </button>
+                        <button onclick="window.downloadSingleAiReportPdf(${item.id})" class="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700 px-2.5 py-1 rounded-lg transition-colors" title="Scarica PDF Report">
+                            <span class="material-symbols-outlined text-sm">picture_as_pdf</span> Scarica PDF
+                        </button>
                     </div>
                 ` : ''}
             </div>
@@ -2047,6 +2050,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Report per ${item.ticker}:\n\n` + (item.reasoning || '').substring(0, 500) + '...');
             }
         } catch(e) {}
+    };
+
+    window.downloadSingleAiReportPdf = async function(id) {
+        try {
+            const res = await fetch(`/api/ai/assets/history/${id}?_t=${Date.now()}`);
+            if (!res.ok) return;
+            const item = await res.json();
+            if (typeof window.downloadSingleAssetAiPdf !== 'function') {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = '/ai_pdf_report.js?v=' + Date.now();
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            if (typeof window.downloadSingleAssetAiPdf === 'function') {
+                const dateStr = new Date(item.created_at).toLocaleString('it-IT');
+                window.downloadSingleAssetAiPdf(item.ticker, item.action, encodeURIComponent(item.reasoning || ''), dateStr);
+            }
+        } catch(e) {
+            console.error('Download AI report PDF error:', e);
+        }
     };
 
     // Initialize topbar icon and status poller
