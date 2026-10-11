@@ -1683,3 +1683,381 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.loadGlobalSidebarPortfolios();
 });
+
+// ─── AI Analysis Topbar Icon, Polling & Global History Modal ─────────────────
+(function() {
+    let _aiStatusTimer = null;
+    let _wasAiRunning = false;
+    let _currentAiFilter = 'all';
+
+    function injectAiHeaderIcon() {
+        // Desktop Header injection
+        if (!document.getElementById('header-ai-icon-btn')) {
+            const themeBtn = document.getElementById('header-theme-icon')?.closest('button');
+            const privacyBtn = document.getElementById('header-privacy-icon')?.closest('button');
+            const targetBtn = privacyBtn || themeBtn;
+            if (targetBtn && targetBtn.parentNode) {
+                const btn = document.createElement('button');
+                btn.id = 'header-ai-icon-btn';
+                btn.onclick = () => window.openAiHistoryModal();
+                btn.className = 'w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-500 transition-all shadow-sm relative group cursor-pointer';
+                btn.title = 'Cronologia Analisi IA (Asset)';
+                btn.innerHTML = `
+                    <span class="material-symbols-outlined text-sm transition-transform" id="header-ai-icon">psychology</span>
+                    <span id="header-ai-dot" class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full hidden border-2 border-white dark:border-slate-900 animate-pulse"></span>
+                `;
+                targetBtn.parentNode.insertBefore(btn, targetBtn);
+            }
+        }
+
+        // Mobile Header injection
+        if (!document.getElementById('mob-ai-icon-btn')) {
+            const mobActions = document.querySelector('.mob-header-actions');
+            if (mobActions) {
+                const mobBtn = document.createElement('button');
+                mobBtn.id = 'mob-ai-icon-btn';
+                mobBtn.onclick = () => window.openAiHistoryModal();
+                mobBtn.className = 'mob-icon-btn relative cursor-pointer';
+                mobBtn.title = 'Analisi IA';
+                mobBtn.innerHTML = `
+                    <span class="material-symbols-outlined transition-transform" id="mob-ai-icon">psychology</span>
+                    <span id="mob-ai-dot" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-500 hidden animate-pulse"></span>
+                `;
+                mobActions.insertBefore(mobBtn, mobActions.firstChild);
+            }
+        }
+    }
+
+    async function checkAiAnalysisStatus() {
+        injectAiHeaderIcon();
+        try {
+            const res = await fetch(`/api/ai/assets/status?_t=${Date.now()}`);
+            if (!res.ok) return;
+            const status = await res.json();
+
+            const dIcon = document.getElementById('header-ai-icon');
+            const dDot = document.getElementById('header-ai-dot');
+            const dBtn = document.getElementById('header-ai-icon-btn');
+
+            const mIcon = document.getElementById('mob-ai-icon');
+            const mDot = document.getElementById('mob-ai-dot');
+            const mBtn = document.getElementById('mob-ai-icon-btn');
+
+            if (status.isRunning) {
+                const titleText = `Analisi IA in corso (${status.runningCount || 1} attiva)`;
+                if (dIcon) {
+                    dIcon.classList.add('animate-spin', 'text-indigo-500');
+                    if (dDot) dDot.classList.remove('hidden');
+                    if (dBtn) dBtn.title = titleText;
+                }
+                if (mIcon) {
+                    mIcon.classList.add('animate-spin', 'text-indigo-500');
+                    if (mDot) mDot.classList.remove('hidden');
+                    if (mBtn) mBtn.title = titleText;
+                }
+
+                _wasAiRunning = true;
+                clearTimeout(_aiStatusTimer);
+                _aiStatusTimer = setTimeout(checkAiAnalysisStatus, 3000);
+            } else {
+                if (dIcon) {
+                    dIcon.classList.remove('animate-spin', 'text-indigo-500');
+                    if (dDot) dDot.classList.add('hidden');
+                    if (dBtn) dBtn.title = 'Cronologia Analisi IA (Asset)';
+                }
+                if (mIcon) {
+                    mIcon.classList.remove('animate-spin', 'text-indigo-500');
+                    if (mDot) mDot.classList.add('hidden');
+                    if (mBtn) mBtn.title = 'Cronologia Analisi IA';
+                }
+
+                if (_wasAiRunning) {
+                    _wasAiRunning = false;
+                    if (window.showNotification) window.showNotification('Analisi IA completata!', 'success');
+                    const modal = document.getElementById('global-ai-history-modal');
+                    if (modal && modal.style.display !== 'none') {
+                        window.loadAiGlobalHistory(_currentAiFilter);
+                    }
+                    if (window._aiModalTicker && typeof window.loadAssetAiHistory === 'function') {
+                        window.loadAssetAiHistory(window._aiModalTicker);
+                    }
+                }
+
+                clearTimeout(_aiStatusTimer);
+                _aiStatusTimer = setTimeout(checkAiAnalysisStatus, 20000);
+            }
+        } catch(e) {
+            clearTimeout(_aiStatusTimer);
+            _aiStatusTimer = setTimeout(checkAiAnalysisStatus, 25000);
+        }
+    }
+    window.checkAiAnalysisStatus = checkAiAnalysisStatus;
+
+    // ─── Global AI History Modal ─────────────────────────────────────────────
+    window.openAiHistoryModal = function() {
+        let modal = document.getElementById('global-ai-history-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'global-ai-history-modal';
+            modal.style.cssText = 'display:none; position:fixed; inset:0; z-index:99990; align-items:center; justify-content:center; background:rgba(15,23,42,0.7); backdrop-filter:blur(6px); padding:16px;';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-xl">psychology</span>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    Cronologia Analisi IA
+                                    <span id="ai-global-status-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 dark:bg-slate-800 text-slate-500">Live</span>
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Tutte le analisi eseguite in background con relativo esito ed errori</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.loadAiGlobalHistory()" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="Ricarica">
+                                <span class="material-symbols-outlined text-lg">refresh</span>
+                            </button>
+                            <button onclick="window.closeAiHistoryModal()" class="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer" title="Chiudi">
+                                <span class="material-symbols-outlined text-lg">close</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="px-6 py-2.5 border-b border-slate-200/80 dark:border-slate-800 flex items-center gap-2 overflow-x-auto text-xs bg-white dark:bg-slate-900">
+                        <button onclick="window.setAiGlobalFilter('all')" id="ai-tab-all" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-indigo-500 text-white cursor-pointer">Tutte</button>
+                        <button onclick="window.setAiGlobalFilter('running')" id="ai-tab-running" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">In corso</button>
+                        <button onclick="window.setAiGlobalFilter('completed')" id="ai-tab-completed" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">Completate</button>
+                        <button onclick="window.setAiGlobalFilter('error')" id="ai-tab-error" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">Errori</button>
+                    </div>
+
+                    <!-- History List Container -->
+                    <div id="global-ai-history-list" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                        <div class="flex items-center justify-center py-12">
+                            <span class="material-symbols-outlined animate-spin text-3xl text-indigo-500">sync</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) window.closeAiHistoryModal();
+            });
+            document.body.appendChild(modal);
+        }
+        modal.style.display = 'flex';
+        window.loadAiGlobalHistory(_currentAiFilter);
+    };
+
+    window.closeAiHistoryModal = function() {
+        const modal = document.getElementById('global-ai-history-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.setAiGlobalFilter = function(filter) {
+        _currentAiFilter = filter;
+        ['all', 'running', 'completed', 'error'].forEach(t => {
+            const btn = document.getElementById(`ai-tab-${t}`);
+            if (btn) {
+                if (t === filter) {
+                    btn.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-indigo-500 text-white cursor-pointer';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer';
+                }
+            }
+        });
+        window.loadAiGlobalHistory(filter);
+    };
+
+    window.loadAiGlobalHistory = async function(filter = _currentAiFilter) {
+        const container = document.getElementById('global-ai-history-list');
+        if (!container) return;
+
+        try {
+            const res = await fetch(`/api/ai/assets/history?limit=100&_t=${Date.now()}`);
+            if (!res.ok) throw new Error('Errore caricamento storico');
+            let items = await res.json();
+
+            if (filter === 'running') {
+                items = items.filter(i => i.status === 'running' || i.status === 'pending');
+            } else if (filter === 'completed') {
+                items = items.filter(i => i.status === 'completed');
+            } else if (filter === 'error') {
+                items = items.filter(i => i.status === 'error');
+            }
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-slate-400 dark:text-slate-500">
+                        <span class="material-symbols-outlined text-4xl mb-2 opacity-40">history_toggle_off</span>
+                        <p class="font-bold text-sm">Nessuna analisi presente per questo filtro</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = items.map(item => renderHistoryCard(item)).join('');
+        } catch(err) {
+            container.innerHTML = `
+                <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-center font-bold text-sm">
+                    ${err.message || 'Errore nel recupero dello storico'}
+                </div>
+            `;
+        }
+    };
+
+    function renderHistoryCard(item) {
+        const dObj = new Date(item.created_at);
+        const dateStr = dObj.toLocaleDateString('it-IT') + ' ' + dObj.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        const isRunning = item.status === 'running' || item.status === 'pending';
+        const isError = item.status === 'error';
+        const isCompleted = item.status === 'completed';
+
+        let actionBg = 'bg-slate-500 text-white';
+        if (item.action === 'BUY' || item.action === 'INC' || item.action === 'INCREASE') actionBg = 'bg-emerald-500 text-white';
+        else if (item.action === 'SELL' || item.action === 'DECREASE') actionBg = 'bg-rose-500 text-white';
+        else if (item.action === 'WATCHLIST') actionBg = 'bg-purple-500 text-white';
+        else if (item.action === 'AVOID') actionBg = 'bg-amber-700 text-white';
+        else if (item.action === 'HOLD') actionBg = 'bg-sky-500 text-white';
+
+        let engineLabel = item.engine || 'Gemini';
+        if (engineLabel.includes('/')) engineLabel = engineLabel.split('/').pop().replace(':free', '');
+
+        return `
+            <div class="p-4 rounded-xl border transition-all ${isError ? 'border-rose-500/30 bg-rose-500/5' : (isRunning ? 'border-indigo-500/40 bg-indigo-500/5 animate-pulse' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:shadow-md')}">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <span class="font-black text-sm text-slate-900 dark:text-white">${item.ticker}</span>
+                        ${item.asset_name ? `<span class="text-xs text-slate-400 font-medium truncate max-w-[200px]">${item.asset_name}</span>` : ''}
+                        
+                        ${isRunning ? `
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-500 text-white">
+                                <span class="material-symbols-outlined text-xs animate-spin">sync</span> IN CORSO
+                            </span>
+                        ` : ''}
+
+                        ${isError ? `
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">
+                                <span class="material-symbols-outlined text-xs">error</span> ERRORE
+                            </span>
+                        ` : ''}
+
+                        ${isCompleted ? `
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${actionBg}">${item.action || 'HOLD'}</span>
+                        ` : ''}
+
+                        <span class="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">smart_toy</span> ${engineLabel}
+                        </span>
+
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md">
+                            ${item.prompt_type || 'graham'}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-1 text-slate-400 shrink-0">
+                        <span class="text-[11px] font-medium mr-2">${dateStr}</span>
+                        ${isError ? `
+                            <button onclick="window.retryAiAnalysis(${item.id})" class="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-500/10 cursor-pointer" title="Riprova questa analisi">
+                                <span class="material-symbols-outlined text-base">refresh</span>
+                            </button>
+                        ` : ''}
+                        <button onclick="window.deleteAiHistoryItem(${item.id})" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer" title="Elimina dallo storico">
+                            <span class="material-symbols-outlined text-base">delete</span>
+                        </button>
+                    </div>
+                </div>
+
+                ${isError ? `
+                    <div class="mt-2.5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs font-mono text-rose-600 dark:text-rose-400 break-words flex items-start gap-2">
+                        <span class="material-symbols-outlined text-sm shrink-0 mt-0.5">warning</span>
+                        <div class="flex-1">
+                            <div class="font-bold font-sans mb-0.5">Messaggio di Errore:</div>
+                            ${item.error_message || 'Errore non specificato dal server'}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${isRunning ? `
+                    <p class="text-xs text-indigo-600 dark:text-indigo-400 mt-2 font-medium flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm animate-spin">hourglass_top</span>
+                        Elaborazione in background in corso... L'icona nella topbar continuerà a ruotare fino al completamento.
+                    </p>
+                ` : ''}
+
+                ${isCompleted ? `
+                    <div class="flex items-center gap-4 text-xs font-bold text-slate-500 dark:text-slate-400 mt-2">
+                        ${item.asset_price ? `<span>Prezzo Analisi: <strong class="text-slate-800 dark:text-slate-200">€${item.asset_price.toFixed(2)}</strong></span>` : ''}
+                        ${item.targetPrice ? `<span>Target / FV: <strong class="text-emerald-600 dark:text-emerald-400">€${item.targetPrice.toFixed(2)}</strong></span>` : ''}
+                        ${item.stopLoss ? `<span>Stop Loss: <strong class="text-rose-600 dark:text-rose-400">€${item.stopLoss.toFixed(2)}</strong></span>` : ''}
+                    </div>
+                    <div class="text-xs text-slate-600 dark:text-slate-300 mt-2 line-clamp-2 leading-relaxed opacity-90">
+                        ${(item.reasoning || '').replace(/\\n/g, ' ').replace(/[*#]/g, '')}
+                    </div>
+                    <div class="mt-3 flex items-center justify-between">
+                        <button onclick="window.viewAiReportDetail(${item.id})" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">visibility</span> Visualizza Report Completo
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    window.retryAiAnalysis = async function(id) {
+        try {
+            const res = await fetch(`/api/ai/assets/history/${id}/retry`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                if (window.showNotification) window.showNotification('Analisi riavviata in background!', 'success');
+                window.loadAiGlobalHistory();
+                checkAiAnalysisStatus();
+            } else {
+                alert(data.error || 'Errore nel riavvio');
+            }
+        } catch(e) {
+            alert('Errore di connessione: ' + e.message);
+        }
+    };
+
+    window.deleteAiHistoryItem = async function(id) {
+        if (!confirm('Eliminare questa analisi dallo storico?')) return;
+        try {
+            const res = await fetch(`/api/ai/assets/history/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                window.loadAiGlobalHistory();
+                if (window._aiModalTicker && typeof window.loadAssetAiHistory === 'function') {
+                    window.loadAssetAiHistory(window._aiModalTicker);
+                }
+            }
+        } catch(e) {}
+    };
+
+    window.viewAiReportDetail = async function(id) {
+        try {
+            const res = await fetch(`/api/ai/assets/history/${id}?_t=${Date.now()}`);
+            if (!res.ok) return;
+            const item = await res.json();
+            const dateStr = new Date(item.created_at).toLocaleString('it-IT');
+            if (typeof window.openAssetAiDetail === 'function') {
+                window.openAssetAiDetail(item.ticker, item.action, encodeURIComponent(item.reasoning || ''), dateStr);
+            } else {
+                alert(`Report per ${item.ticker}:\n\n` + (item.reasoning || '').substring(0, 500) + '...');
+            }
+        } catch(e) {}
+    };
+
+    // Initialize topbar icon and status poller
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            injectAiHeaderIcon();
+            checkAiAnalysisStatus();
+        });
+    } else {
+        injectAiHeaderIcon();
+        checkAiAnalysisStatus();
+    }
+})();
+

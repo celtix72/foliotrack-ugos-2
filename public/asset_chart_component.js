@@ -1769,6 +1769,48 @@
                 engineDisplay = engineDisplay.replace(':free', '');
                 if (engineDisplay.length > 22) engineDisplay = engineDisplay.substring(0, 20) + '...';
 
+                if (item.status === 'running' || item.status === 'pending') {
+                    return `
+                        <div style="border: 1px solid rgba(99,102,241,0.3); border-radius: 14px; padding: 14px; background: rgba(99,102,241,0.05); margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-outlined animate-spin" style="font-size: 18px; color: #6366f1;">sync</span>
+                                    <span style="font-size: 11px; font-weight: 900; color: #6366f1;">Analisi in corso...</span>
+                                    <span style="font-size: 10px; font-weight: 700; color: #64748b;">${engineDisplay}</span>
+                                </div>
+                                <span style="font-size: 10px; color: #94a3b8;">${date}</span>
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">L'analisi è in elaborazione in background. L'icona in alto ruota fino al termine.</div>
+                        </div>
+                    `;
+                }
+
+                if (item.status === 'error') {
+                    return `
+                        <div style="border: 1px solid rgba(239,68,68,0.3); border-radius: 14px; padding: 14px; background: rgba(239,68,68,0.05); margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-outlined" style="font-size: 18px; color: rgb(239,68,68);">error</span>
+                                    <span style="font-size: 11px; font-weight: 900; color: rgb(239,68,68);">Analisi Fallita</span>
+                                    <span style="font-size: 10px; font-weight: 700; color: #64748b;">${engineDisplay}</span>
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <span style="font-size: 10px; color: #94a3b8;">${date}</span>
+                                    <button onclick="event.preventDefault(); event.stopPropagation(); window.retryAiAnalysis ? window.retryAiAnalysis(${item.id}) : window.runAssetAi()" style="background: rgba(99,102,241,0.1); border: none; border-radius: 6px; color: #6366f1; padding: 4px; cursor: pointer;" title="Riprova">
+                                        <span class="material-symbols-outlined" style="font-size: 14px;">refresh</span>
+                                    </button>
+                                    <button onclick="event.preventDefault(); event.stopPropagation(); window.deleteAssetAiHistory(${item.id}, '${ticker}')" style="background: rgba(239,68,68,0.1); border: none; border-radius: 6px; color: rgb(239,68,68); padding: 4px; cursor: pointer;" title="Elimina">
+                                        <span class="material-symbols-outlined" style="font-size: 14px;">delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="font-size: 11px; font-family: monospace; color: rgb(239,68,68); background: rgba(239,68,68,0.1); padding: 8px; border-radius: 8px; word-break: break-word;">
+                                ${item.error_message || 'Errore durante l\'esecuzione dell\'analisi'}
+                            </div>
+                        </div>
+                    `;
+                }
+
                 let actionTextColor = '#ffffff';
                 if (item.action === 'BUY' || item.action === 'INCREASE' || item.action === 'INC') {
                     actionColor = 'rgb(16,185,129)';
@@ -2394,55 +2436,59 @@
         const btn = document.getElementById('ai-modal-run-btn');
         const listEl = document.getElementById('ai-modal-list');
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size: 16px;">sync</span> Attendere...';
-        listEl.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 180px; text-align:center; color: var(--mob-primary);">
-                <span class="material-symbols-outlined animate-spin" style="font-size: 48px; margin-bottom: 12px; background: linear-gradient(135deg, var(--mob-primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span>
-                <div style="font-size: 14px; font-weight: 900;">Generazione Analisi IA in corso...</div>
-                <div style="font-size: 11px; opacity: 0.7; margin-top: 8px;" id="ai-modal-progress-text">Inizializzazione</div>
-            </div>`;
-
         const engineSelect = document.getElementById('ai-modal-engine-select');
         const promptSelect = document.getElementById('ai-modal-prompt-select');
         const engineVal = engineSelect && engineSelect.value ? engineSelect.value : '';
         const promptVal = promptSelect && promptSelect.value ? promptSelect.value : 'graham';
-        const query = `?engine=${encodeURIComponent(engineVal)}&prompt_type=${encodeURIComponent(promptVal)}`;
-        const source = new EventSource('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis' + query);
 
-        source.addEventListener('progress', function (e) {
-            const data = JSON.parse(e.data);
-            const pt = document.getElementById('ai-modal-progress-text');
-            if (pt) pt.textContent = data.message;
-        });
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size: 16px;">sync</span> Avvio...';
+        }
 
-        source.addEventListener('complete', function (e) {
-            source.close();
-            btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi';
+        try {
+            const res = await fetch('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ engine: engineVal, prompt_type: promptVal })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Errore durante l\'avvio dell\'analisi');
+            }
+
+            if (window.showNotification) {
+                window.showNotification(`Analisi IA per ${_aiModalTicker} avviata in background!`, 'info');
+            }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi';
+            }
+
+            // Immediately check and update topbar spinner
+            if (window.checkAiAnalysisStatus) {
+                window.checkAiAnalysisStatus();
+            }
+
+            // Refresh asset history list
             window.loadAssetAiHistory(_aiModalTicker);
-            if (typeof window.loadAssets === 'function') window.loadAssets();
-            if (typeof window.loadWatchlist === 'function') window.loadWatchlist();
-            if (typeof window.loadPortfolioDetails === 'function') window.loadPortfolioDetails();
-        });
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">refresh</span> Riprova';
+            }
 
-        source.addEventListener('error', function (e) {
-            source.close();
-            btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">refresh</span> Riprova';
-
-            let errorData = {};
-            try { errorData = JSON.parse(e.data || '{}'); } catch (err) { }
-            const errorMsg = errorData.error || "Errore sconosciuto durante l'analisi IA";
-
-            listEl.innerHTML = `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 24px; text-align:center; color: rgb(239,68,68); background: rgba(239,68,68,0.1); border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(239,68,68,0.3);">
-                    <span class="material-symbols-outlined" style="font-size: 40px; margin-bottom: 8px;">error</span>
-                    <div style="font-size: 14px; font-weight: 900;">Analisi IA Fallita</div>
-                    <div style="font-size: 11px; margin-top: 8px; font-family: monospace; word-break: break-word;">${errorMsg}</div>
-                </div>
-            `;
-        });
+            if (listEl) {
+                listEl.insertAdjacentHTML('afterbegin', `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 14px; text-align:center; color: rgb(239,68,68); background: rgba(239,68,68,0.1); border-radius: 12px; margin-bottom: 12px; border: 1px solid rgba(239,68,68,0.3);">
+                        <span class="material-symbols-outlined" style="font-size: 28px; margin-bottom: 4px;">error</span>
+                        <div style="font-size: 13px; font-weight: 900;">Errore Avvio Analisi</div>
+                        <div style="font-size: 11px; margin-top: 4px; font-family: monospace;">${err.message}</div>
+                    </div>
+                `);
+            }
+        }
     };
 
     window.deleteAssetAiHistory = async function (id, ticker) {

@@ -1950,31 +1950,121 @@ router.delete('/assets/:id', requireAuth, (req, res) => {
     }
 });
 
-router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
+    // ─── Asset AI Queue & Background Worker ─────────────────────────────────
+    const aiJobQueue = [];
+    const activeAiJobs = new Map();
+    let isProcessingAiQueue = false;
+
+    // Reset zombie jobs on server startup
     try {
-        const globalSettings = database.getSettings(1) || {};
-        const allowedTypes = ['garp', 'disruptive', 'tech', 'fin', 'capital', 'graham'];
-        const promptType = allowedTypes.includes(req.query.prompt_type) ? req.query.prompt_type : 'graham';
+        database.db.prepare(`
+            UPDATE asset_ai_history 
+            SET status = 'error', error_message = 'Interrotta dal riavvio del server', completed_at = CURRENT_TIMESTAMP
+            WHERE status IN ('running', 'pending')
+        `).run();
+    } catch (e) {
+        logger.warn('[Asset AI] Zombie reset warning:', e.message);
+    }
 
-
-        // Setup SSE Headers
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        
-        const sendEvent = (event, data) => {
-            res.write(`event: ${event}\n`);
-            res.write(`data: ${JSON.stringify(data)}\n\n`);
+    function getAiQueueStatus() {
+        const runningList = Array.from(activeAiJobs.values());
+        return {
+            isRunning: runningList.length > 0 || aiJobQueue.length > 0,
+            runningCount: runningList.length,
+            queuedCount: aiJobQueue.length,
+            runningJobs: runningList.map(j => ({
+                id: j.id,
+                ticker: j.ticker,
+                engine: j.engine,
+                promptType: j.promptType,
+                startedAt: j.startedAt
+            }))
         };
+    }
 
-        const ticker = req.params.ticker;
+    function queueAssetAiAnalysis(ticker, promptType = 'graham', engine = null, userId = 1) {
+        if (!ticker) throw new Error('Ticker mancante.');
         if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'CASH' || ticker.startsWith('CASH_')) {
-            sendEvent('error', { error: 'L\'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.' });
-            res.end();
-            return;
+            throw new Error('L\'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.');
         }
 
-        sendEvent('progress', { message: 'Recupero informazioni asset...' });
+        const assetRow = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
+        if (!assetRow) throw new Error(`Asset non trovato (${ticker}).`);
+        if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(assetRow.type)) {
+            throw new Error('L\'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.');
+        }
+
+        for (const j of activeAiJobs.values()) {
+            if (j.ticker === ticker) return { id: j.id, ticker, status: 'running', message: `Analisi già in corso per ${ticker}` };
+        }
+        for (const j of aiJobQueue) {
+            if (j.ticker === ticker) return { id: j.id, ticker, status: 'pending', message: `Analisi già in coda per ${ticker}` };
+        }
+
+        const globalSettings = database.getSettings(1) || {};
+        const allowedTypes = ['garp', 'disruptive', 'tech', 'fin', 'capital', 'graham'];
+        const finalPromptType = allowedTypes.includes(promptType) ? promptType : 'graham';
+        const finalEngine = engine || globalSettings.aiEngine || 'REQ1';
+
+        const ins = database.db.prepare(`
+            INSERT INTO asset_ai_history (ticker, action, reasoning, engine, prompt_type, asset_price, status, user_id)
+            VALUES (?, 'IN CORSO', 'Analisi in corso di elaborazione in background...', ?, ?, ?, 'pending', ?)
+        `).run(ticker, finalEngine, finalPromptType, assetRow.currentPrice, userId || 1);
+
+        const jobId = ins.lastInsertRowid;
+        const job = { id: jobId, ticker, promptType: finalPromptType, engine: finalEngine, userId: userId || 1, queuedAt: new Date().toISOString() };
+        aiJobQueue.push(job);
+        logger.info(`[Asset AI] Enqueued background job #${jobId} for ${ticker} [${finalEngine} / ${finalPromptType}]`);
+
+        setImmediate(() => {
+            processAiQueue().catch(err => logger.error('[Asset AI] Queue worker error:', err));
+        });
+
+        return { id: jobId, ticker, engine: finalEngine, promptType: finalPromptType, status: 'running', message: `Analisi avviata in background per ${ticker}` };
+    }
+
+    async function processAiQueue() {
+        if (isProcessingAiQueue) return;
+        isProcessingAiQueue = true;
+        try {
+            while (aiJobQueue.length > 0) {
+                const job = aiJobQueue.shift();
+                activeAiJobs.set(job.id, { ...job, startedAt: new Date().toISOString() });
+                try {
+                    database.db.prepare(`UPDATE asset_ai_history SET status = 'running' WHERE id = ?`).run(job.id);
+                } catch(e) {}
+
+                try {
+                    await executeAssetAiAnalysis(job.id, job.ticker, job.promptType, job.engine, job.userId);
+                } catch(err) {
+                    const errMsg = err?.response?.data?.error?.message || err.message || 'Errore durante l\'analisi IA';
+                    logger.error(`[Asset AI] Failed job #${job.id} for ${job.ticker}:`, errMsg);
+                    try {
+                        database.db.prepare(`
+                            UPDATE asset_ai_history 
+                            SET status = 'error', error_message = ?, action = 'ERRORE', reasoning = ?, completed_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                        `).run(errMsg, `⚠️ **Analisi IA Fallita**\n\nErrore riscontrato: ${errMsg}`, job.id);
+                    } catch(dbErr) {}
+                    try {
+                        await notifyUser(job.userId || 1, 'STATUS', {
+                            title: `⚠️ Analisi IA Fallita: ${job.ticker}`,
+                            body: errMsg.substring(0, 150),
+                            ticker: job.ticker
+                        }, false);
+                    } catch(nErr) {}
+                } finally {
+                    activeAiJobs.delete(job.id);
+                }
+            }
+        } finally {
+            isProcessingAiQueue = false;
+        }
+    }
+
+    async function executeAssetAiAnalysis(jobId, ticker, promptType, engine, userId) {
+        const globalSettings = database.getSettings(1) || {};
+        const sendEvent = () => {};
 
         // Fetch asset info
         const assetRow = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
@@ -2563,14 +2653,14 @@ ${contextData}
             }
         }
 
-        const engine = req.query.engine || globalSettings.aiEngine || 'REQ1';
+        const modelEngine = engine || globalSettings.aiEngine || 'REQ1';
         let parsedResponse = null;
         let tokensUsed = 0;
         let usage = {};
 
         try {
-            sendEvent('progress', { message: `Generazione responso IA in corso tramite ${engine}...` });
-            const res = await callAIModel(engine, prompt, globalSettings);
+            sendEvent('progress', { message: `Generazione responso IA in corso tramite ${modelEngine}...` });
+            const res = await callAIModel(modelEngine, prompt, globalSettings);
             const rawText = res.text;
             tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
             usage = res.usage;
@@ -2582,7 +2672,7 @@ ${contextData}
                     ? `**GROWTH (GARP)** (Principi di Peter Lynch: Crescita Sostenibile, PEG, multipli ragionevoli)` 
                     : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`);
                 
-            const userId = req.user.id;
+            const targetUserId = userId || 1;
             // Calcola il PMC esatto considerando cronologicamente gli acquisti/vendite e commissioni/tasse
             const userPortfolios = database.db.prepare(`
                 SELECT p.id 
@@ -2701,60 +2791,152 @@ ${contextData}
             `).run(targetPrice, stopLoss, action, reasoning, finalEngineName, promptType, ticker);
 
             // Se l'utente ha una watchlist per questo asset, sovrascrivi anche le sue impostazioni personali
-            const userId = req.user.id;
-            const userWl = database.db.prepare(`SELECT 1 FROM user_watchlist WHERE user_id = ? AND ticker = ?`).get(userId, ticker);
+            const userWl = database.db.prepare(`SELECT 1 FROM user_watchlist WHERE user_id = ? AND ticker = ?`).get(targetUserId, ticker);
             if (userWl) {
                 database.db.prepare(`
                     UPDATE user_watchlist
                     SET targetPrice = ?, stopLoss = ?
                     WHERE user_id = ? AND ticker = ?
-                `).run(targetPrice, stopLoss, userId, ticker);
+                `).run(targetPrice, stopLoss, targetUserId, ticker);
             } else {
                 database.db.prepare(`
                     INSERT INTO user_watchlist (user_id, ticker, targetPrice, stopLoss)
                     VALUES (?, ?, ?, ?)
-                `).run(userId, ticker, targetPrice, stopLoss);
+                `).run(targetUserId, ticker, targetPrice, stopLoss);
             }
 
             try {
                 database.db.prepare(`
                     DELETE FROM notifications 
                     WHERE user_id = ? AND ticker = ? AND type IN ('TP', 'SL') AND date(date) = date('now')
-                `).run(userId, ticker);
+                `).run(targetUserId, ticker);
             } catch(e) {}
 
-            // Inserisci nello storico
+            // Aggiorna record nello storico
             database.db.prepare(`
-                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss, engine, prompt_type, asset_price)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(ticker, action, reasoning, targetPrice, stopLoss, finalEngineName, promptType, assetRow.currentPrice);
+                UPDATE asset_ai_history 
+                SET action = ?, reasoning = ?, targetPrice = ?, stopLoss = ?, engine = ?, prompt_type = ?, asset_price = ?, status = 'completed', error_message = NULL, completed_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(action, reasoning, targetPrice, stopLoss, finalEngineName, promptType, assetRow.currentPrice, jobId);
         })();
 
-        sendEvent('complete', { 
-            analysis: parsedResponse,
-            usage: usage 
-        });
-        res.end();
-    } catch (err) {
-        console.error('AI Analysis Error:', err?.response?.data || err.message);
-        if (!res.headersSent) {
-            res.status(500).json({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) });
-        } else {
-            res.write(`event: error\ndata: ${JSON.stringify({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) })}\n\n`);
-            res.end();
-        }
+        logger.info(`[Asset AI] Analysis #${jobId} completed successfully for ${ticker} [${action}]`);
+        try {
+            await notifyUser(userId || 1, 'STATUS', {
+                title: `🤖 Analisi IA Completata: ${ticker}`,
+                body: `Esito: ${action} | Modello: ${finalEngineName}`,
+                ticker: ticker
+            }, false);
+        } catch(e) {}
     }
-});
 
-router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
-    try {
-        const history = database.db.prepare(`
-            SELECT id, action, reasoning, targetPrice, stopLoss, engine, prompt_type, created_at, asset_price, is_best 
-            FROM asset_ai_history 
-            WHERE ticker = ? 
-            ORDER BY created_at DESC
-        `).all(req.params.ticker);
-        res.json(history);
+    // ─── AI Analysis HTTP Endpoints ──────────────────────────────────────────
+    router.post('/assets/:ticker/ai-analysis', requireAuth, (req, res) => {
+        try {
+            const promptType = req.body?.prompt_type || req.query?.prompt_type;
+            const engine = req.body?.engine || req.query?.engine;
+            const result = queueAssetAiAnalysis(req.params.ticker, promptType, engine, req.user?.id || 1);
+            res.json(result);
+        } catch (err) {
+            res.status(400).json({ error: err.message });
+        }
+    });
+
+    router.get('/assets/:ticker/ai-analysis', requireAuth, (req, res) => {
+        try {
+            const result = queueAssetAiAnalysis(req.params.ticker, req.query?.prompt_type, req.query?.engine, req.user?.id || 1);
+            if (req.headers.accept && req.headers.accept.includes('text/event-stream')) {
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.write(`event: progress\ndata: ${JSON.stringify({ message: result.message })}\n\n`);
+                res.write(`event: complete\ndata: ${JSON.stringify(result)}\n\n`);
+                res.end();
+                return;
+            }
+            res.json(result);
+        } catch (err) {
+            if (req.headers.accept && req.headers.accept.includes('text/event-stream')) {
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
+                res.end();
+                return;
+            }
+            res.status(400).json({ error: err.message });
+        }
+    });
+
+    router.get('/ai/assets/status', requireAuth, (req, res) => {
+        res.json(getAiQueueStatus());
+    });
+
+    router.get('/ai/assets/history', requireAuth, (req, res) => {
+        try {
+            const limit = Math.min(parseInt(req.query.limit) || 100, 200);
+            let query = `
+                SELECT h.id, h.ticker, h.action, h.reasoning, h.targetPrice, h.stopLoss,
+                       h.engine, h.prompt_type, h.created_at, h.completed_at, h.asset_price,
+                       h.is_best, h.status, h.error_message, h.user_id,
+                       a.name as asset_name, a.currency as asset_currency, a.currentPrice as live_price
+                FROM asset_ai_history h
+                LEFT JOIN assets a ON h.ticker = a.ticker
+            `;
+            const params = [];
+            if (req.query.status) {
+                query += ` WHERE h.status = ?`;
+                params.push(req.query.status);
+            }
+            query += ` ORDER BY h.id DESC LIMIT ?`;
+            params.push(limit);
+            res.json(database.db.prepare(query).all(...params));
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    router.get('/ai/assets/history/:id', requireAuth, (req, res) => {
+        try {
+            const item = database.db.prepare(`
+                SELECT h.*, a.name as asset_name, a.currency as asset_currency, a.currentPrice as live_price
+                FROM asset_ai_history h
+                LEFT JOIN assets a ON h.ticker = a.ticker
+                WHERE h.id = ?
+            `).get(req.params.id);
+            if (!item) return res.status(404).json({ error: 'Elemento non trovato' });
+            res.json(item);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    router.post('/ai/assets/history/:id/retry', requireAuth, (req, res) => {
+        try {
+            const item = database.db.prepare('SELECT * FROM asset_ai_history WHERE id = ?').get(req.params.id);
+            if (!item) return res.status(404).json({ error: 'Analisi non trovata per il riavvio' });
+            const result = queueAssetAiAnalysis(item.ticker, item.prompt_type, item.engine, req.user?.id || item.user_id || 1);
+            res.json({ success: true, ...result });
+        } catch (err) {
+            res.status(400).json({ error: err.message });
+        }
+    });
+
+    router.delete('/ai/assets/history/:id', requireAuth, (req, res) => {
+        try {
+            const result = database.db.prepare('DELETE FROM asset_ai_history WHERE id = ?').run(req.params.id);
+            res.json({ success: true, deleted: result.changes });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
+        try {
+            const history = database.db.prepare(`
+                SELECT id, ticker, action, reasoning, targetPrice, stopLoss, engine, prompt_type, created_at, completed_at, asset_price, is_best, status, error_message 
+                FROM asset_ai_history 
+                WHERE ticker = ? 
+                ORDER BY id DESC
+            `).all(req.params.ticker);
+            res.json(history);
     } catch (err) {
         logger.error('Error fetching asset AI history', err);
         res.status(500).json({ error: err.message });
