@@ -2017,6 +2017,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.showNotification) window.showNotification('Analisi riavviata in background!', 'success');
                 window.loadAiGlobalHistory();
                 checkAiAnalysisStatus();
+                if (window._aiModalTicker && typeof window.loadAssetAiHistory === 'function') {
+                    window.loadAssetAiHistory(window._aiModalTicker);
+                }
             } else {
                 alert(data.error || 'Errore nel riavvio');
             }

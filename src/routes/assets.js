@@ -2065,6 +2065,7 @@ router.delete('/assets/:id', requireAuth, (req, res) => {
     async function executeAssetAiAnalysis(jobId, ticker, promptType, engine, userId) {
         const globalSettings = database.getSettings(1) || {};
         const sendEvent = () => {};
+        const targetUserId = userId || 1;
 
         // Fetch asset info
         const assetRow = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
@@ -2673,14 +2674,13 @@ ${contextData}
                     ? `**GROWTH (GARP)** (Principi di Peter Lynch: Crescita Sostenibile, PEG, multipli ragionevoli)` 
                     : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`);
                 
-            const targetUserId = userId || 1;
             // Calcola il PMC esatto considerando cronologicamente gli acquisti/vendite e commissioni/tasse
             const userPortfolios = database.db.prepare(`
                 SELECT p.id 
                 FROM portfolios p
                 JOIN portfolio_users pu ON p.id = pu.portfolio_id
                 WHERE pu.user_id = ?
-            `).all(userId);
+            `).all(targetUserId);
             
             let totalQty = 0;
             let totalCostInAssetCurrency = 0;
@@ -2765,7 +2765,13 @@ ${contextData}
             console.error('Failed to parse AI JSON response or execute model:', e);
             throw e;
         }
-        
+
+        const targetPrice = parsedResponse.targetProfit > 0 ? parsedResponse.targetProfit : assetRow.targetPrice;
+        const stopLoss = parsedResponse.stopLoss > 0 ? parsedResponse.stopLoss : assetRow.stopLoss;
+        const action = (parsedResponse.action || 'HOLD').toUpperCase();
+        const reasoning = parsedResponse.reasoning || '';
+        const finalEngineName = modelUsed || engine;
+
         database.db.transaction(() => {
             // Aggiorna token count
             const today = new Date().toISOString().split('T')[0];
@@ -2779,12 +2785,6 @@ ${contextData}
             database.setSetting(1, 'aiTokensUsedToday', (currentTokens + tokensUsed).toString());
 
             // Aggiorna asset con targetPrice, stopLoss e info IA
-            const targetPrice = parsedResponse.targetProfit > 0 ? parsedResponse.targetProfit : assetRow.targetPrice;
-            const stopLoss = parsedResponse.stopLoss > 0 ? parsedResponse.stopLoss : assetRow.stopLoss;
-            const action = (parsedResponse.action || 'HOLD').toUpperCase();
-            const reasoning = parsedResponse.reasoning || '';
-            const finalEngineName = modelUsed || engine;
-
             database.db.prepare(`
                 UPDATE assets 
                 SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_prompt_type = ?, ai_updated_at = CURRENT_TIMESTAMP
@@ -2823,7 +2823,7 @@ ${contextData}
 
         logger.info(`[Asset AI] Analysis #${jobId} completed successfully for ${ticker} [${action}]`);
         try {
-            await notifyUser(userId || 1, 'STATUS', {
+            await notifyUser(targetUserId, 'STATUS', {
                 title: `🤖 Analisi IA Completata: ${ticker}`,
                 body: `Esito: ${action} | Modello: ${finalEngineName}`,
                 ticker: ticker
