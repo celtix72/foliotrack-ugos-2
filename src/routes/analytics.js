@@ -735,7 +735,7 @@ module.exports = function (dependencies) {
                 logger.warn('calculatePerformanceHistory fallback in daily-gains: ' + calcErr.message);
             }
 
-            // Fallback: If calculatePerformanceHistory returned no points, use portfolio_history + live rows
+            // Fallback: If calculatePerformanceHistory returned no points, use portfolio_history
             if (tradingDays.length === 0) {
                 const today = new Date();
                 const dayOfWeekNow = today.getDay();
@@ -761,7 +761,6 @@ module.exports = function (dependencies) {
                     ORDER BY date ASC
                 `).all(...pIds, cutoffStr, lastTradingStr);
 
-                const fallbackDays = [];
                 for (let i = 1; i < rows.length; i++) {
                     const prev = rows[i - 1];
                     const curr = rows[i];
@@ -771,27 +770,37 @@ module.exports = function (dependencies) {
 
                     const depositsDelta = (curr.netDeposits || 0) - (prev.netDeposits || 0);
                     const gain = (curr.totalValue || 0) - (prev.totalValue || 0) - depositsDelta;
-                    fallbackDays.push({ date: curr.date, gain: Math.round(gain * 100) / 100 });
+                    tradingDays.push({ date: curr.date, gain: Math.round(gain * 100) / 100 });
                 }
-
-                const liveRows = database.db.prepare(`
-                    SELECT performance1D, currency
-                    FROM portfolios
-                    WHERE id IN (${placeholders})
-                `).all(...pIds);
-                const liveGain = liveRows.reduce((sum, p) => sum + (p.performance1D || 0), 0);
-
-                if (liveGain !== 0 || fallbackDays.length === 0) {
-                    const existingIdx = fallbackDays.findIndex(d => d.date === lastTradingStr);
-                    if (existingIdx >= 0) {
-                        fallbackDays[existingIdx].gain = Math.round(liveGain * 100) / 100;
-                    } else {
-                        fallbackDays.push({ date: lastTradingStr, gain: Math.round(liveGain * 100) / 100 });
-                    }
-                }
-
-                return res.json({ days: fallbackDays.slice(-7) });
             }
+
+            // 2. Authoritative reconciliation of the latest active trading session:
+            // Ensure that the most recent trading session (e.g. today or Friday on weekends)
+            // exactly matches the certified 1D performance shown on the dashboard Hero card
+            // (including USD/EUR conversion and currency exchange impacts).
+            const today = new Date();
+            const dayOfWeekNow = today.getDay();
+            const daysToSub = (dayOfWeekNow === 6) ? 1 : (dayOfWeekNow === 0) ? 2 : 0;
+            const lastTradingObj = new Date(today);
+            lastTradingObj.setDate(today.getDate() - daysToSub);
+            const lastTradingStr = lastTradingObj.toISOString().split('T')[0];
+
+            try {
+                const stats = await getAllPortfolioStats(req.user.id);
+                const targetPortfolios = (stats.portfolios || []).filter(p => pIds.includes(p.id));
+                const liveGain = targetPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValueEUR) || 0) + (parseFloat(p.changeValuePrePostEUR) || 0), 0);
+
+                const existingIdx = tradingDays.findIndex(d => d.date === lastTradingStr);
+                if (existingIdx >= 0) {
+                    tradingDays[existingIdx].gain = Math.round(liveGain * 100) / 100;
+                } else {
+                    tradingDays.push({ date: lastTradingStr, gain: Math.round(liveGain * 100) / 100 });
+                }
+            } catch (statsErr) {
+                logger.warn('Failed to reconcile latest trading day with getAllPortfolioStats: ' + statsErr.message);
+            }
+
+            tradingDays.sort((a, b) => a.date.localeCompare(b.date));
 
             res.json({ days: tradingDays.slice(-7) });
         } catch (err) {
