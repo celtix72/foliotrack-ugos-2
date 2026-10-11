@@ -2073,9 +2073,7 @@ router.delete('/assets/:id', requireAuth, (req, res) => {
         }
 
         if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(assetRow.type)) {
-            sendEvent('error', { error: 'L\'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.' });
-            res.end();
-            return;
+            throw new Error('L\'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.');
         }
 
         // Fetch recent news via Tavily (multi-query, type-aware)
@@ -2658,12 +2656,15 @@ ${contextData}
         let tokensUsed = 0;
         let usage = {};
 
+        let modelUsed = engine;
+
         try {
             sendEvent('progress', { message: `Generazione responso IA in corso tramite ${modelEngine}...` });
-            const res = await callAIModel(modelEngine, prompt, globalSettings);
-            const rawText = res.text;
-            tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
-            usage = res.usage;
+            const aiCallResult = await callAIModel(modelEngine, prompt, globalSettings);
+            const rawText = aiCallResult.text;
+            modelUsed = aiCallResult.modelUsed || engine;
+            tokensUsed = aiCallResult.usage.totalTokenCount || aiCallResult.usage.total_tokens || 0;
+            usage = aiCallResult.usage;
             
              parsedResponse = parseAIResponse(rawText);
             const filosofiaStr = promptType === 'disruptive' 
@@ -2727,7 +2728,7 @@ ${contextData}
             const headerStr = [
                 `### 📊 METODOLOGIA DI ANALISI IA`,
                 `- **Filosofia Applicata:** ${filosofiaStr}`,
-                `- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**`,
+                `- **Modello LLM:** **${engine} (${modelUsed || 'N/D'})**`,
                 `- **Prezzo Rilevato all'Analisi:** ${priceStr}`,
                 `- **Prezzo Medio di Carico (PMC):** ${pmcStr}`,
                 `- **Posizione:** ${portfolioStatusStr}`,
@@ -2782,7 +2783,7 @@ ${contextData}
             const stopLoss = parsedResponse.stopLoss > 0 ? parsedResponse.stopLoss : assetRow.stopLoss;
             const action = (parsedResponse.action || 'HOLD').toUpperCase();
             const reasoning = parsedResponse.reasoning || '';
-            const finalEngineName = res.modelUsed || engine;
+            const finalEngineName = modelUsed || engine;
 
             database.db.prepare(`
                 UPDATE assets 
