@@ -120,6 +120,7 @@ module.exports = function(dependencies) {
         getEurUsdRate,
         getMarketStatus,
         isUSMarket,
+        isAssetQuoteFromToday,
         fetchAssetMetadata,
         clearPerformanceCache,
         updateMarketData,
@@ -213,19 +214,7 @@ router.get('/market/movers', requireAuth, async (req, res) => {
             // Exclude if the market did not open today (stale intraday data)
             if (!openedToday) return false;
 
-            let isToday = a.quoteDate === todayStr;
-            if (!isToday && a.updatedAt) {
-                try {
-                    const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
-                    if (upDate.toDateString() === new Date().toDateString()) {
-                        const openHourUTC = isUS ? 13.5 : 7.0;
-                        const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
-                        if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
-                            isToday = true;
-                        }
-                    }
-                } catch(e) {}
-            }
+            const isToday = isAssetQuoteFromToday ? isAssetQuoteFromToday(a, isUS, openedToday, todayStr) : (a.quoteDate === todayStr);
             if (!isToday) return false;
             
             return Math.abs(a.changePercent) > 0;

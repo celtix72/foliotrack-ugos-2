@@ -496,7 +496,7 @@ app.use('/api', analyticsRouter);
 // ─── Assets & Fundamentals Routes ────────────────────────────────────────────
 const assetsRouter = require('./routes/assets')({
     requireAuth, requireAdmin, requirePortfolioAccess, database, logger, yahooFinance,
-    getEurUsdRate, getMarketStatus, isUSMarket, fetchAssetMetadata,
+    getEurUsdRate, getMarketStatus, isUSMarket, isAssetQuoteFromToday, fetchAssetMetadata,
     clearPerformanceCache, callAIModel, parseAIResponse, notifyUser, APP_VERSION,
     triggerHistoryRebuild, recalculateAllPortfoliosWithOverrides, historicalPricesCache,
     isValidISIN, sanitizeTicker, B_ITA, fetchBorsaItalianaHistory
@@ -506,7 +506,7 @@ app.use('/api', assetsRouter);
 // ─── Market Routes ────────────────────────────────────────────────────────────
 app.use('/api', require('./routes/market')({
     requireAuth, requireAdmin, database, logger, yahooFinance,
-    getEurUsdRate, getMarketStatus, isUSMarket, fetchAssetMetadata,
+    getEurUsdRate, getMarketStatus, isUSMarket, isAssetQuoteFromToday, fetchAssetMetadata,
     clearPerformanceCache, updateMarketData, syncNews,
     get eurUsdCache() { return eurUsdCache; },
     get globalLastMarketUpdate() { return globalLastMarketUpdate; },
@@ -530,7 +530,7 @@ app.use('/api', require('./routes/dividends')({
 
 // ─── Watchlist Routes ─────────────────────────────────────────────────────────
 app.use('/api', require('./routes/watchlist')({
-    requireAuth, database, logger, yahooFinance, getMarketStatus, isUSMarket,
+    requireAuth, database, logger, yahooFinance, getMarketStatus, isUSMarket, isAssetQuoteFromToday,
     fetchAssetMetadata, triggerHistoryRebuild, historicalPricesCache, watchlistPerformanceCache, getEurUsdRate
 }));
 
@@ -1016,6 +1016,50 @@ function getMarketStatus() {
 }
 
 /**
+ * Determines whether an asset's quote reflects today's active/completed trading session.
+ * Prevents quotes from previous trading sessions (e.g. Friday's close) or updates before market open from being treated as today's.
+ */
+function isAssetQuoteFromToday(asset, isUS = null, openedToday = null, todayRomeStr = null) {
+    if (!asset) return false;
+    if (isUS === null) isUS = isUSMarket(asset);
+    if (!todayRomeStr) {
+        todayRomeStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(new Date());
+    }
+
+    if (openedToday === null) {
+        const ms = getMarketStatus();
+        openedToday = isUS ? ms.US_openedToday : ms.EU_openedToday;
+    }
+
+    // If market has not opened today, regular trading has not taken place today
+    if (!openedToday) return false;
+
+    // If quoteDate is explicitly from a previous day, it is definitely stale
+    if (asset.quoteDate && asset.quoteDate < todayRomeStr) {
+        return false;
+    }
+
+    // Check updatedAt in Europe/Rome timezone
+    const openTimeCet = isUS ? '15:30' : '09:00';
+    if (asset.updatedAt) {
+        try {
+            const upDate = new Date(asset.updatedAt.includes('T') ? asset.updatedAt : asset.updatedAt.replace(' ', 'T') + 'Z');
+            if (!isNaN(upDate.getTime())) {
+                const upCetDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(upDate);
+                const upCetTime = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', hour12: false }).format(upDate);
+
+                // Quote must have been updated today at or after market open
+                if (upCetDate === todayRomeStr && upCetTime >= openTimeCet) {
+                    return true;
+                }
+            }
+        } catch (e) {}
+    }
+
+    return false;
+}
+
+/**
  * Calculates variation overrides based on current market status.
  * Prevents showing yesterday's variation as "today's" in the morning.
  */
@@ -1023,7 +1067,7 @@ function calculateVariationOverrides(marketStatus) {
     const overrides = { regular: {}, prePost: {} };
     try {
         const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, postMarketChangePercent, quoteDate, updatedAt, isRealtime, realtimeSource FROM assets').all();
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayRomeStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(new Date());
         
         assets.forEach(a => {
             if (!a.ticker || a.ticker === 'CASH') return;
@@ -1031,19 +1075,7 @@ function calculateVariationOverrides(marketStatus) {
             const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
             const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
             const postMktActive = isUS ? marketStatus.US_afterHoursActive : false;
-            let isToday = a.quoteDate === todayStr;
-            if (!isToday && a.updatedAt) {
-                try {
-                    const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
-                    if (upDate.toDateString() === new Date().toDateString()) {
-                        const openHourUTC = isUS ? 13.5 : 7.0;
-                        const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
-                        if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
-                            isToday = true;
-                        }
-                    }
-                } catch(e) {}
-            }
+            const isToday = isAssetQuoteFromToday(a, isUS, openedToday, todayRomeStr);
 
             // 1. Regular Session Variation
             // On weekends, preserve the last trading session's variation (Friday's close)
@@ -1617,7 +1649,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
 
 
     const heldAssetsRaw = userId ? database.db.prepare(`
-        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, a.updatedAt, a.isRealtime, a.realtimeSource, SUM(h.netQty) as totalNetQty
+        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, a.updatedAt, a.isRealtime, a.realtimeSource, a.preMarketChangePercent, SUM(h.netQty) as totalNetQty
         FROM assets a
         JOIN (
             SELECT t.assetTicker, 
@@ -1632,40 +1664,38 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         GROUP BY a.ticker
     `).all(userId) : [];
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayRomeStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(new Date());
     const heldAssets = heldAssetsRaw.map(a => {
-        let changePct = a.changePercent || 0;
         const isUS = isUSMarket(a);
         const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
         const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
-        let isToday = a.quoteDate === todayStr;
-        if (!isToday && a.updatedAt) {
-            try {
-                const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
-                if (upDate.toDateString() === new Date().toDateString()) {
-                    const openHourUTC = isUS ? 13.5 : 7.0;
-                    const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
-                    if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
-                        isToday = true;
-                    }
-                }
-            } catch(e) {}
-        }
+        const isQuoteToday = isAssetQuoteFromToday(a, isUS, openedToday, todayRomeStr);
 
-        if (!(openedToday && isToday)) {
-            if (preMktActive && a.preMarketChangePercent) {
-                changePct = a.preMarketChangePercent;
-            }
+        let changePct = 0;
+        let isValidToday = false;
+
+        if (marketStatus.isWeekend) {
+            // On weekends, preserve the last trading session's variation (Friday's close)
+            changePct = a.changePercent || 0;
+            isValidToday = true;
+        } else if (openedToday && isQuoteToday) {
+            changePct = a.changePercent || 0;
+            isValidToday = true;
+        } else if (preMktActive && (a.preMarketChangePercent || a.preMarketChangePercent === 0) && a.preMarketChangePercent !== 0) {
+            changePct = a.preMarketChangePercent;
+            isValidToday = true;
+        } else {
+            changePct = 0;
+            isValidToday = false;
         }
 
         const rate = (a.currency === 'USD') ? rateToday : 1;
-        const absChange = (a.currentPrice * changePct / 100) * a.totalNetQty / rate;
-        
-        const isValidToday = isToday || (preMktActive && a.preMarketChangePercent);
+        const absChange = isValidToday ? (a.currentPrice * changePct / 100) * a.totalNetQty / rate : 0;
 
         return { 
             ticker: a.ticker, 
             name: a.name, 
+            assetName: a.name,
             changePercent: changePct, 
             absChange, 
             isValidToday,
@@ -1675,8 +1705,10 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
     });
     
     const validTopAssets = heldAssets.filter(a => a.isValidToday && a.changePercent !== 0 && a.absChange !== 0);
-    const heldAssetsPct = [...validTopAssets].sort((a,b) => b.changePercent - a.changePercent);
-    const heldAssetsAbs = [...validTopAssets].sort((a,b) => (b.absChange || 0) - (a.absChange || 0));
+    const winnersPct = validTopAssets.filter(a => a.changePercent > 0).sort((a,b) => b.changePercent - a.changePercent);
+    const losersPct = validTopAssets.filter(a => a.changePercent < 0).sort((a,b) => a.changePercent - b.changePercent);
+    const winnersAbs = validTopAssets.filter(a => (a.absChange || 0) > 0).sort((a,b) => (b.absChange || 0) - (a.absChange || 0));
+    const losersAbs = validTopAssets.filter(a => (a.absChange || 0) < 0).sort((a,b) => (a.absChange || 0) - (b.absChange || 0));
 
     const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
 
@@ -1697,10 +1729,10 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         changePercent: (totalValueEUR - globalChangeEUR - globalChangePrePostEUR) > 0 
             ? ((globalChangeEUR + globalChangePrePostEUR) / (totalValueEUR - globalChangeEUR - globalChangePrePostEUR)) * 100 
             : 0,
-        topWinners: heldAssetsPct.slice(0, 5),
-        topLosers: heldAssetsPct.slice(-5).reverse(),
-        topWinnersAbs: heldAssetsAbs.slice(0, 5),
-        topLosersAbs: heldAssetsAbs.slice(-5).reverse(),
+        topWinners: winnersPct.slice(0, 5),
+        topLosers: losersPct.slice(0, 5),
+        topWinnersAbs: winnersAbs.slice(0, 5),
+        topLosersAbs: losersAbs.slice(0, 5),
         userTickers: uniqueTickers
     };
 }
@@ -1733,6 +1765,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     `).all(portfolioId);
 
     const today = new Date().toISOString().split('T')[0];
+    const marketStatus = getMarketStatus();
 
     if (!liveRate) {
         liveRate = await getEurUsdRate();
@@ -1827,9 +1860,12 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
 
             const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
             const curVal = h.shares * curPxP;
-            const isToday = asset && asset.quoteDate === today;
-            const changePercent = isToday ? (asset.changePercent || 0) : 0;
-            const changeValue = isToday ? (asset.changeValue || 0) : 0;
+            const isUS = asset ? isUSMarket(asset) : false;
+            const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+            const isQuoteToday = isAssetQuoteFromToday(asset, isUS, openedToday, today);
+            const showVar = marketStatus.isWeekend || (openedToday && isQuoteToday);
+            const changePercent = showVar ? (asset.changePercent || 0) : 0;
+            const changeValue = showVar ? (asset.changeValue || 0) : 0;
             const uGain  = curVal - h.totalCostInPCurr;
             const uGainPct = h.totalCostInPCurr > 0 ? (uGain / h.totalCostInPCurr) * 100 : 0;
 
