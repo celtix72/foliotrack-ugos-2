@@ -712,22 +712,40 @@ module.exports = function (dependencies) {
                 const points = Array.isArray(perfData) ? perfData : (perfData?.dataPoints || []);
 
                 if (points.length >= 2) {
-                    for (let i = 1; i < points.length; i++) {
-                        const prev = points[i - 1];
-                        const curr = points[i];
-                        if (!curr.date) continue;
+                    // Fold any weekend points (Saturday/Sunday) into the preceding Friday.
+                    // Stock markets are closed on Sat/Sun; any end-of-week valuation changes recorded over the weekend
+                    // belong strictly to Friday's trading session.
+                    const tradingMap = new Map();
+                    for (const pt of points) {
+                        if (!pt.date) continue;
+                        const [y, m, d] = pt.date.split('-').map(Number);
+                        const dow = new Date(y, m - 1, d).getDay();
 
-                        const [y, m, d] = curr.date.split('-').map(Number);
-                        const dateObj = new Date(y, m - 1, d);
-                        const dayOfWeek = dateObj.getDay();
-                        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                        if (dow === 6) { // Saturday -> attribute to preceding Friday
+                            const fri = new Date(y, m - 1, d - 1);
+                            const friStr = `${fri.getFullYear()}-${String(fri.getMonth() + 1).padStart(2, '0')}-${String(fri.getDate()).padStart(2, '0')}`;
+                            if (tradingMap.has(friStr)) {
+                                tradingMap.get(friStr).value = pt.value;
+                                tradingMap.get(friStr).netDeposits = pt.netDeposits;
+                            }
+                        } else if (dow === 0) { // Sunday -> attribute to preceding Friday
+                            const fri = new Date(y, m - 1, d - 2);
+                            const friStr = `${fri.getFullYear()}-${String(fri.getMonth() + 1).padStart(2, '0')}-${String(fri.getDate()).padStart(2, '0')}`;
+                            if (tradingMap.has(friStr)) {
+                                tradingMap.get(friStr).value = pt.value;
+                                tradingMap.get(friStr).netDeposits = pt.netDeposits;
+                            }
+                        } else {
+                            tradingMap.set(pt.date, { ...pt });
+                        }
+                    }
 
-                        // Skip weekends entirely - markets are closed on Saturday and Sunday
-                        if (isWeekend) continue;
-
+                    const sortedTradingPoints = Array.from(tradingMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+                    for (let i = 1; i < sortedTradingPoints.length; i++) {
+                        const prev = sortedTradingPoints[i - 1];
+                        const curr = sortedTradingPoints[i];
                         const depositsDelta = (curr.netDeposits || 0) - (prev.netDeposits || 0);
                         const gain = Math.round(((curr.value || 0) - (prev.value || 0) - depositsDelta) * 100) / 100;
-
                         tradingDays.push({ date: curr.date, gain });
                     }
                 }
@@ -745,7 +763,7 @@ module.exports = function (dependencies) {
                 const lastTradingStr = lastTradingObj.toISOString().split('T')[0];
 
                 const cutoff = new Date();
-                cutoff.setDate(cutoff.getDate() - 15);
+                cutoff.setDate(cutoff.getDate() - 25);
                 const cutoffStr = cutoff.toISOString().split('T')[0];
 
                 const placeholders = pIds.map(() => '?').join(',');
@@ -761,13 +779,33 @@ module.exports = function (dependencies) {
                     ORDER BY date ASC
                 `).all(...pIds, cutoffStr, lastTradingStr);
 
-                for (let i = 1; i < rows.length; i++) {
-                    const prev = rows[i - 1];
-                    const curr = rows[i];
-                    const [y, m, d] = curr.date.split('-').map(Number);
+                const tradingMap = new Map();
+                for (const r of rows) {
+                    const [y, m, d] = r.date.split('-').map(Number);
                     const dow = new Date(y, m - 1, d).getDay();
-                    if (dow === 0 || dow === 6) continue;
+                    if (dow === 6) {
+                        const fri = new Date(y, m - 1, d - 1);
+                        const friStr = `${fri.getFullYear()}-${String(fri.getMonth() + 1).padStart(2, '0')}-${String(fri.getDate()).padStart(2, '0')}`;
+                        if (tradingMap.has(friStr)) {
+                            tradingMap.get(friStr).totalValue = r.totalValue;
+                            tradingMap.get(friStr).netDeposits = r.netDeposits;
+                        }
+                    } else if (dow === 0) {
+                        const fri = new Date(y, m - 1, d - 2);
+                        const friStr = `${fri.getFullYear()}-${String(fri.getMonth() + 1).padStart(2, '0')}-${String(fri.getDate()).padStart(2, '0')}`;
+                        if (tradingMap.has(friStr)) {
+                            tradingMap.get(friStr).totalValue = r.totalValue;
+                            tradingMap.get(friStr).netDeposits = r.netDeposits;
+                        }
+                    } else {
+                        tradingMap.set(r.date, { ...r });
+                    }
+                }
 
+                const sortedRows = Array.from(tradingMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+                for (let i = 1; i < sortedRows.length; i++) {
+                    const prev = sortedRows[i - 1];
+                    const curr = sortedRows[i];
                     const depositsDelta = (curr.netDeposits || 0) - (prev.netDeposits || 0);
                     const gain = (curr.totalValue || 0) - (prev.totalValue || 0) - depositsDelta;
                     tradingDays.push({ date: curr.date, gain: Math.round(gain * 100) / 100 });

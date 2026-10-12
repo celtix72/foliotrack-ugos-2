@@ -1056,6 +1056,53 @@ function initDb() {
         standardizedTaxRates.forEach(tr => insertTaxRate.run(mauroId, tr.type, tr.rate));
     }
 
+    // Migration: Reconcile weekend portfolio_history snapshots into preceding Friday
+    try {
+        const weekendRows = dbConnection.prepare(`
+            SELECT id, portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits,
+                   strftime('%w', date) as dow
+            FROM portfolio_history
+            WHERE strftime('%w', date) IN ('0', '6')
+            ORDER BY date ASC
+        `).all();
+
+        if (weekendRows.length > 0) {
+            const updateFridayStmt = dbConnection.prepare(`
+                INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(portfolioId, date) DO UPDATE SET
+                    totalValue = excluded.totalValue,
+                    cashValue = excluded.cashValue,
+                    assetValue = excluded.assetValue,
+                    netDeposits = excluded.netDeposits
+            `);
+            const deleteWeekendStmt = dbConnection.prepare(`DELETE FROM portfolio_history WHERE id = ?`);
+
+            dbConnection.transaction(() => {
+                for (const row of weekendRows) {
+                    const daysToSub = row.dow === '6' ? 1 : 2; // Sat=1, Sun=2
+                    const [y, m, d] = row.date.split('-').map(Number);
+                    const friDateObj = new Date(y, m - 1, d - daysToSub);
+                    const friDateStr = `${friDateObj.getFullYear()}-${String(friDateObj.getMonth() + 1).padStart(2, '0')}-${String(friDateObj.getDate()).padStart(2, '0')}`;
+
+                    updateFridayStmt.run(
+                        row.portfolioId,
+                        row.user_id,
+                        friDateStr,
+                        row.totalValue,
+                        row.cashValue,
+                        row.assetValue,
+                        row.netDeposits
+                    );
+                    deleteWeekendStmt.run(row.id);
+                }
+            })();
+            console.log(`[DB Migration] Reconciled ${weekendRows.length} weekend portfolio snapshots into preceding Fridays.`);
+        }
+    } catch (e) {
+        console.warn('Weekend portfolio history migration warning:', e.message);
+    }
+
     // ─── Default settings ────────────────────────────────────────────────────────
     const defaultSettings = {
         fontFamily: "'JetBrains Mono', monospace",
@@ -1403,9 +1450,22 @@ function recalculateAll(liveEurUsdRate = null, variationOverrides = null) {
     }
 }
 
-function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0, userId = null) {
+function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0, userId = null, snapshotDate = null) {
     let totalValue = 0, cashValue = 0, assetValue = 0, netDeposits = 0;
-    const date = new Date().toISOString().split('T')[0];
+    let date = snapshotDate;
+    if (!date) {
+        const now = new Date();
+        const dow = now.getDay();
+        if (dow === 6) { // Saturday -> belongs to Friday
+            const fri = new Date(now); fri.setDate(now.getDate() - 1);
+            date = fri.toISOString().split('T')[0];
+        } else if (dow === 0) { // Sunday -> belongs to Friday
+            const fri = new Date(now); fri.setDate(now.getDate() - 2);
+            date = fri.toISOString().split('T')[0];
+        } else {
+            date = now.toISOString().split('T')[0];
+        }
+    }
     let uId = userId;
 
     if (portfolioId) {

@@ -4199,6 +4199,15 @@ setInterval(async () => {
             if (global[lastDailyKey] !== todayStr) {
                 global[lastDailyKey] = todayStr;
                 sendStatusNotification(u.id, 'DAILY').catch(e => logger.error('Daily notify failed', e));
+                try {
+                    const rateForSnap = await getEurUsdRate().catch(() => 1.08) || 1.08;
+                    const userPortfolios = database.db.prepare(`SELECT portfolio_id as id FROM portfolio_users WHERE user_id = ?`).all(u.id);
+                    userPortfolios.forEach(p => database.savePortfolioSnapshot(p.id, rateForSnap, u.id));
+                    database.savePortfolioSnapshot(null, rateForSnap, u.id);
+                    logger.info(`Recorded end-of-day snapshot (22:15 CET) for user ${u.id}.`);
+                } catch (e) {
+                    logger.warn('Failed to record 22:15 CET end-of-day snapshot: ' + e.message);
+                }
             }
         }
     }
