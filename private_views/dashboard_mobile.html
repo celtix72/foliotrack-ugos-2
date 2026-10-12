@@ -194,16 +194,20 @@
     <div class="mob-portfolio-list" id="mob-portfolio-list"></div>
 
     <!-- Asset Allocation Card -->
-    <div class="px-4 pt-3 pb-2">
-      <div class="mob-chart-card !p-4">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Allocation ByType</span>
+    <div class="px-4 pt-2 pb-1.5">
+      <div class="mob-chart-card !p-3">
+        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">Asset Allocation</span>
+          </div>
+          <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded">ByType</span>
         </div>
-        <div class="flex items-center gap-4">
-          <div class="w-28 h-28 relative shrink-0 flex items-center justify-center">
+        <div class="flex items-center gap-3">
+          <div class="w-20 h-20 relative shrink-0 flex items-center justify-center">
             <canvas id="mob-allocation-chart"></canvas>
           </div>
-          <div id="mob-allocation-legend" class="flex-1 space-y-1.5 custom-scrollbar overflow-y-auto max-h-[120px] pr-1">
+          <div id="mob-allocation-legend" class="flex-1 min-w-0 space-y-1 custom-scrollbar overflow-y-auto max-h-[85px] pr-0.5">
             <!-- JS filled -->
           </div>
         </div>
@@ -1268,32 +1272,54 @@
                       data: data.map(d => d.value),
                       backgroundColor: data.map(d => d.color || '#cbd5e1'),
                       borderWidth: 0,
-                      hoverOffset: 6
+                      hoverOffset: 4
                   }]
               },
               options: {
                   responsive: true,
                   maintainAspectRatio: false,
-                  cutout: '72%',
-                  plugins: { legend: { display: false } }
+                  cutout: '68%',
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                          backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                          titleFont: { size: 10, weight: 'bold' },
+                          bodyFont: { size: 10 },
+                          padding: 6,
+                          cornerRadius: 6,
+                          callbacks: {
+                              label: function(context) {
+                                  const val = context.raw || 0;
+                                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                  const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                  const formattedVal = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+                                  return ` ${context.label}: ${formattedVal} (${pct}%)`;
+                              }
+                          }
+                      }
+                  }
               }
           });
 
           const legend = document.getElementById('mob-allocation-legend');
           if (legend) {
               const total = data.reduce((sum, d) => sum + d.value, 0);
-              legend.innerHTML = data.map(d => {
-                  const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
-                  return `
-                      <div class="flex items-center justify-between group py-0.5">
-                          <div class="flex items-center gap-1.5 overflow-hidden">
-                              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${d.color}"></span>
-                              <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase truncate">${d.type}</span>
+              if (!data || data.length === 0 || total === 0) {
+                  legend.innerHTML = '<span class="text-[10px] text-slate-400 italic">Nessun asset</span>';
+              } else {
+                  legend.innerHTML = data.map(d => {
+                      const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
+                      return `
+                          <div class="flex items-center justify-between group py-0.5">
+                              <div class="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                                  <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${d.color}"></span>
+                                  <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase truncate" title="${d.type}">${d.type}</span>
+                              </div>
+                              <span class="text-[10px] font-black text-slate-500 shrink-0 ml-1.5">${pct}%</span>
                           </div>
-                          <span class="text-[10px] font-black text-slate-500 shrink-0 ml-1">${pct}%</span>
-                      </div>
-                  `;
-              }).join('');
+                      `;
+                  }).join('');
+              }
           }
       } catch(e) { console.error('mob allocation error:', e); }
   }
