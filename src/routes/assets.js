@@ -2302,14 +2302,93 @@ router.delete('/assets/:id', requireAuth, (req, res) => {
   - Spese R&D (R&D Expense): ${fundamentalsData.researchDevelopment !== undefined && fundamentalsData.researchDevelopment !== null ? (fundamentalsData.researchDevelopment/1e9).toFixed(2) + 'B' : 'N/D'}
   - Spese SG&A: ${fundamentalsData.sellingGeneralAdministrative !== undefined && fundamentalsData.sellingGeneralAdministrative !== null ? (fundamentalsData.sellingGeneralAdministrative/1e9).toFixed(2) + 'B' : 'N/D'}${historicalStr}${fcfStr}${fcfQuarterlyStr}${epsHistoryStr}${estimatesStr}${technicalStr}`;
         
+        // Calcola il PMC esatto e le quote possedute considerando cronologicamente le transazioni
+        const userPortfolios = database.db.prepare(`
+            SELECT p.id 
+            FROM portfolios p
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE pu.user_id = ?
+        `).all(targetUserId);
+        
+        let totalQty = 0;
+        let totalCostInAssetCurrency = 0;
+        
+        for (const p of userPortfolios) {
+            const txs = database.db.prepare(`
+                SELECT type, quantity, price, commission, tax 
+                FROM transactions 
+                WHERE portfolioId = ? AND assetTicker = ?
+                ORDER BY date ASC
+            `).all(p.id, ticker);
+            
+            let qty = 0;
+            let cost = 0;
+            for (const t of txs) {
+                if (t.type === 'BUY') {
+                    qty += t.quantity;
+                    cost += (t.quantity * t.price + (t.commission || 0) + (t.tax || 0));
+                } else if (t.type === 'SELL') {
+                    if (qty > 0) {
+                        const currentPmc = cost / qty;
+                        qty -= t.quantity;
+                        cost -= t.quantity * currentPmc;
+                    }
+                }
+            }
+            if (qty > 0) {
+                totalQty += qty;
+                totalCostInAssetCurrency += cost;
+            }
+        }
+        
+        const pmcVal = totalQty > 0.0001 ? (totalCostInAssetCurrency / totalQty) : null;
+        const isInPortfolio = pmcVal !== null && totalQty > 0.0001;
+
+        let portfolioContextStr = '';
+        if (isInPortfolio) {
+            const curPx = assetRow.currentPrice || 0;
+            const unrealizedGainPct = (pmcVal > 0 && curPx > 0) ? ((curPx - pmcVal) / pmcVal) * 100 : 0;
+            const sign = unrealizedGainPct >= 0 ? '+' : '';
+            portfolioContextStr = `
+  - Posizione Utente: IN PORTAFOGLIO ✅
+    * Quantità Posseduta: ${totalQty.toFixed(4)} quote
+    * Prezzo Medio di Carico (PMC): ${pmcVal.toFixed(2)} ${assetRow.currency}
+    * Rendimento Non Realizzato: ${sign}${unrealizedGainPct.toFixed(2)}% (Prezzo Attuale: ${curPx.toFixed(2)} ${assetRow.currency} vs PMC: ${pmcVal.toFixed(2)} ${assetRow.currency})`;
+        } else {
+            portfolioContextStr = `
+  - Posizione Utente: NON IN PORTAFOGLIO 👁️ (Solo in Watchlist / Nessuna quota attualmente posseduta)`;
+        }
+
         const contextData = `
 - **${assetRow.ticker} (${assetRow.name})**:
   - Asset Type: ${assetRow.type}
   - Exchange: ${assetRow.exchange}
   - Currency: ${assetRow.currency}
-  - Current Price: ${assetRow.currentPrice}
+  - Current Price: ${assetRow.currentPrice}${portfolioContextStr}
   - Prossima Trimestrale (Earnings): ${earningsDate}${fundamentalsStr}
   - Ultime News: ${newsTitles || 'Nessuna news rilevante recente'}`;
+
+        const criteriaSection = `
+**CRITERI DECISIONALI OPERATIVI E COERENZA LOGICA (TASSATIVI)**
+Devi garantire una rigorosa COERENZA LOGICA tra Salute Finanziaria, Fair Value stimato, Livelli Operativi (TP/SL) e l'Azione suggerita ("action"):
+
+1. **SE IL TITOLO È IN PORTAFOGLIO DELL'UTENTE** (vedi "Posizione Utente" nei dati di input):
+   - **HOLD**: Consigliato se il titolo quota a sconto rispetto al Fair Value 1Y o è in profitto e i fondamentali/trend ne supportano il mantenimento verso il target price con rischio controllato.
+   - **SELL**: Consigliato se il titolo ha raggiunto o superato il Fair Value OPPURE se il bilancio presenta grave dissesto / deterioramento strutturale (Altman Z-Score in distress, patrimonio netto tangibile negativo, debito insostenibile / value trap) che rende il rischio asimmetrico verso il basso: in tal caso l'uscita serve a proteggere il capitale o a monetizzare il profitto residuo prima di ulteriori ribassi.
+   - **BUY / INC**: Consigliato se il titolo offre un solido margine di sicurezza aggiuntivo (>20-30% su Fair Value) e la salute finanziaria è adeguata per incrementare l'esposizione.
+   - **IMPORTANTE SU TP e SL PER TITOLI IN PORTAFOGLIO**: Se l'utente ha il titolo in portafoglio, sia nel JSON ("targetProfit", "stopLoss") sia nella Tabella 5, **Take Profit (TP) e Stop Loss (SL) DEVONO ESSERE SEMPRE VALORI NUMERICI REALI > 0** (MAI impostare 0!).
+     * **Take Profit (TP)**: target razionale di vendita o alleggerimento (Fair Value 1Y o prima resistenza critica).
+     * **Stop Loss / Stop Profit (SL)**: livello di protezione rigido (se in profitto, impostalo sopra o vicino al PMC per proteggere il guadagno; se in perdita, sotto il supporto chiave).
+
+2. **SE IL TITOLO NON È IN PORTAFOGLIO DELL'UTENTE**:
+   - **BUY**: Solo se il prezzo attuale offre un chiaro Margine di Sicurezza (>20-30% rispetto al Fair Value 1Y) E la salute finanziaria è accettabile.
+   - **WATCHLIST**: Se l'azienda è di qualità ma il prezzo attuale non garantisce sufficiente margine di sicurezza rispetto al Fair Value.
+   - **AVOID**: Se l'azienda è gravata da dissesto finanziario (value trap, rischio insolvenza) o fondamentali compromessi. Solo per AVOID/WATCHLIST su titoli non posseduti TP e SL possono essere impostati a 0.
+
+3. **COERENZA FAIR VALUE vs RISCHIO DI BILANCIO**:
+   - Se un'azienda ha un bilancio critico (debito elevato, NTA negativo, Z-Score < 0), il **Fair Value 1Y DEVE incorporare uno sconto di rischio per dissesto patrimoniale (distress discount)**: non stimare un Fair Value generoso ed espansivo se poi giudichi l'azienda vicina al dissesto.
+   - Se il Fair Value teorico risulta comunque superiore al prezzo attuale ma consigli **SELL** o **AVOID** per gravi rischi di bilancio, **esplicita chiaramente la motivazione nel testo**: es. *"Sebbene il Fair Value teorico FCF/DCF indichi X €, l'assenza di patrimonio tangibile e il grave rischio di dissesto rendono il profilo rischio/rendimento sfavorevole, consigliando la liquidazione / astensione"*.
+`;
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
@@ -2370,7 +2449,9 @@ Here are the metrics for each section's table:
             }
 
             if (!customPromptText.includes(contextData.substring(0, 15))) {
-                prompt += `\n\n**CRITICAL INSTRUCTION:**\nYou MUST analyze and incorporate the latest quarterly earnings report data (specifically actual EPS vs estimate, surprise percent, and publication date) and the analyst estimates (consensus rating, target prices, and current quarter estimates) provided in the input below.\n\n**INPUT DATA TO ANALYZE:**\n${contextData}`;
+                prompt += `\n\n**CRITICAL INSTRUCTION:**\nYou MUST analyze and incorporate the latest quarterly earnings report data (specifically actual EPS vs estimate, surprise percent, and publication date) and the analyst estimates (consensus rating, target prices, and current quarter estimates) provided in the input below.\n\n${criteriaSection}\n\n**INPUT DATA TO ANALYZE:**\n${contextData}`;
+            } else {
+                prompt += `\n\n${criteriaSection}`;
             }
         } else {
             const customPromptSection = customPromptText ? `\n**USER CUSTOM INSTRUCTIONS**\n${customPromptText}\n` : '';
@@ -2382,6 +2463,7 @@ Agisci come un Senior Equity Research Analyst specializzato in Deep Tech, Biotec
 Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. Se un dato manca, indicalo come "N/D".
 Valuta specialmente R&D, Cash Runway, Bilancio, e il potenziale asimmetrico.
 ${customPromptSection}
+${criteriaSection}
 **OUTPUT CONSTRAINTS (CRITICAL)**
 You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text prima o dopo. Nessun blocco di codice markdown (\`\`\`json).
 The JSON structure must be exactly as follows:
@@ -2448,6 +2530,8 @@ Usa i colori:
 | Area di Supporto critico | ... | ... |
 | Area di Resistenza | ... | ... |
 | Zona di Ingresso (Buy) | ... | ... |
+| **Take Profit suggerito (TP)** | ... | [Prezzo numerico > 0 se in portafoglio o BUY/HOLD; DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"] |
+| **Stop Loss rigoroso (SL)** | ... | [Prezzo numerico > 0 se in portafoglio o BUY/HOLD; DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"] |
 
 **La Tesi di Innovazione:** [Perché questo titolo può sovraperformare? Qual è il catalizzatore?]
 **I 3 Rischi Chiave:** 
@@ -2466,6 +2550,7 @@ Act as an elite financial analyst specializing in the GARP (Growth At a Reasonab
 Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. If a specific metric required for the analysis is missing from the input, explicitly state "N/D" and adapt your evaluation.
 You MUST evaluate and analyze the latest quarterly earnings data (specifically actual EPS vs estimate, surprise percent, and publication date) and the future analyst estimates (consensus rating, target prices, and current quarter expectations) provided in the input.
 ${customPromptSection}
+${criteriaSection}
 **OUTPUT CONSTRAINTS (CRITICAL)**
 You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text before or after. No markdown code blocks (like \`\`\`json). 
 The JSON structure must be exactly as follows:
@@ -2542,8 +2627,8 @@ Esegui i calcoli conservativi e popola la tabella con le seguenti righe:
 | **Area di Supporto critico** | ... | [Prezzo stimato dai minimi a 52 settimane e dati] |
 | **Area di Resistenza critica** | ... | [Prezzo stimato dai massimi a 52 settimane e target analisti] |
 | **Zona di Ingresso ideale (Buy)** | ... | [Prezzo o Range che garantisce un margine di sicurezza secondo GARP] |
-| **Take Profit suggerito (TP)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"] |
-| **Stop Loss rigoroso (SL)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"] |
+| **Take Profit suggerito (TP)** | ... | [Prezzo numerico > 0 se in portafoglio o BUY/HOLD; DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"] |
+| **Stop Loss rigoroso (SL)** | ... | [Prezzo numerico > 0 se in portafoglio o BUY/HOLD; DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"] |
 
 **INPUT DATA TO ANALYZE:**
 ${contextData}
@@ -2556,6 +2641,7 @@ Act as an elite financial analyst and a strict value investor. Your analysis mus
 Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. If a specific metric required for the analysis is missing from the input, explicitly state "N/D" and adapt your evaluation.
 You MUST evaluate and analyze the latest quarterly earnings data (specifically actual EPS vs estimate, surprise percent, and publication date) and the future analyst estimates (consensus rating, target prices, and current quarter expectations) provided in the input.
 ${customPromptSection}
+${criteriaSection}
 **OUTPUT CONSTRAINTS (CRITICAL)**
 You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text before or after. No markdown code blocks (like \`\`\`json). 
 The JSON structure must be exactly as follows:
@@ -2632,8 +2718,8 @@ Esegui i calcoli conservativi e popola la tabella con le seguenti righe:
 | **Area di Supporto critico** | ... | [Prezzo stimato dai minimi a 52 settimane e dati] |
 | **Area di Resistenza critica** | ... | [Prezzo stimato dai massimi a 52 settimane e target analisti] |
 | **Zona di Ingresso ideale (Buy)** | ... | [Prezzo o Range che garantisce un margine di sicurezza] |
-| **Take Profit suggerito (TP)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"] |
-| **Stop Loss rigoroso (SL)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"] |
+| **Take Profit suggerito (TP)** | ... | [Prezzo numerico > 0 se in portafoglio o BUY/HOLD; DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"] |
+| **Stop Loss rigoroso (SL)** | ... | [Prezzo numerico > 0 se in portafoglio o BUY/HOLD; DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"] |
 
 **INPUT DATA TO ANALYZE:**
 ${contextData}
@@ -2663,47 +2749,6 @@ ${contextData}
                     ? `**GROWTH (GARP)** (Principi di Peter Lynch: Crescita Sostenibile, PEG, multipli ragionevoli)` 
                     : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`);
                 
-            // Calcola il PMC esatto considerando cronologicamente gli acquisti/vendite e commissioni/tasse
-            const userPortfolios = database.db.prepare(`
-                SELECT p.id 
-                FROM portfolios p
-                JOIN portfolio_users pu ON p.id = pu.portfolio_id
-                WHERE pu.user_id = ?
-            `).all(targetUserId);
-            
-            let totalQty = 0;
-            let totalCostInAssetCurrency = 0;
-            
-            for (const p of userPortfolios) {
-                const txs = database.db.prepare(`
-                    SELECT type, quantity, price, commission, tax 
-                    FROM transactions 
-                    WHERE portfolioId = ? AND assetTicker = ?
-                    ORDER BY date ASC
-                `).all(p.id, ticker);
-                
-                let qty = 0;
-                let cost = 0;
-                for (const t of txs) {
-                    if (t.type === 'BUY') {
-                        qty += t.quantity;
-                        cost += (t.quantity * t.price + (t.commission || 0) + (t.tax || 0));
-                    } else if (t.type === 'SELL') {
-                        if (qty > 0) {
-                            const currentPmc = cost / qty;
-                            qty -= t.quantity;
-                            cost -= t.quantity * currentPmc;
-                        }
-                    }
-                }
-                if (qty > 0) {
-                    totalQty += qty;
-                    totalCostInAssetCurrency += cost;
-                }
-            }
-            
-            const pmcVal = totalQty > 0.0001 ? (totalCostInAssetCurrency / totalQty) : null;
-                
             const pmcStr = pmcVal !== null 
                 ? `**${pmcVal.toFixed(2)} ${assetRow.currency}**`
                 : `Non presente in portafoglio`;
@@ -2730,8 +2775,6 @@ ${contextData}
             parsedResponse.reasoning = headerStr + (parsedResponse.reasoning || '');
 
             // ── Portfolio-aware TAG adjustment ─────────────────────────────────
-            // pmcVal !== null means the user holds this asset in their portfolio
-            const isInPortfolio = pmcVal !== null && totalQty > 0.0001;
             const rawAction = (parsedResponse.action || 'HOLD').toUpperCase();
             let adjustedAction = rawAction;
 
@@ -2739,10 +2782,18 @@ ${contextData}
                 if (rawAction === 'WATCHLIST') adjustedAction = 'HOLD';       // Can't watchlist what you own
                 else if (rawAction === 'AVOID') adjustedAction = 'SELL';      // Should exit if avoiding
                 else if (rawAction === 'BUY') adjustedAction = 'INC';         // Already own it: increment
+
+                // Fallback di sicurezza su TP e SL per posizioni in portafoglio
+                if (!parsedResponse.targetProfit || parsedResponse.targetProfit <= 0) {
+                    parsedResponse.targetProfit = assetRow.currentPrice ? Math.round(assetRow.currentPrice * 1.10 * 100) / 100 : 0;
+                }
+                if (!parsedResponse.stopLoss || parsedResponse.stopLoss <= 0) {
+                    parsedResponse.stopLoss = pmcVal > 0 ? Math.round(pmcVal * 100) / 100 : (assetRow.currentPrice ? Math.round(assetRow.currentPrice * 0.90 * 100) / 100 : 0);
+                }
             }
 
             if (adjustedAction !== rawAction) {
-                const adjustNote = `\\n\\n> ⚠️ **Nota operativa:** Il titolo è **in portafoglio** (PMC: ${pmcVal.toFixed(2)} ${assetRow.currency}, ${totalQty.toFixed(4)} quote). Il segnale originale era **${rawAction}**, adattato a **${adjustedAction}** considerando la posizione aperta.\\n`;
+                const adjustNote = `\n\n> ⚠️ **Nota operativa:** Il titolo è **in portafoglio** (PMC: ${pmcVal.toFixed(2)} ${assetRow.currency}, ${totalQty.toFixed(4)} quote). Il segnale originale era **${rawAction}**, adattato a **${adjustedAction}** considerando la posizione aperta.\n`;
                 parsedResponse.reasoning = parsedResponse.reasoning + adjustNote;
                 parsedResponse.action = adjustedAction;
             } else {
