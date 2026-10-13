@@ -771,7 +771,20 @@
                 return;
             }
 
+            // ── Authoritative reconciliation of today's bar ────────────────────────────────────────
+            // window._dashboardMetrics is loaded from /api/portfolios BEFORE this function
+            // is called (see loadDashboard). It contains changeValueEUR + changeValuePrePostEUR,
+            // the exact same value shown in the Hero card (includes FX differential and
+            // pre/post market). We override the last trading day so the chart bar for
+            // "oggi" always matches the Hero card.
+            if (days.length > 0 && window._dashboardMetrics) {
+                const authoritativeGain = (window._dashboardMetrics.changeReg || 0)
+                                        + (window._dashboardMetrics.changePP  || 0);
+                days[days.length - 1].gain = Math.round(authoritativeGain * 100) / 100;
+            }
+
             const maxAbs = Math.max(...days.map(d => Math.abs(d.gain)), 1);
+            // Recalculate weekTotal after the override so it stays consistent
             const weekTotal = days.reduce((s, d) => s + d.gain, 0);
 
             // Reverse so most recent day is on the LEFT
@@ -804,16 +817,9 @@
                 totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(weekTotal, 'EUR', 0);
             }
 
-            // Fallback: If changeFX is not already showing on Hero card, check against last trading day gain
-            if (days.length > 0 && window._dashboardMetrics) {
-                const lastDayGain = days[days.length - 1].gain;
-                if (Math.abs(window._dashboardMetrics.changeFX || 0) < 1 && lastDayGain !== undefined) {
-                    const diff = Math.round((window._dashboardMetrics.changeReg || 0) - lastDayGain);
-                    if (Math.abs(diff) >= 5) {
-                        window._dashboardMetrics.changeFX = diff;
-                        renderHeroDayVar(window._dashboardMetrics);
-                    }
-                }
+            // Ensure the Hero FX badge is rendered with the now-confirmed metrics.
+            if (window._dashboardMetrics && Math.abs(window._dashboardMetrics.changeFX || 0) >= 1) {
+                renderHeroDayVar(window._dashboardMetrics);
             }
         } catch (err) {
             console.error('Daily gains chart error:', err);

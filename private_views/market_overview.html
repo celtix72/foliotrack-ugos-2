@@ -377,6 +377,7 @@
 let allAssets = [];
 let notesMap = {};
 let usdEurRate = 1.0;
+let portfoliosDailyGainEUR = null; // Authoritative daily gain from /api/portfolios (same source as Dashboard)
 let currentSortField = 'perf24h';
 let currentSortDir = 'desc';
 let displayMode = localStorage.getItem('market_display_mode') || 'name';
@@ -591,24 +592,35 @@ async function loadAssets() {
     try {
         updateDisplayModeUI();
         applyMarketDesktopScale();
-        // Fetch exchange rate
-        const exRes = await fetch('/api/market/exchange-rate');
-        const exData = await exRes.json();
+
+        // Fetch exchange rate, notes, assets and portfolio stats in parallel
+        const [exData, notesList, assetsData, portfoliosData] = await Promise.all([
+            fetch('/api/market/exchange-rate').then(r => r.json()).catch(() => ({})),
+            fetch('/api/notes').then(r => r.json()).catch(() => []),
+            fetch('/api/assets?t=' + Date.now()).then(r => r.json()),
+            fetch('/api/portfolios').then(r => r.json()).catch(() => null)
+        ]);
+
         if (exData && exData.rate) {
             usdEurRate = exData.rate;
         }
 
-        const notesRes = await fetch('/api/notes');
-        const notesList = await notesRes.json();
         notesMap = {};
-        notesList.forEach(n => {
-            if (n.asset_symbol) {
-                notesMap[n.asset_symbol] = n;
-            }
+        (notesList || []).forEach(n => {
+            if (n.asset_symbol) notesMap[n.asset_symbol] = n;
         });
 
-        const res = await fetch('/api/assets?t=' + Date.now());
-        allAssets = await res.json();
+        // Extract authoritative daily gain from /api/portfolios (same calculation used by Dashboard)
+        // Includes FX differential and pre/post market, already converted to EUR
+        if (portfoliosData && Array.isArray(portfoliosData.portfolios)) {
+            portfoliosDailyGainEUR = portfoliosData.portfolios.reduce((sum, p) => {
+                return sum + (parseFloat(p.changeValueEUR) || 0) + (parseFloat(p.changeValuePrePostEUR) || 0);
+            }, 0);
+        } else {
+            portfoliosDailyGainEUR = null;
+        }
+
+        allAssets = assetsData;
         renderAssets();
         const lastUpd = document.getElementById('header-last-update') || document.getElementById('last-update-label');
         if (lastUpd) lastUpd.textContent = 'Upd: ' + new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
@@ -634,24 +646,35 @@ function renderAssets(filter = '') {
 
     if (countLabel) countLabel.textContent = `${openPositions.length} POSITIONS`;
 
-    // Calculate Total Daily Gain in EUR for Open Positions
+    // Use the authoritative daily gain from /api/portfolios (same source as Dashboard Hero card).
+    // This includes FX differential (EUR/USD rate change) and pre/post market, already in EUR.
+    // Falls back to client-side estimate if portfolio data is unavailable.
     let totalDailyGainEUR = 0;
-    openPositions.forEach(a => {
-        let gain = (a.totalQuantity || 0) * (a.changeValue || 0);
-        if (a.currency === 'USD') {
-            gain = gain / usdEurRate;
-        }
-        totalDailyGainEUR += gain;
-    });
+    if (portfoliosDailyGainEUR !== null) {
+        totalDailyGainEUR = portfoliosDailyGainEUR;
+    } else {
+        // Fallback: approximate recalculation using current rate only
+        openPositions.forEach(a => {
+            let gain = (a.totalQuantity || 0) * (a.changeValue || 0);
+            if (a.currency === 'USD') {
+                gain = gain / usdEurRate;
+            }
+            totalDailyGainEUR += gain;
+        });
+    }
 
     const totalGainHeader = document.getElementById('th-total-daily-gain');
     if (totalGainHeader) {
         const color = totalDailyGainEUR >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const sign = totalDailyGainEUR >= 0 ? '+' : '';
+        const sourceLabel = portfoliosDailyGainEUR !== null
+            ? `<span class="text-[8px] font-bold text-slate-400 leading-none mt-0.5" title="Sincronizzato con Dashboard (include FX e pre/post market)">≡ Dashboard</span>`
+            : '';
         totalGainHeader.innerHTML = `
             <div class="flex flex-col">
                 <span>Daily Gain</span>
                 <span class="text-[10px] font-mono ${color} leading-none mt-1">${sign}${formatCurrency(totalDailyGainEUR, 'EUR', 0)}</span>
+                ${sourceLabel}
             </div>
         `;
     }
