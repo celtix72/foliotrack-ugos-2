@@ -377,7 +377,6 @@
 let allAssets = [];
 let notesMap = {};
 let usdEurRate = 1.0;
-let portfoliosDailyGainEUR = null; // Authoritative daily gain from /api/portfolios (same source as Dashboard)
 let currentSortField = 'perf24h';
 let currentSortDir = 'desc';
 let displayMode = localStorage.getItem('market_display_mode') || 'name';
@@ -593,12 +592,11 @@ async function loadAssets() {
         updateDisplayModeUI();
         applyMarketDesktopScale();
 
-        // Fetch exchange rate, notes, assets and portfolio stats in parallel
-        const [exData, notesList, assetsData, portfoliosData] = await Promise.all([
+        // Fetch exchange rate, notes, and assets in parallel
+        const [exData, notesList, assetsData] = await Promise.all([
             fetch('/api/market/exchange-rate').then(r => r.json()).catch(() => ({})),
             fetch('/api/notes').then(r => r.json()).catch(() => []),
-            fetch('/api/assets?t=' + Date.now()).then(r => r.json()),
-            fetch('/api/portfolios').then(r => r.json()).catch(() => null)
+            fetch('/api/assets?t=' + Date.now()).then(r => r.json())
         ]);
 
         if (exData && exData.rate) {
@@ -609,16 +607,6 @@ async function loadAssets() {
         (notesList || []).forEach(n => {
             if (n.asset_symbol) notesMap[n.asset_symbol] = n;
         });
-
-        // Extract authoritative daily gain from /api/portfolios (same calculation used by Dashboard)
-        // Includes FX differential and pre/post market, already converted to EUR
-        if (portfoliosData && Array.isArray(portfoliosData.portfolios)) {
-            portfoliosDailyGainEUR = portfoliosData.portfolios.reduce((sum, p) => {
-                return sum + (parseFloat(p.changeValueEUR) || 0) + (parseFloat(p.changeValuePrePostEUR) || 0);
-            }, 0);
-        } else {
-            portfoliosDailyGainEUR = null;
-        }
 
         allAssets = assetsData;
         renderAssets();
@@ -646,35 +634,24 @@ function renderAssets(filter = '') {
 
     if (countLabel) countLabel.textContent = `${openPositions.length} POSITIONS`;
 
-    // Use the authoritative daily gain from /api/portfolios (same source as Dashboard Hero card).
-    // This includes FX differential (EUR/USD rate change) and pre/post market, already in EUR.
-    // Falls back to client-side estimate if portfolio data is unavailable.
+    // Total daily gain: exact sum of all open positions converted to EUR
     let totalDailyGainEUR = 0;
-    if (portfoliosDailyGainEUR !== null) {
-        totalDailyGainEUR = portfoliosDailyGainEUR;
-    } else {
-        // Fallback: approximate recalculation using current rate only
-        openPositions.forEach(a => {
-            let gain = (a.totalQuantity || 0) * (a.changeValue || 0);
-            if (a.currency === 'USD') {
-                gain = gain / usdEurRate;
-            }
-            totalDailyGainEUR += gain;
-        });
-    }
+    openPositions.forEach(a => {
+        let gain = (a.totalQuantity || 0) * (a.changeValue || 0);
+        if ((a.currency || '').toUpperCase() === 'USD') {
+            gain = gain / usdEurRate;
+        }
+        totalDailyGainEUR += gain;
+    });
 
     const totalGainHeader = document.getElementById('th-total-daily-gain');
     if (totalGainHeader) {
         const color = totalDailyGainEUR >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const sign = totalDailyGainEUR >= 0 ? '+' : '';
-        const sourceLabel = portfoliosDailyGainEUR !== null
-            ? `<span class="text-[8px] font-bold text-slate-400 leading-none mt-0.5" title="Sincronizzato con Dashboard (include FX e pre/post market)">≡ Dashboard</span>`
-            : '';
         totalGainHeader.innerHTML = `
-            <div class="flex flex-col">
+            <div class="flex flex-col" title="Somma Daily Gain delle posizioni aperte: ${sign}${formatCurrency(totalDailyGainEUR, 'EUR', 0)}">
                 <span>Daily Gain</span>
                 <span class="text-[10px] font-mono ${color} leading-none mt-1">${sign}${formatCurrency(totalDailyGainEUR, 'EUR', 0)}</span>
-                ${sourceLabel}
             </div>
         `;
     }
@@ -833,16 +810,25 @@ function renderAssets(filter = '') {
             const renderSection = (items, title) => {
                 if (items.length === 0) return '';
                 
-                const secCurrency = (title.includes('USD')) ? 'USD' : 'EUR';
+                const isUsdSection = title.includes('USD');
+                const secCurrency = isUsdSection ? 'USD' : 'EUR';
                 let totalInvested = 0;
                 let totalCumulated = 0;
                 let totalDailyGain = 0;
+                let totalDailyGainEUR = 0;
                 
                 items.forEach(a => {
                     const price = a.currentPrice || 0;
-                    totalCumulated += (a.totalQuantity || 0) * price;
+                    const qty = a.totalQuantity || 0;
+                    const changeVal = a.changeValue || 0;
+                    const isUSD = (a.currency || '').toUpperCase() === 'USD';
+                    
+                    totalCumulated += qty * price;
                     totalInvested += a.totalCostAssetCurr || 0;
-                    totalDailyGain += (a.totalQuantity || 0) * (a.changeValue || 0);
+                    
+                    const assetGain = qty * changeVal;
+                    totalDailyGain += assetGain;
+                    totalDailyGainEUR += isUSD ? (assetGain / usdEurRate) : assetGain;
                 });
                 
                 const sectionGain = totalCumulated - totalInvested;
@@ -860,6 +846,10 @@ function renderAssets(filter = '') {
                     return rowHtml.replace('<tr class="', `<tr class="section-row-${sectionId} `);
                 }).join('');
 
+                const eurSubtext = isUsdSection
+                    ? ` <span class="text-[9px] font-semibold text-yellow-800 dark:text-yellow-300 ml-1 font-mono">(~${totalDailyGainEUR >= 0 ? '+' : ''}${formatCurrency(totalDailyGainEUR, 'EUR', 0)})</span>`
+                    : '';
+
                 return `
                     <tr class="select-none cursor-pointer hover:bg-yellow-200/50 dark:hover:bg-yellow-800/30 transition-colors" onclick="toggleSection('${sectionId}')">
                         <td colspan="3" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100 border-y-2 border-yellow-300 dark:border-yellow-700/50">
@@ -870,7 +860,7 @@ function renderAssets(filter = '') {
                             </div>
                         </td>
                         <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 font-mono">
-                            <p class="text-xs font-black ${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, secCurrency, 0)}</p>
+                            <p class="text-xs font-black ${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, secCurrency, 0)}${eurSubtext}</p>
                             <p class="text-[8px] font-bold text-yellow-700 dark:text-yellow-500 mt-0.5 uppercase tracking-tighter">Daily</p>
                         </td>
                         <td colspan="2" class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50">
