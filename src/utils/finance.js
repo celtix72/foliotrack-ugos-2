@@ -154,6 +154,14 @@ function isValidQuotePrice(price, assetMeta = null, lastValidPrice = null) {
 
     // General asset (Stocks, ETFs, Crypto, etc.) checks against last known price:
     if (lastValidPrice && lastValidPrice > 0.0001) {
+        // If candidate price is confirmed by reference previous close (from YF or chart),
+        // allow recovery from a corrupted/anomalous lastValidPrice baseline.
+        const refClose = assetMeta?.previousClose || assetMeta?.regularMarketPreviousClose || assetMeta?.chartPreviousClose;
+        const isConfirmedByRefClose = refClose && refClose > 0.0001 && (Math.abs(p - refClose) / refClose < 0.20);
+        if (isConfirmedByRefClose) {
+            return { valid: true, recovered: true };
+        }
+
         // If lastValidPrice is <= 1.05 and candidate price is > 1.05,
         // it indicates recovery from a dummy/corrupted placeholder price (e.g. 1.00 € default),
         // NOT a genuine 500% spike. Allow recovery.

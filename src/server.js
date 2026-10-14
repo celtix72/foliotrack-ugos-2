@@ -681,7 +681,7 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
             if (!quote) return null;
         }
 
-        // Se abbiamo quotazione GF primaria, usiamo il prezzo in tempo reale di Google Finance!
+        // Se abbiamo quotazione GF primaria, usiamo il prezzo in tempo reale di Google Finance SOLO SE consistente con Yahoo Finance!
         let gfEnrichment = {
             enriched: false,
             realtimeSource: (quote.exchangeDataDelayedBy === 0) ? 'YF' : 'YF_DELAYED',
@@ -690,23 +690,37 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
         };
 
         if (gfPrimary && gfPrimary.price > 0) {
-            quote.regularMarketPrice = gfPrimary.price;
-            quote.regularMarketChange = gfPrimary.changeValue;
-            quote.regularMarketChangePercent = gfPrimary.changePercent;
-            quote.regularMarketTime = new Date();
-            gfEnrichment = {
-                enriched: true,
-                realtimeSource: gfPrimary.realtimeSource || 'GF',
-                isRealtime: gfPrimary.isRealtime ?? 1,
-                googleTicker: gTicker
-            };
+            const refPrice = quote.regularMarketPreviousClose || quote.regularMarketPrice || 0;
+            const currenciesMatch = !gfPrimary.currency || !quote.currency || gfPrimary.currency.toUpperCase() === quote.currency.toUpperCase();
+            const priceDiffRatio = refPrice > 0 ? Math.abs(gfPrimary.price - refPrice) / refPrice : 0;
+
+            if (currenciesMatch && priceDiffRatio <= 0.20) {
+                quote.regularMarketPrice = gfPrimary.price;
+                quote.regularMarketChange = gfPrimary.changeValue;
+                quote.regularMarketChangePercent = gfPrimary.changePercent;
+                quote.regularMarketTime = new Date();
+                gfEnrichment = {
+                    enriched: true,
+                    realtimeSource: gfPrimary.realtimeSource || 'GF',
+                    isRealtime: gfPrimary.isRealtime ?? 1,
+                    googleTicker: gTicker
+                };
+            } else {
+                logger.warn(`[GF-PRIMARY] Discarded Google Finance price ${gfPrimary.price} ${gfPrimary.currency || ''} for ${yTicker}: deviates from YF reference ${refPrice} ${quote.currency || ''} (diff: ${(priceDiffRatio * 100).toFixed(1)}%, currMatch: ${currenciesMatch})`);
+            }
         } else if (!isBond) {
             // Se GF primario non era scattato, prova l'arricchimento if delayed
             try {
                 const resEnrich = await enrichWithGoogleFinanceIfDelayed(yTicker, quote, gTicker);
                 if (resEnrich && resEnrich.enriched) {
-                    gfEnrichment = resEnrich;
-                    gTicker = resEnrich.googleTicker || gTicker;
+                    const refPrice = quote.regularMarketPreviousClose || quote.regularMarketPrice || 0;
+                    const priceDiffRatio = refPrice > 0 ? Math.abs(resEnrich.price - refPrice) / refPrice : 0;
+                    if (priceDiffRatio <= 0.20) {
+                        gfEnrichment = resEnrich;
+                        gTicker = resEnrich.googleTicker || gTicker;
+                    } else {
+                        logger.warn(`[GF-ENRICH] Discarded delayed GF enrichment ${resEnrich.price} for ${yTicker}: deviates from YF ref ${refPrice}`);
+                    }
                 }
             } catch (gfErr) {
                 logger.warn(`Google Finance enrichment check error for ${yTicker}: ${gfErr.message}`);
@@ -792,11 +806,13 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
             ticker: yTicker,
             googleTicker: gTicker || (gfEnrichment && gfEnrichment.googleTicker) || mapYahooToGoogleTicker(yTicker, null, quote.fullExchangeName || quote.exchange),
             name: quote.shortName || quote.longName || (gfPrimary ? gfPrimary.name : yTicker),
-            currency: (gfPrimary && gfPrimary.currency) ? gfPrimary.currency : (quote.currency || 'USD'),
+            currency: quote.currency || (gfPrimary && gfPrimary.currency) || 'USD',
             exchange: quote.fullExchangeName || quote.exchange || (gTicker ? gTicker.split(':')[1] : ''),
             type: detailedType,
             country: country,
             currentPrice: quote.regularMarketPrice || 0,
+            previousClose: quote.regularMarketPreviousClose || (summary.summaryDetail ? summary.summaryDetail.previousClose : null),
+            regularMarketPreviousClose: quote.regularMarketPreviousClose || null,
             changePercent: calculatedChangePercent ?? 0,
             changeValue: calculatedChangeValue ?? 0,
 
@@ -3582,7 +3598,10 @@ async function _internalUpdateMarketData(force = false) {
                 if (!metadata) {
                     throw new Error(`YF/GF: no quote data returned for '${asset.ticker}' (check ticker spelling or try manual update)`);
                 }
-                const priceCheck = isValidQuotePrice(metadata.currentPrice, asset, asset.currentPrice);
+                const priceCheck = isValidQuotePrice(metadata.currentPrice, {
+                    ...asset,
+                    previousClose: metadata.previousClose || metadata.regularMarketPreviousClose
+                }, asset.currentPrice);
                 let finalPrice = asset.currentPrice;
                 let finalChange = asset.changePercent;
                 let finalChangeVal = asset.changeValue;
@@ -4330,8 +4349,31 @@ async function repairInconsistentAssetQuotesAndPrices() {
                 }
             }
 
-            if ((!check.valid || isStuckDummy) && a.currentPrice !== null && a.currentPrice !== undefined && a.currentPrice > 0) {
-                logger.warn(`[REPAIR] Detected corrupted currentPrice ${a.currentPrice} for ${a.ticker} (${check.reason || 'stuck_dummy_baseline'}). Attempting recovery...`);
+            // Check if currentPrice deviates heavily from recent quotes in asset_quotes or BUY transactions
+            let isCorruptedBaseline = false;
+            if (!isStuckDummy && a.currentPrice > 0) {
+                const latestHistoryQuote = database.db.prepare("SELECT price FROM asset_quotes WHERE ticker = ? AND price > 0 ORDER BY date DESC LIMIT 1").get(a.ticker);
+                if (latestHistoryQuote && latestHistoryQuote.price > 0) {
+                    const ratio = latestHistoryQuote.price / a.currentPrice;
+                    if (ratio > 2.0 || ratio < 0.5) {
+                        isCorruptedBaseline = true;
+                        logger.warn(`[REPAIR] Detected inconsistent currentPrice ${a.currentPrice} for ${a.ticker} (latest history quote is ${latestHistoryQuote.price}, ratio: ${ratio.toFixed(2)}). Flagging for repair.`);
+                    }
+                }
+                if (!isCorruptedBaseline) {
+                    const txRef = database.db.prepare("SELECT price FROM transactions WHERE assetTicker = ? AND type = 'BUY' AND price > 0 ORDER BY date DESC LIMIT 1").get(a.ticker);
+                    if (txRef && txRef.price > 0) {
+                        const ratio = txRef.price / a.currentPrice;
+                        if (ratio > 2.0 || ratio < 0.5) {
+                            isCorruptedBaseline = true;
+                            logger.warn(`[REPAIR] Detected inconsistent currentPrice ${a.currentPrice} for ${a.ticker} (BUY tx price is ${txRef.price}, ratio: ${ratio.toFixed(2)}). Flagging for repair.`);
+                        }
+                    }
+                }
+            }
+
+            if ((!check.valid || isStuckDummy || isCorruptedBaseline) && a.currentPrice !== null && a.currentPrice !== undefined && a.currentPrice > 0) {
+                logger.warn(`[REPAIR] Detected corrupted currentPrice ${a.currentPrice} for ${a.ticker} (${check.reason || (isStuckDummy ? 'stuck_dummy_baseline' : 'inconsistent_with_history')}). Attempting recovery...`);
                 
                 // 1. Delete corrupted quotes from asset_quotes
                 if (isBondAsset(a)) {

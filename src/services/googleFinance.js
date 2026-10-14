@@ -315,6 +315,13 @@ async function fetchGoogleFinanceQuote(googleTicker) {
             return { success: false, reason: 'Unexpected data structure in Google Finance ds:2' };
         }
 
+        // Validate that returned item actually matches requested ticker
+        const [expectedSym] = cleanTicker.toUpperCase().split(':');
+        const itemSym = item[1]?.[0];
+        if (expectedSym && itemSym && String(itemSym).toUpperCase() !== expectedSym) {
+            return { success: false, reason: `Google Finance ticker mismatch: expected ${expectedSym}, got ${itemSym}` };
+        }
+
         const price = item[5]?.[0];
         if (price === undefined || price === null || isNaN(price)) {
             return { success: false, reason: 'No numeric price found in Google Finance item' };
@@ -372,7 +379,7 @@ async function enrichWithGoogleFinanceIfDelayed(yahooTicker, yfQuote, customGoog
     // Try Google Finance if YF is delayed OR if YF price is 0/missing/unrealistic
     const needsGF = isYfDelayed || basePrice <= 0.0001;
 
-    const gTicker = mapYahooToGoogleTicker(yahooTicker, customGoogleTicker);
+    const gTicker = mapYahooToGoogleTicker(yahooTicker, customGoogleTicker, yfQuote?.exchange || yfQuote?.fullExchangeName);
     if (gTicker && needsGF) {
         try {
             const gf = await fetchGoogleFinanceQuote(gTicker);
@@ -419,7 +426,7 @@ async function enrichWithGoogleFinanceIfDelayed(yahooTicker, yfQuote, customGoog
  * @returns {Promise<object|null>}
  */
 async function fetchGoogleFinanceAsset(ticker, customGoogleTicker = null) {
-    const gTicker = mapYahooToGoogleTicker(ticker, customGoogleTicker);
+    const gTicker = await resolveGoogleTicker(ticker, customGoogleTicker);
     if (!gTicker) return null;
 
     const gf = await fetchGoogleFinanceQuote(gTicker);

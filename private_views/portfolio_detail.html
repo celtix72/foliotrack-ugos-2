@@ -1249,7 +1249,7 @@
             const gainPct    = h.avgCostPortCurr > 0 ? ((h.unrealizedGain / (h.shares * h.avgCostPortCurr)) * 100) : 0;
             const dayColor   = (h.changeValue || 0) >= 0 ? 'emerald' : 'rose';
             const daySign    = (h.changeValue || 0) >= 0 ? '+' : '';
-            const dailyGain  = (h.shares || 0) * (h.changeValue || 0);
+            const dailyGain  = (h.shares || 0) * (h.changeValuePortfolio !== undefined ? h.changeValuePortfolio : (h.changeValue || 0));
 
             const errorTag = h.lastUpdateError ? `
                 <span class="ml-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${h.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>
