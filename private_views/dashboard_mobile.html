@@ -124,8 +124,11 @@
         <div class="mob-hero-value cursor-pointer select-none" id="mob-total-net" onclick="window.togglePrivacy()" style="font-size: 30px; font-weight: 900; line-height: 1.1; margin-bottom: 0;" title="Clicca per modalità privata">€ 0</div>
         <div id="mob-day-var" class="ml-auto px-2.5 py-1 rounded-lg text-[13px] font-black shadow-sm hidden"></div>
       </div>
-      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-        Lordo: <span id="mob-total-gross" class="text-slate-500 dark:text-slate-400 font-bold">€ 0</span>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60 mt-1">
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+          Lordo: <span id="mob-total-gross" class="text-slate-500 dark:text-slate-400 font-bold">€ 0</span>
+        </div>
+        <div id="mob-day-var-breakdown" class="flex items-center gap-1 text-[10px] font-bold hidden"></div>
       </div>
     </div>
 
@@ -384,41 +387,82 @@
 
   function renderMobHeroDayVar(metrics) {
       const varEl = document.getElementById('mob-day-var');
+      const bdEl  = document.getElementById('mob-day-var-breakdown');
       if (!varEl || !metrics) return;
-      const totalMove = (metrics.changeReg || 0) + (metrics.changePP || 0);
-      const isPos = totalMove >= 0;
-      varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm inline-flex items-center gap-1 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-      
-      const formattedReg = formatCurrency(metrics.changeReg || 0, 'EUR', 0);
-      const formattedPP = formatCurrency(metrics.changePP || 0, 'EUR', 0);
-      
-      const signReg = (metrics.changeReg || 0) >= 0 ? '+' : '';
-      const signPP = (metrics.changePP || 0) >= 0 ? '+' : '';
-      
-      let html = `<span>${signReg}${formattedReg}</span>`;
-      if (metrics.changePP !== 0) {
-          html += ` <span class="opacity-80 text-[11px] ml-0.5">(${signPP}${formattedPP})</span>`;
+
+      const isPrivacy = window.privacyState && window.privacyState.enabled;
+
+      const changeReg = Math.round(metrics.changeReg || 0);
+      const changePP  = Math.round(metrics.changePP  || 0);
+      const changeFX  = Math.round(metrics.changeFX  || 0);
+      const assetGain = (metrics.assetGain !== undefined)
+          ? Math.round(metrics.assetGain)
+          : (changeReg - changeFX);
+
+      const totalMove = changeReg + changePP;
+      const isTotPos   = totalMove >= 0;
+      const isAssetPos = assetGain >= 0;
+      const isFxPos    = changeFX >= 0;
+      const isFxZero   = (changeFX === 0);
+
+      function fmtSignedVal(val) {
+          if (isPrivacy) return '****';
+          const num = Math.round(val);
+          if (num === 0) return '0 €';
+          const sign = num > 0 ? '+' : '-';
+          return `${sign}${formatCurrency(Math.abs(num), 'EUR', 0)}`;
       }
 
-      // Badge conciso con icona per la componente cambio EUR/USD
-      const changeFX = metrics.changeFX || 0;
-      if (Math.abs(changeFX) >= 1) {
-          const isFxPos = changeFX >= 0;
-          const signFX = isFxPos ? '+' : '-';
-          const formattedFX = formatCurrency(Math.abs(changeFX), 'EUR', 0);
-          const assetOnlyGain = (metrics.changeReg || 0) - changeFX;
-          const signAsset = assetOnlyGain >= 0 ? '+' : '-';
-          const formattedAsset = formatCurrency(Math.abs(assetOnlyGain), 'EUR', 0);
+      const totStr   = fmtSignedVal(changeReg);
+      const assetStr = fmtSignedVal(assetGain);
+      const fxStr    = fmtSignedVal(changeFX);
 
-          html += `<span class="inline-flex items-center gap-0.5 ml-1 px-1 py-0.2 rounded text-[10px] font-bold bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700"
-                         title="Impatto cambio EUR/USD: ${signFX}${formattedFX} (Variazione titoli: ${signAsset}${formattedAsset})">
-              <span class="material-symbols-outlined text-[11px] text-blue-500">currency_exchange</span>
-              <span class="${isFxPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} font-black">${signFX}${formattedFX}</span>
-          </span>`;
+      // Percentage
+      let pctStr = '';
+      if (!isPrivacy && metrics.totalValue) {
+          const prevBase = metrics.totalValue - (metrics.changeReg || 0) - (metrics.changePP || 0);
+          if (prevBase > 0) {
+              const pct = ((metrics.changeReg + (metrics.changePP || 0)) / prevBase) * 100;
+              const signPct = pct >= 0 ? '+' : '';
+              pctStr = `${signPct}${pct.toFixed(1)}%`;
+          }
       }
 
+      varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm inline-flex items-center gap-1 ${isTotPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+      
+      let html = `<span>${totStr}</span>`;
+      if (pctStr) {
+          html += ` <span class="opacity-80 text-[11px] font-bold">(${pctStr})</span>`;
+      }
+      if (changePP !== 0) {
+          const ppSign = changePP >= 0 ? '+' : '-';
+          const ppStr = isPrivacy ? '****' : `${ppSign}${formatCurrency(Math.abs(changePP), 'EUR', 0)}`;
+          html += ` <span class="opacity-80 text-[10px] ml-0.5">(${ppStr})</span>`;
+      }
       varEl.innerHTML = html;
       varEl.classList.remove('hidden');
+
+      if (bdEl) {
+          const assetCol = isAssetPos ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-rose-600 dark:text-rose-400 font-black';
+          const fxCol    = isFxZero ? 'text-slate-400 font-bold' : (isFxPos ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-rose-600 dark:text-rose-400 font-black');
+          
+          bdEl.innerHTML = `
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100/90 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-slate-500 dark:text-slate-400"
+                    title="Variazione Asset in Euro">
+                  <span class="material-symbols-outlined text-[11px] text-slate-400">show_chart</span>
+                  <span>Asset:</span>
+                  <span class="${assetCol}">${assetStr}</span>
+              </span>
+              <span class="text-slate-400 font-black text-[10px] select-none">+</span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100/90 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-slate-500 dark:text-slate-400"
+                    title="Impatto Cambio Euro/Dollaro">
+                  <span class="material-symbols-outlined text-[11px] text-blue-500">currency_exchange</span>
+                  <span>Cambio:</span>
+                  <span class="${fxCol}">${fxStr}</span>
+              </span>
+          `;
+          bdEl.classList.remove('hidden');
+      }
   }
 
   async function mobUpdateDashboard(prefetchedData = null) {
@@ -440,7 +484,10 @@
               changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0),
               changeFX: (selectedPortfolioIds.length === 0 && data.global && data.global.totalChangeFX !== undefined)
                   ? Number(data.global.totalChangeFX)
-                  : filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueFX_EUR) || 0), 0)
+                  : filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueFX_EUR) || 0), 0),
+              assetGain: (selectedPortfolioIds.length === 0 && data.global && data.global.totalAssetChange !== undefined)
+                  ? Number(data.global.totalAssetChange)
+                  : filtered.reduce((sum, p) => sum + (parseFloat(p.assetChangeEUR) || ((parseFloat(p.changeValueEUR) || 0) - (parseFloat(p.changeValueFX_EUR) || 0))), 0)
           };
           window._mobCurrentMetrics = metrics;
 

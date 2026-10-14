@@ -771,9 +771,11 @@
             const signFX = isFxPos ? '+' : '-';
             const strFX = formatSafe(Math.abs(changeFX), 0);
             const fxCol = isFxPos ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400';
-            fxHtml = `<span class="inline-flex items-center gap-0.5 ml-1 px-1 py-0.2 rounded text-[10px] font-black bg-white/70 dark:bg-slate-800/80 ${fxCol} border border-slate-200/60 dark:border-slate-700/60" title="Impatto cambio EUR/USD: ${signFX}${strFX}"><span class="material-symbols-outlined text-[11px] text-blue-500">currency_exchange</span><span>${signFX}${strFX}</span></span>`;
+            const assetOnlyGain = changeReg - changeFX;
+            const strAsset = formatGainPart(assetOnlyGain, true);
+            fxHtml = `<span class="inline-flex items-center gap-0.5 ml-1 px-1 py-0.2 rounded text-[10px] font-black bg-white/70 dark:bg-slate-800/80 ${fxCol} border border-slate-200/60 dark:border-slate-700/60" title="Impatto cambio EUR/USD: ${signFX}${strFX} (Asset: ${strAsset})"><span class="material-symbols-outlined text-[11px] text-blue-500">currency_exchange</span><span>${signFX}${strFX}</span></span>`;
             fxMobHtml = `<span style="margin-left:2px; font-weight:800; font-size:10px; color:${isFxPos ? '#34d399' : '#fb7185'};">💱${signFX}${strFX}</span>`;
-            fxTooltip = ` | Cambio EUR/USD: ${signFX}${strFX}`;
+            fxTooltip = ` | Gain Totale = Asset ${strAsset} + Cambio €/$ ${signFX}${strFX}`;
         }
 
         // Desktop

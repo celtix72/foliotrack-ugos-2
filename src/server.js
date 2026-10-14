@@ -140,6 +140,8 @@ async function calculateMarketStats(userId) {
             totalChange: stats.totalChange,
             totalChangePrePost: stats.totalChangePrePost,
             totalChangePercent: stats.changePercent,
+            totalChangeFX: stats.totalChangeFX,
+            totalAssetChange: stats.totalAssetChange,
             liveRate: liveRate,
             individualPortfolios: stats.portfolios || [], // Added to support granular push info
             assets: assets.map(a => ({
@@ -1740,6 +1742,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         totalChange: globalChangeEUR,
         totalChangePrePost: globalChangePrePostEUR,
         totalChangeFX: Math.round(globalChangeFX_EUR * 100) / 100,
+        totalAssetChange: Math.round((globalChangeEUR - globalChangeFX_EUR) * 100) / 100,
         totalGain: lastPoint.profit || 0,
         investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
         changePercent: (totalValueEUR - globalChangeEUR - globalChangePrePostEUR) > 0 
