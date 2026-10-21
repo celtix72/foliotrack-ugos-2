@@ -2,17 +2,51 @@ const axios = require('axios');
 
 async function fetchBorsaItalianaHistory(ticker, isin) {
     try {
-        const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=1Y&adjustment=true&add-last-price=true`;
+        const cleanIsin = isin.trim().toUpperCase();
+        const suffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+        };
+
+        let token = null;
+        let summaryUrl = null;
+        let exchcode = 'XMIL';
+
+        for (const sfx of suffixes) {
+            const u = `https://grafici.borsaitaliana.it/summary-chart/${cleanIsin}${sfx}?lang=it`;
+            try {
+                const resp = await axios.get(u, { headers, timeout: 5000 });
+                if (resp.data) {
+                    const tokenMatch = resp.data.match(/token="([^"]+)"/);
+                    const exchMatch = resp.data.match(/exchcode="([^"]+)"/);
+                    if (tokenMatch) {
+                        token = tokenMatch[1];
+                        summaryUrl = u;
+                        if (exchMatch && exchMatch[1]) exchcode = exchMatch[1];
+                        break;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        if (!token) {
+            console.error(`Token not found for ${cleanIsin}`);
+            return null;
+        }
+
+        const url = `https://grafici.borsaitaliana.it/api/instruments/${cleanIsin},${exchcode},ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
         console.log(`Fetching: ${url}`);
         const resp = await axios.get(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': 'https://www.borsaitaliana.it/',
-                'Accept': 'application/json, text/plain, */*',
-                'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+                ...headers,
+                'Authorization': `Bearer ${token}`,
+                'Referer': summaryUrl,
+                'Accept': 'application/json, text/plain, */*'
             },
-            timeout: 5000
+            timeout: 10000
         });
+
         if (resp.data && resp.data.history && resp.data.history.historyDt) {
             const map = {};
             resp.data.history.historyDt.forEach(h => {
@@ -31,14 +65,15 @@ async function fetchBorsaItalianaHistory(ticker, isin) {
 }
 
 async function test() {
-    const prices = await fetchBorsaItalianaHistory('BTPMz30', 'IT0005594483');
+    const isin = 'IT0005583486';
+    const ticker = 'BTPMz30';
+    console.log(`Testing history fetch for ${ticker} (${isin})...`);
+    const prices = await fetchBorsaItalianaHistory(ticker, isin);
     if (prices && Object.keys(prices).length > 0) {
-        console.log(`✅ Success! Found ${Object.keys(prices).length} historical points.`);
-        const sampleDate = Object.keys(prices).sort()[0];
-        console.log(`Sample: ${sampleDate} => ${prices[sampleDate]}`);
-        
-        // Check for March 2024 specifically if available in 1Y (Wait, 1Y is too short for March 2024 now)
-        // Let's try 5Y
+        const dates = Object.keys(prices).sort();
+        console.log(`✅ Success! Found ${dates.length} historical points.`);
+        console.log(`First date: ${dates[0]} => ${prices[dates[0]]}`);
+        console.log(`Latest date: ${dates[dates.length - 1]} => ${prices[dates[dates.length - 1]]}`);
     } else {
         console.log('❌ Failed to fetch historical prices.');
     }

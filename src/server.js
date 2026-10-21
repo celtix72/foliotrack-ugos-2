@@ -1267,6 +1267,69 @@ function clearPerformanceCache() {
 }
 
 // ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
+async function scrapeBorsaItalianaScheda(cleanIsin, assetType = '') {
+    if (!cleanIsin || typeof cleanIsin !== 'string') return null;
+    const searchUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${cleanIsin}&lang=it`;
+    const headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+    };
+    try {
+        const resp = await axios.get(searchUrl, { headers, maxRedirects: 5, timeout: 8000 });
+        const html = resp.data || '';
+        const finalUrl = (resp.request && resp.request.res && resp.request.res.responseUrl) || (resp.config && resp.config.url) || searchUrl;
+
+        let name = null;
+        const nameMatch = html.match(/<a href="[^"]*\/scheda\/[^"]*\.html[^"]*">([^<]+)<\/a>/i);
+        if (nameMatch) {
+            name = nameMatch[1].trim();
+        } else {
+            const titleMatch = html.match(/<title>([^|<]+)[|<]/i);
+            if (titleMatch) name = titleMatch[1].replace(/quotazioni.*$/i, '').trim();
+        }
+
+        let price = null;
+        const priceMatch = html.match(/class="[^"]*-formatPrice[^"]*"[^>]*>\s*<strong>\s*([0-9.,]+)\s*<\/strong>/i);
+        if (priceMatch) {
+            price = parseFloat(priceMatch[1].replace(',', '.'));
+        }
+
+        let variation = null;
+        const varMatch = html.match(/class="[^"]*-percPrice[^"]*"[^>]*>\s*<strong>\s*([+-]?[0-9.,]+)%\s*<\/strong>/i);
+        if (varMatch) {
+            variation = parseFloat(varMatch[1].replace(',', '.'));
+        }
+
+        let quoteDate = null;
+        const dateMatch = html.match(/Ultimo Contratto:[\s\S]*?<strong>\s*(\d{2})\/(\d{2})\/(\d{2})/i);
+        if (dateMatch) {
+            quoteDate = `20${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+        }
+
+        const suffixMatch = finalUrl.match(new RegExp(cleanIsin + '(-[A-Z0-9]+)', 'i'));
+        const detectedSuffix = suffixMatch ? suffixMatch[1] : null;
+
+        if (price && price > 0) {
+            const check = isValidQuotePrice(price, { isin: cleanIsin, type: assetType || 'Bond', dataSource: 'B_ITA' });
+            if (check.valid) {
+                return {
+                    success: true,
+                    name,
+                    price,
+                    variation: variation !== null ? parseFloat(variation.toFixed(3)) : 0,
+                    quoteDate: quoteDate || new Date().toISOString().split('T')[0],
+                    detectedSuffix,
+                    finalUrl
+                };
+            }
+        }
+    } catch (e) {
+        // Fallback to token API
+    }
+    return null;
+}
+
 async function B_ITA(isin, assetType = '') {
     if (!isin || typeof isin !== 'string') {
         return { success: false, error: 'Invalid or missing ISIN', isin };
@@ -1274,12 +1337,20 @@ async function B_ITA(isin, assetType = '') {
     const cleanIsin = isin.trim().toUpperCase();
     const finalUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${cleanIsin}&lang=it`;
 
+    // Step 0: Scrape official Borsa Italiana HTML scheda first (provides name, verified price, and exact suffix)
+    const htmlScrape = await scrapeBorsaItalianaScheda(cleanIsin, assetType);
+
     const headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
     };
 
-    const suffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
+    // If HTML scrape detected the exact suffix (e.g. -MOTX), prioritize it
+    const baseSuffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
+    const suffixes = (htmlScrape && htmlScrape.detectedSuffix)
+        ? [htmlScrape.detectedSuffix, ...baseSuffixes.filter(s => s !== htmlScrape.detectedSuffix)]
+        : baseSuffixes;
+
     let summaryUrl = null;
     let token = null;
     let exchcode = 'XMIL';
@@ -1305,6 +1376,19 @@ async function B_ITA(isin, assetType = '') {
     }
 
     if (!token) {
+        if (htmlScrape && htmlScrape.price > 0) {
+            logger.info(`B_ITA Scraper [${cleanIsin}]: Token not found, successfully recovered price via HTML scheda: ${htmlScrape.price}`);
+            return {
+                success: true,
+                price: htmlScrape.price,
+                variation: htmlScrape.variation !== null ? htmlScrape.variation : 0,
+                name: htmlScrape.name,
+                source: 'SCHEDA_HTML',
+                quoteDate: htmlScrape.quoteDate,
+                isin: cleanIsin,
+                url: htmlScrape.finalUrl || finalUrl
+            };
+        }
         logger.warn(`B_ITA Scraper: Token not found across any summary-chart suffix for ${cleanIsin}`);
         return { success: false, error: 'Token not found across any summary-chart suffix', isin: cleanIsin, url: finalUrl };
     }
@@ -1333,6 +1417,8 @@ async function B_ITA(isin, assetType = '') {
                         const prevClose = parseFloat(pt.previousClosingPx);
                         if (prevClose > 0) {
                             variation = ((price - prevClose) / prevClose) * 100;
+                        } else if (htmlScrape && htmlScrape.variation !== null) {
+                            variation = htmlScrape.variation;
                         }
                         const rawTime = pt.time ? String(pt.time) : '';
                         const qDate = rawTime.length >= 8 
@@ -1342,6 +1428,7 @@ async function B_ITA(isin, assetType = '') {
                             success: true,
                             price,
                             variation: variation !== null ? parseFloat(variation.toFixed(3)) : 0,
+                            name: htmlScrape?.name || null,
                             source: 'INTRADAY',
                             quoteDate: qDate,
                             isin: cleanIsin,
@@ -1384,6 +1471,8 @@ async function B_ITA(isin, assetType = '') {
                         if (prevPrice > 0) {
                             variation = ((price - prevPrice) / prevPrice) * 100;
                         }
+                    } else if (htmlScrape && htmlScrape.variation !== null) {
+                        variation = htmlScrape.variation;
                     }
                     const rawDt = validEntry.dt ? String(validEntry.dt) : '';
                     const parsedDate = rawDt.length === 8 ? `${rawDt.substring(0,4)}-${rawDt.substring(4,6)}-${rawDt.substring(6,8)}` : null;
@@ -1391,6 +1480,7 @@ async function B_ITA(isin, assetType = '') {
                         success: true,
                         price,
                         variation: parseFloat(variation.toFixed(3)),
+                        name: htmlScrape?.name || null,
                         source: `HISTORY_${period}`,
                         quoteDate: parsedDate,
                         isin: cleanIsin,
@@ -1403,16 +1493,35 @@ async function B_ITA(isin, assetType = '') {
         }
     }
 
-    logger.warn(`B_ITA Scraper: No price found for ${cleanIsin} across intraday and all history periods`);
-    return { success: false, error: 'Price not found in API response', url: finalUrl, isin: cleanIsin };
+    // Step 4: Final fallback to HTML scheda if API had no points
+    if (htmlScrape && htmlScrape.price > 0) {
+        logger.info(`B_ITA Scraper [${cleanIsin}]: API history had no points, falling back to HTML scheda: ${htmlScrape.price}`);
+        return {
+            success: true,
+            price: htmlScrape.price,
+            variation: htmlScrape.variation !== null ? htmlScrape.variation : 0,
+            name: htmlScrape.name,
+            source: 'SCHEDA_HTML',
+            quoteDate: htmlScrape.quoteDate,
+            isin: cleanIsin,
+            url: htmlScrape.finalUrl || finalUrl
+        };
+    }
+
+    logger.warn(`B_ITA Scraper: No price found for ${cleanIsin} across intraday, history and HTML scheda`);
+    return { success: false, error: 'Price not found in API response or HTML scheda', url: finalUrl, isin: cleanIsin };
 }
 
 async function fetchBorsaItalianaHistory(ticker, isin) {
     if (!isin || typeof isin !== 'string') return null;
     const cleanIsin = isin.trim().toUpperCase();
-    const suffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
+    const htmlScrape = await scrapeBorsaItalianaScheda(cleanIsin, 'Bond');
+    const baseSuffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
+    const suffixes = (htmlScrape && htmlScrape.detectedSuffix)
+        ? [htmlScrape.detectedSuffix, ...baseSuffixes.filter(s => s !== htmlScrape.detectedSuffix)]
+        : baseSuffixes;
     const headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
     };
 

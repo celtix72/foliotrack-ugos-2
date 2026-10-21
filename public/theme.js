@@ -1341,53 +1341,23 @@
                 body: JSON.stringify({ isin })
             }).catch(() => null);
 
-            if (srvRes && srvRes.ok) {
-                const data = await srvRes.json();
-                if (data.success) {
+            if (srvRes) {
+                const data = await srvRes.json().catch(() => ({}));
+                if (srvRes.ok && data.success) {
                     window.showNotification(`Storico Borsa Italiana ripristinato con successo per ${ticker} (${data.count} punti)`, 'success');
                     window.dispatchEvent(new CustomEvent('asset-history-updated', { detail: { ticker } }));
                     if (typeof loadAssetChart === 'function' && document.getElementById('asset-chart-modal')?.style.display !== 'none') {
                         loadAssetChart(ticker);
                     }
                     return true;
-                }
-            }
-
-            // Priority 2: Direct browser fallback if backend endpoint was unreachable
-            const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
-            
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`B_ITA API failed (${response.status})`);
-            
-            const data = await response.json();
-            if (data && data.history && data.history.historyDt) {
-                const isBond = (ticker && ticker.toUpperCase().startsWith('BTP')) || (isin && isin.toUpperCase().startsWith('IT'));
-                const history = data.history.historyDt.filter(h => {
-                    const px = parseFloat(h.closePx || h.price || 0);
-                    if (px <= 0.0001) return false;
-                    if (isBond && (px < 20.0 || px > 200.0)) return false;
-                    return true;
-                });
-                
-                const importRes = await fetch('/api/assets/import-history', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ticker, history })
-                });
-                
-                if (importRes.ok) {
-                    window.showNotification(`Successfully restored ${history.length} price points for ${ticker}`, 'success');
-                    window.dispatchEvent(new CustomEvent('asset-history-updated', { detail: { ticker } }));
-                    if (typeof loadAssetChart === 'function' && document.getElementById('asset-chart-modal')?.style.display !== 'none') {
-                        loadAssetChart(ticker);
-                    }
-                    return true;
+                } else if (data.error) {
+                    throw new Error(data.error);
                 }
             }
             return false;
         } catch (err) {
             console.error(`[B_ITA] Error:`, err);
-            window.showNotification(`Failed to recover history for ${ticker}.`, 'error');
+            window.showNotification(`Failed to recover history for ${ticker}: ${err.message || ''}`, 'error');
             return false;
         }
     };

@@ -11,12 +11,41 @@ const {
  * Unified search helper querying both Google Finance and Yahoo Finance.
  * Cross-references tickers between both services.
  */
-async function performUnifiedSearch(query, yf) {
+async function performUnifiedSearch(query, yf, bItaFn = null) {
     const raw = (query || '').trim();
     if (!raw || raw.length < 2) return [];
 
     const suggestions = [];
     const seenSymbols = new Set();
+
+    // 0. If user typed an Italian/Euro bond ISIN (e.g. IT0005583486 or XS...)
+    const isItIsin = (/^IT[0-9A-Z]{10}$/i.test(raw) || /^XS[0-9]{10}$/i.test(raw));
+    if (isItIsin && typeof bItaFn === 'function') {
+        try {
+            const cleanIsin = raw.toUpperCase();
+            const bRes = await bItaFn(cleanIsin, 'Bond');
+            if (bRes && bRes.success && bRes.price > 0) {
+                const sym = bRes.isin || cleanIsin;
+                suggestions.push({
+                    symbol: sym,
+                    ticker: sym,
+                    googleTicker: null,
+                    name: bRes.name || `BTP ${sym}`,
+                    exchange: `${bRes.price} EUR • XMIL (Borsa Italiana)`,
+                    exchDisp: 'XMIL',
+                    type: 'Bond',
+                    quoteType: 'BOND',
+                    currency: 'EUR',
+                    price: bRes.price,
+                    changePercent: bRes.variation || 0,
+                    isRealtime: 1,
+                    source: 'B_ITA',
+                    isin: sym
+                });
+                seenSymbols.add(sym);
+            }
+        } catch (e) {}
+    }
 
     // 1. If user typed a Google Finance ticker format (e.g. ENI:BIT, AAPL:NASDAQ, VWRL:AMS)
     if (raw.includes(':')) {
@@ -141,11 +170,31 @@ router.get('/market/search', requireAuth, async (req, res) => {
     if (!q || q.length < 2) return res.json([]);
 
     try {
-        const suggestions = await performUnifiedSearch(q, yahooFinance);
+        const suggestions = await performUnifiedSearch(q, yahooFinance, B_ITA);
         res.json(suggestions);
     } catch (err) {
         console.error('Search error:', err.message);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Diagnostic scraper test for Borsa Italiana
+router.get('/market/scrape-test', requireAuth, requireAdmin, async (req, res) => {
+    const isin = (req.query.isin || '').trim().toUpperCase();
+    const type = (req.query.type || 'obbligazioni').trim();
+    if (!isin) return res.status(400).json({ success: false, error: 'ISIN is required' });
+    try {
+        const result = await B_ITA(isin, type);
+        const formattedVariation = (result && result.variation !== undefined && result.variation !== null)
+            ? `${result.variation >= 0 ? '+' : ''}${result.variation}%`
+            : '0.0%';
+        res.json({
+            ...result,
+            variation: formattedVariation,
+            numericVariation: result?.variation ?? 0
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -232,11 +281,17 @@ router.get('/market/movers', requireAuth, async (req, res) => {
     }
 });
 
-// Validate a ticker against Yahoo Finance (used by bulk import)
+// Validate a ticker against Yahoo Finance and Borsa Italiana
 router.get('/validate-ticker', requireAuth, async (req, res) => {
-    const ticker = (req.query.ticker || "").trim().toUpperCase();
-    const isin = (req.query.isin || "").trim().toUpperCase();
+    let ticker = (req.query.ticker || "").trim().toUpperCase();
+    let isin = (req.query.isin || "").trim().toUpperCase();
     if (!ticker && !isin) return res.status(400).send('Ticker or ISIN required');
+
+    // If ticker is an ISIN (e.g. IT0005583486 or XS...) and isin param wasn't passed, infer isin
+    const tickerIsIsin = /^IT[0-9A-Z]{10}$/.test(ticker) || /^XS[0-9]{10}$/.test(ticker);
+    if (!isin && tickerIsIsin) {
+        isin = ticker;
+    }
 
     if (ticker === 'CASH' || ticker.startsWith('CASH_')) {
         return res.json({
@@ -282,21 +337,35 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
         });
     }
 
-    // BTP* tickers are virtual Italian bond labels — not searchable directly on YF or Borsa Italiana.
-    // They are always treated as B_ITA bonds, identified only by their ISIN.
+    // BTP* tickers are virtual Italian bond labels — if ISIN is provided, query B_ITA for live quote
     if (ticker.startsWith('BTP')) {
+        let livePrice = 0;
+        let liveChange = 0;
+        let bondName = ticker;
+        if (isin && (/^IT[0-9A-Z]{10}$/.test(isin) || /^XS[0-9]{10}$/.test(isin)) && typeof B_ITA === 'function') {
+            try {
+                const bRes = await B_ITA(isin, 'Bond');
+                if (bRes && bRes.success && bRes.price > 0) {
+                    livePrice = bRes.price;
+                    liveChange = bRes.variation || 0;
+                    if (bRes.name) bondName = bRes.name;
+                }
+            } catch (e) {}
+        }
         return res.json({
             valid: true,
             isBTP: true,
             ticker,
-            name: ticker,
+            name: bondName,
             currency: 'EUR',
             exchange: 'XMIL',
             type: 'Bond',
-            currentPrice: 0,
+            currentPrice: livePrice,
+            changePercent: liveChange,
             pe: null,
             country: 'Italy',
-            dataSource: 'B_ITA'
+            dataSource: 'B_ITA',
+            isin: isin || null
         });
     }
 
@@ -308,23 +377,56 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
     }
 
     try {
-        let metadata = await fetchAssetMetadata(yTicker, gTicker);
-        
+        let metadata = null;
+
+        // If ISIN is provided or ticker itself is an Italian bond ISIN, query B_ITA directly
+        const isItIsin = (isin && (/^IT[0-9A-Z]{10}$/.test(isin) || /^XS[0-9]{10}$/.test(isin))) || tickerIsIsin;
+        if (isItIsin && typeof B_ITA === 'function') {
+            const targetIsin = isin || ticker;
+            try {
+                const bResult = await B_ITA(targetIsin, 'Bond');
+                if (bResult && bResult.success && bResult.price > 0) {
+                    const priceValid = isValidQuotePrice(bResult.price, { ticker: yTicker || targetIsin, isin: targetIsin, type: 'Bond', dataSource: 'B_ITA' }).valid;
+                    metadata = {
+                        ticker: yTicker || targetIsin,
+                        name: bResult.name || yTicker || targetIsin,
+                        currentPrice: priceValid ? bResult.price : 0,
+                        changePercent: priceValid ? (bResult.variation || 0) : 0,
+                        quoteType: 'Bond',
+                        type: 'Bond',
+                        exchange: 'XMIL',
+                        currency: 'EUR',
+                        country: 'Italy',
+                        dataSource: 'B_ITA',
+                        isin: targetIsin
+                    };
+                }
+            } catch (bErr) {
+                logger.warn(`B_ITA validation error for ${targetIsin}: ${bErr.message}`);
+            }
+        }
+
+        if (!metadata) {
+            metadata = await fetchAssetMetadata(yTicker, gTicker);
+        }
+
         // Fallback to ISIN if ticker fails or is just a label (like ROM39)
-        if ((!metadata || yTicker.length < 3) && isin && isin.length >= 10) {
-            const isItIsin = /^IT[0-9A-Z]{10}$/.test(isin) || /^XS[0-9]{10}$/.test(isin);
-            if (isItIsin) {
-                const bResult = await B_ITA(isin);
-                if (bResult.success) {
+        if ((!metadata || yTicker.length < 3) && isin && isin.length >= 10 && !metadata && typeof B_ITA === 'function') {
+            const isItIsinFallback = /^IT[0-9A-Z]{10}$/.test(isin) || /^XS[0-9]{10}$/.test(isin);
+            if (isItIsinFallback) {
+                const bResult = await B_ITA(isin, 'Bond');
+                if (bResult && bResult.success) {
                     const priceValid = isValidQuotePrice(bResult.price, { ticker: yTicker, isin, type: 'Bond', dataSource: 'B_ITA' }).valid;
                     metadata = {
                         ticker: yTicker || isin,
                         name: bResult.name || yTicker || isin,
                         currentPrice: priceValid ? bResult.price : 0,
-                        changePercent: priceValid ? bResult.variation : 0,
+                        changePercent: priceValid ? (bResult.variation || 0) : 0,
                         quoteType: 'Bond',
+                        type: 'Bond',
                         exchange: 'XMIL',
                         currency: 'EUR',
+                        country: 'Italy',
                         dataSource: 'B_ITA',
                         isin: isin
                     };
@@ -343,7 +445,7 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
     } catch {
         // Try search fallback
         try {
-            const results = await performUnifiedSearch(ticker, yahooFinance);
+            const results = await performUnifiedSearch(ticker, yahooFinance, B_ITA);
             res.json({ valid: false, suggestions: results.slice(0, 5) });
         } catch {
             res.json({ valid: false, suggestions: [] });
@@ -373,7 +475,7 @@ router.get('/asset-search', requireAuth, async (req, res) => {
     const { query } = req.query;
     if (!query) return res.status(400).send('query is required');
     try {
-        const results = await performUnifiedSearch(query, yahooFinance);
+        const results = await performUnifiedSearch(query, yahooFinance, B_ITA);
         res.json(results);
     } catch (err) {
         console.error('Search error:', err);
