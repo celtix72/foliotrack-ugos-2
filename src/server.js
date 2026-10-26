@@ -563,9 +563,9 @@ app.use('/api/history', require('./routes/history')({
 
 // ─── MARKET STATUS LOGIC ─────────────────────────────────────────────────────
 const MARKET_HOURS = {
-    MIL: { open: '09:00', close: '17:30', name: 'Borsa Italiana' },
-    GER: { open: '09:00', close: '17:30', name: 'XETRA' },
-    USA: { open: '15:30', close: '22:00', name: 'NYSE/NASDAQ' }
+    MIL: { open: '09:00', close: '17:30', name: 'Borsa Italiana', tz: 'Europe/Rome' },
+    GER: { open: '09:00', close: '17:30', name: 'XETRA', tz: 'Europe/Berlin' },
+    USA: { open: '09:30', close: '16:00', name: 'NYSE/NASDAQ', tz: 'America/New_York' }
 };
 
 /**
@@ -982,13 +982,17 @@ function isEUMarketHoliday(date) {
 
 function getMarketStatus() {
     const now = new Date();
-    const day = now.getUTCDay(); // 0=Sun, 6=Sat
-    const isWeekend = (day === 0 || day === 6);
     
     // Convert current time to CET/CEST (Italy/Germany time)
     const cetNow = new Intl.DateTimeFormat('it-IT', {
         timeZone: 'Europe/Rome',
-        hour: '2-digit', minute: '2-digit', hour12: false
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).format(now);
+
+    // Convert current time to US Eastern Time (NYSE/NASDAQ time)
+    const usNow = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
     }).format(now);
 
     const usLocalDate = getLocalDate('America/New_York');
@@ -1003,28 +1007,24 @@ function getMarketStatus() {
     const isUSHoliday = isUSWeekend || isUSMarketHoliday(usLocalDate);
     const isEUHoliday = isEUWeekend || isEUMarketHoliday(euLocalDate);
 
-    const checkOpen = (hours, isClosed) => {
-        if (isClosed) return false;
-        return cetNow >= hours.open && cetNow <= hours.close;
-    };
-
-    const milOpen = checkOpen(MARKET_HOURS.MIL, isEUHoliday);
-    const gerOpen = checkOpen(MARKET_HOURS.GER, isEUHoliday);
-    const usOpen  = checkOpen(MARKET_HOURS.USA, isUSHoliday);
-
     const milHrs = MARKET_HOURS.MIL;
+    const gerHrs = MARKET_HOURS.GER;
     const usHrs  = MARKET_HOURS.USA;
+
+    const milOpen = !isEUHoliday && cetNow >= milHrs.open && cetNow <= milHrs.close;
+    const gerOpen = !isEUHoliday && cetNow >= gerHrs.open && cetNow <= gerHrs.close;
+    const usOpen  = !isUSHoliday && usNow >= usHrs.open && usNow <= usHrs.close;
 
     const status = {
         EU: milOpen || gerOpen,
         US: usOpen,
         EU_openedToday: !isEUHoliday && cetNow >= milHrs.open,
-        US_openedToday: !isUSHoliday && cetNow >= usHrs.open,
+        US_openedToday: !isUSHoliday && usNow >= usHrs.open,
         EU_preMarketActive: !isEUHoliday && cetNow >= '08:00' && cetNow < milHrs.open,
         EU_afterHoursActive: !isEUHoliday && cetNow >= '18:00' && cetNow <= '20:30',
-        US_preMarketActive: !isUSHoliday && cetNow >= '10:00' && cetNow < usHrs.open,
-        US_afterHoursActive: !isUSHoliday && (cetNow > usHrs.close || cetNow < '02:05'),
-        isWeekend,
+        US_preMarketActive: !isUSHoliday && usNow >= '04:00' && usNow < usHrs.open,
+        US_afterHoursActive: !isUSHoliday && usNow > usHrs.close && usNow <= '20:00',
+        isWeekend: (euDay === 0 || euDay === 6),
         isEUHoliday,
         isUSHoliday,
         anyOpen: milOpen || gerOpen || usOpen
@@ -1037,12 +1037,13 @@ function getMarketStatus() {
  * Determines whether an asset's quote reflects today's active/completed trading session.
  * Prevents quotes from previous trading sessions (e.g. Friday's close) or updates before market open from being treated as today's.
  */
-function isAssetQuoteFromToday(asset, isUS = null, openedToday = null, todayRomeStr = null) {
+function isAssetQuoteFromToday(asset, isUS = null, openedToday = null, todayDateStr = null) {
     if (!asset) return false;
     if (isUS === null) isUS = isUSMarket(asset);
-    if (!todayRomeStr) {
-        todayRomeStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(new Date());
-    }
+    
+    const tz = isUS ? 'America/New_York' : 'Europe/Rome';
+    const openTime = isUS ? '09:30' : '09:00';
+    const todayExchangeStr = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
 
     if (openedToday === null) {
         const ms = getMarketStatus();
@@ -1052,22 +1053,21 @@ function isAssetQuoteFromToday(asset, isUS = null, openedToday = null, todayRome
     // If market has not opened today, regular trading has not taken place today
     if (!openedToday) return false;
 
-    // If quoteDate is explicitly from a previous day, it is definitely stale
-    if (asset.quoteDate && asset.quoteDate < todayRomeStr) {
+    // If quoteDate is explicitly from a previous day in the exchange's timezone, it is definitely stale
+    if (asset.quoteDate && asset.quoteDate < todayExchangeStr) {
         return false;
     }
 
-    // Check updatedAt in Europe/Rome timezone
-    const openTimeCet = isUS ? '15:30' : '09:00';
+    // Check updatedAt in exchange's timezone
     if (asset.updatedAt) {
         try {
             const upDate = new Date(asset.updatedAt.includes('T') ? asset.updatedAt : asset.updatedAt.replace(' ', 'T') + 'Z');
             if (!isNaN(upDate.getTime())) {
-                const upCetDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(upDate);
-                const upCetTime = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', hour12: false }).format(upDate);
+                const upExchangeDate = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(upDate);
+                const upExchangeTime = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(upDate);
 
-                // Quote must have been updated today at or after market open
-                if (upCetDate === todayRomeStr && upCetTime >= openTimeCet) {
+                // Quote must have been updated today at or after market open in exchange's timezone
+                if (upExchangeDate === todayExchangeStr && upExchangeTime >= openTime) {
                     return true;
                 }
             }
@@ -4206,9 +4206,9 @@ setInterval(async () => {
     // Format current time in Europe/Rome (CET/CEST)
     const cetTimeFormatter = new Intl.DateTimeFormat('it-IT', {
         timeZone: 'Europe/Rome',
-        hour: '2-digit', minute: '2-digit', hour12: false
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
     });
-    const cetTime = cetTimeFormatter.format(now); // e.g. "09:05", "15:35", "17:35", "22:05"
+    const cetTime = cetTimeFormatter.format(now); // e.g. "09:05", "14:35", "17:35", "21:05"
 
     for (const u of users) {
         const uSettings = database.getSettings(u.id);
@@ -4272,15 +4272,21 @@ setInterval(async () => {
 
         // ── A. CRITICAL MARKET BELL EVENTS (+5 min delay for stabilized data) ──
         if (eventsEnabled && (mode === 'smart' || mode === 'events_only')) {
+            const usTime = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/New_York',
+                hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            }).format(now);
+
             const bellEvents = [
-                { id: 'eu_open', timeMin: '09:05', timeMax: '09:09', isHoliday: status.isEUHoliday, label: '🔔 OpenUE' },
-                { id: 'us_open', timeMin: '15:35', timeMax: '15:39', isHoliday: status.isUSHoliday, label: '🔔 OpenUSA' },
-                { id: 'eu_close', timeMin: '17:35', timeMax: '17:39', isHoliday: status.isEUHoliday, label: '🔔 CloseUE' },
-                { id: 'us_close', timeMin: '22:05', timeMax: '22:09', isHoliday: status.isUSHoliday, label: '🔔 CloseUSA' }
+                { id: 'eu_open', tz: 'Europe/Rome', timeMin: '09:05', timeMax: '09:09', isHoliday: status.isEUHoliday, label: '🔔 OpenUE' },
+                { id: 'us_open', tz: 'America/New_York', timeMin: '09:35', timeMax: '09:39', isHoliday: status.isUSHoliday, label: '🔔 OpenUSA' },
+                { id: 'eu_close', tz: 'Europe/Rome', timeMin: '17:35', timeMax: '17:39', isHoliday: status.isEUHoliday, label: '🔔 CloseUE' },
+                { id: 'us_close', tz: 'America/New_York', timeMin: '16:05', timeMax: '16:09', isHoliday: status.isUSHoliday, label: '🔔 CloseUSA' }
             ];
 
             for (const ev of bellEvents) {
-                if (!ev.isHoliday && cetTime >= ev.timeMin && cetTime <= ev.timeMax) {
+                const currentTzTime = (ev.tz === 'America/New_York') ? usTime : cetTime;
+                if (!ev.isHoliday && currentTzTime >= ev.timeMin && currentTzTime <= ev.timeMax) {
                     const trigKey = `bell_trig_${u.id}_${ev.id}_${todayStr}`;
                     const alreadySent = global[trigKey] || uSettings[trigKey] === 'true';
                     if (!alreadySent) {
@@ -4405,10 +4411,8 @@ setInterval(async () => {
 
     // 2b. Scheduled Google Drive Zip Backup (Daily at 23:50 CET)
     const gdriveEnabled = settings.gdrive_enabled === 'true';
-    const nowHour = now.getHours();
-    const nowMin = now.getMinutes();
 
-    if (gdriveEnabled && lastGDriveBackupDate !== todayStr && nowHour === 23 && nowMin === 50) {
+    if (gdriveEnabled && lastGDriveBackupDate !== todayStr && cetTime === '23:50') {
         logger.info(`[GDrive] Starting 23:50 automated zipped backup to Google Drive...`);
         try {
             const gdriveService = require('./services/gdriveBackupService');
