@@ -97,10 +97,12 @@
                 
                 this.set(key, freshData);
 
-                if (typeof onUpdate === 'function') {
+                if (hasRenderedCache && typeof onUpdate === 'function') {
                     onUpdate(freshData);
                 } else if (typeof onData === 'function') {
                     onData(freshData, false);
+                } else if (typeof onUpdate === 'function') {
+                    onUpdate(freshData);
                 }
 
                 // If header update element exists, update it

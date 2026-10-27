@@ -3354,15 +3354,20 @@ function invalidatePageViewCache() {
 // Helper per iniettare la sidebar nelle viste desktop
 // NOTA: usare sempre fs.readFile + res.send() per ENTRAMBI mobile e desktop per rispettare Helmet CSP.
 function serveWithSidebar(req, res, file) {
-    // 1. Serve from in-memory cache if available (instant response)
-    if (_pageViewCache.has(file)) {
-        res.set('Content-Type', 'text/html; charset=utf-8');
-        return res.send(_pageViewCache.get(file));
-    }
-
     const isMobileView = file.includes('_mobile.html');
     const viewPath = path.join(__dirname, '../private_views', file);
     const fs = require('fs');
+
+    let viewMtime = 0;
+    try {
+        viewMtime = fs.statSync(viewPath).mtimeMs;
+    } catch (_) {}
+
+    const cached = _pageViewCache.get(file);
+    if (cached && cached.mtime === viewMtime) {
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        return res.send(cached.html);
+    }
 
     if (isMobileView) {
         return fs.readFile(viewPath, 'utf8', (err, viewData) => {
@@ -3370,7 +3375,7 @@ function serveWithSidebar(req, res, file) {
                 console.error(err);
                 return res.status(500).send('Error loading mobile view');
             }
-            _pageViewCache.set(file, viewData);
+            _pageViewCache.set(file, { mtime: viewMtime, html: viewData });
             res.set('Content-Type', 'text/html; charset=utf-8');
             res.send(viewData);
         });
@@ -3390,8 +3395,8 @@ function serveWithSidebar(req, res, file) {
             }
             const codeTime = getLastCodeModTime();
             const populatedSidebar = sidebarData.replace('{{CODE_BUILD_TIME}}', codeTime);
-            const finalHtml = viewData.replace(/<aside\s+id="app-sidebar"[^>]*>[\s\S]*?<\/aside>/, populatedSidebar);
-            _pageViewCache.set(file, finalHtml);
+            const finalHtml = viewData.replace(/<aside\s+id="app-sidebar"[^>]*>[\s\S]*?<\/aside>/, () => populatedSidebar);
+            _pageViewCache.set(file, { mtime: viewMtime, html: finalHtml });
             res.set('Content-Type', 'text/html; charset=utf-8');
             res.send(finalHtml);
         });

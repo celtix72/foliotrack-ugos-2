@@ -114,6 +114,7 @@
         </div>
         <div id="div-alert-details" class="hidden mt-2 bg-white/50 dark:bg-slate-900/50 border border-amber-500/20 rounded-xl p-4 shadow-sm">
         </div>
+    </div>
 
     <!-- Earnings Alert Banner -->
     <div id="earnings-alert-container" class="px-8 mt-6 -mb-2 hidden">
@@ -526,6 +527,7 @@
                     onUpdate: (freshData) => {
                         window._dashboardData = freshData;
                         updateDashboardUI(freshData);
+                        launchSecondaryWidgets();
                     }
                 });
             } else {
