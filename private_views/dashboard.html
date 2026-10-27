@@ -14,6 +14,7 @@
         .layout-toggle-btn.active { color: var(--primary); background: rgba(19, 91, 236, 0.1); border-color: var(--primary); }
     </style>
     <script src="/theme.js"></script>
+    <script src="/client_cache.js"></script>
     <script src="/header_indices.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -477,34 +478,67 @@
         }
     };
 
+    function renderMockMarkets() {
+        const mContainer = document.getElementById('market-container');
+        if (mContainer && (!mContainer.children || mContainer.children.length === 0)) {
+            mContainer.innerHTML = mockMarkets.map(m => `
+                <div class="p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-lg font-black tracking-tight">${m.val}</span>
+                        <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${m.perf}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
     async function loadDashboard(prefetchedData = null) {
         try {
-            const url = '/api/portfolios';
-            const data = prefetchedData || await (await fetch(url)).json();
-            window._dashboardData = data;
-            
-            updateDashboardUI(data);
-            
-            if (!prefetchedData) {
+            renderMockMarkets();
+
+            if (prefetchedData) {
+                window._dashboardData = prefetchedData;
+                updateDashboardUI(prefetchedData);
+                return;
+            }
+
+            if (window.ftCache) {
+                let secondaryWidgetsStarted = false;
+                const launchSecondaryWidgets = () => {
+                    if (secondaryWidgetsStarted) return;
+                    secondaryWidgetsStarted = true;
+                    initDashboardChart();
+                    initAllocationChart();
+                    loadDividendAlert();
+                    loadEarningsAlert();
+                    loadDailyGains();
+                    loadSixMonthSparkline();
+                };
+
+                // SWR: Render cached data immediately (0ms delay), revalidate in background
+                await ftCache.fetchSWR('dashboard_portfolios', '/api/portfolios', {
+                    onData: (data, isFromCache) => {
+                        window._dashboardData = data;
+                        updateDashboardUI(data);
+                        launchSecondaryWidgets();
+                    },
+                    onUpdate: (freshData) => {
+                        window._dashboardData = freshData;
+                        updateDashboardUI(freshData);
+                    }
+                });
+            } else {
+                const url = '/api/portfolios';
+                const data = await (await fetch(url)).json();
+                window._dashboardData = data;
+                updateDashboardUI(data);
                 initDashboardChart();
                 initAllocationChart();
                 loadDividendAlert();
                 loadEarningsAlert();
                 loadDailyGains();
                 loadSixMonthSparkline();
-                
-                const mContainer = document.getElementById('market-container');
-                if (mContainer) {
-                    mContainer.innerHTML = mockMarkets.map(m => `
-                        <div class="p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
-                            <div class="flex items-baseline justify-between">
-                                <span class="text-lg font-black tracking-tight">${m.val}</span>
-                                <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${m.perf}%</span>
-                            </div>
-                        </div>
-                    `).join('');
-                }
             }
         } catch (err) {
             console.error('Failed to load dashboard:', err);
@@ -824,190 +858,198 @@
         }
     }
 
-    async function loadDailyGains() {
+    function renderDailyGainsData(data) {
         const barsContainer = document.getElementById('daily-gains-bars');
         const totalLabel    = document.getElementById('daily-gains-total');
+        if (!barsContainer) return;
+
+        const days = data.days || [];
+        if (days.length === 0) {
+            barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
+            return;
+        }
+
+        if (days.length > 0 && window._dashboardMetrics) {
+            const authoritativeGain = (window._dashboardMetrics.changeReg || 0)
+                                    + (window._dashboardMetrics.changePP  || 0);
+            days[days.length - 1].gain = Math.round(authoritativeGain * 100) / 100;
+        }
+
+        const maxAbs = Math.max(...days.map(d => Math.abs(d.gain)), 1);
+        const weekTotal = days.reduce((s, d) => s + d.gain, 0);
+
+        barsContainer.innerHTML = days.slice().reverse().map((d, renderIdx) => {
+            const pct    = Math.round((Math.abs(d.gain) / maxAbs) * 100);
+            const isPos  = d.gain >= 0;
+            const color  = isPos ? '#10b981' : '#f43f5e';
+            const bg     = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+            const parts  = d.date.split('-');
+            const dayLabel = `${parts[2]}/${parts[1]}`;
+            const gainStr  = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
+            const isToday  = renderIdx === 0;
+            const todayDot = isToday ? `<div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full animate-pulse" style="background:${color}"></div>` : '';
+            return `
+            <div class="flex flex-col items-center gap-0.5 group relative" style="width:20px">
+                <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
+                     style="background:${color}; color:white">${gainStr}${isToday ? ' ●' : ''}</div>
+                <div class="relative w-full">
+                    ${todayDot}
+                    <div class="w-full rounded-sm transition-all duration-300"
+                         style="height:${Math.max(pct * 0.42, 3)}px; background:${color}; box-shadow: 0 0 4px ${color}40; ${isToday ? `outline: 1px solid ${color}; outline-offset: 1px;` : ''}"></div>
+                </div>
+                <span class="text-[7px] font-bold ${isToday ? 'text-primary' : 'text-slate-400'}">${dayLabel}</span>
+            </div>`;
+        }).join('');
+
+        if (totalLabel) {
+            const isPos = weekTotal >= 0;
+            totalLabel.style.color = isPos ? '#10b981' : '#f43f5e';
+            totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(weekTotal, 'EUR', 0);
+        }
+
+        if (window._dashboardMetrics && Math.abs(window._dashboardMetrics.changeFX || 0) >= 1) {
+            renderHeroDayVar(window._dashboardMetrics);
+        }
+    }
+
+    async function loadDailyGains() {
+        const barsContainer = document.getElementById('daily-gains-bars');
         if (!barsContainer) return;
 
         try {
             let url = '/api/analytics/daily-gains';
             if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
-            const res  = await fetch(url);
-            const data = await res.json();
-            const days = data.days || [];
+            const cacheKey = `daily_gains_${selectedPortfolioIds.join(',')}`;
 
-            if (days.length === 0) {
-                barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
-                return;
-            }
-
-            // ── Authoritative reconciliation of today's bar ────────────────────────────────────────
-            // window._dashboardMetrics is loaded from /api/portfolios BEFORE this function
-            // is called (see loadDashboard). It contains changeValueEUR + changeValuePrePostEUR,
-            // the exact same value shown in the Hero card (includes FX differential and
-            // pre/post market). We override the last trading day so the chart bar for
-            // "oggi" always matches the Hero card.
-            if (days.length > 0 && window._dashboardMetrics) {
-                const authoritativeGain = (window._dashboardMetrics.changeReg || 0)
-                                        + (window._dashboardMetrics.changePP  || 0);
-                days[days.length - 1].gain = Math.round(authoritativeGain * 100) / 100;
-            }
-
-            const maxAbs = Math.max(...days.map(d => Math.abs(d.gain)), 1);
-            // Recalculate weekTotal after the override so it stays consistent
-            const weekTotal = days.reduce((s, d) => s + d.gain, 0);
-
-            // Reverse so most recent day is on the LEFT
-            barsContainer.innerHTML = days.slice().reverse().map((d, renderIdx) => {
-                const pct    = Math.round((Math.abs(d.gain) / maxAbs) * 100);
-                const isPos  = d.gain >= 0;
-                const color  = isPos ? '#10b981' : '#f43f5e';
-                const bg     = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
-                const parts  = d.date.split('-');
-                const dayLabel = `${parts[2]}/${parts[1]}`;
-                const gainStr  = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
-                const isToday  = renderIdx === 0; // reversed → first rendered = most recent = today
-                const todayDot = isToday ? `<div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full animate-pulse" style="background:${color}"></div>` : '';
-                return `
-                <div class="flex flex-col items-center gap-0.5 group relative" style="width:20px">
-                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
-                         style="background:${color}; color:white">${gainStr}${isToday ? ' ●' : ''}</div>
-                    <div class="relative w-full">
-                        ${todayDot}
-                        <div class="w-full rounded-sm transition-all duration-300"
-                             style="height:${Math.max(pct * 0.42, 3)}px; background:${color}; box-shadow: 0 0 4px ${color}40; ${isToday ? `outline: 1px solid ${color}; outline-offset: 1px;` : ''}"></div>
-                    </div>
-                    <span class="text-[7px] font-bold ${isToday ? 'text-primary' : 'text-slate-400'}">${dayLabel}</span>
-                </div>`;
-            }).join('');
-
-            if (totalLabel) {
-                const isPos = weekTotal >= 0;
-                totalLabel.style.color = isPos ? '#10b981' : '#f43f5e';
-                totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(weekTotal, 'EUR', 0);
-            }
-
-            // Ensure the Hero FX badge is rendered with the now-confirmed metrics.
-            if (window._dashboardMetrics && Math.abs(window._dashboardMetrics.changeFX || 0) >= 1) {
-                renderHeroDayVar(window._dashboardMetrics);
+            if (window.ftCache) {
+                ftCache.fetchSWR(cacheKey, url, {
+                    onData: (data) => renderDailyGainsData(data)
+                });
+            } else {
+                const res  = await fetch(url);
+                const data = await res.json();
+                renderDailyGainsData(data);
             }
         } catch (err) {
             console.error('Daily gains chart error:', err);
         }
     }
 
-    async function loadSixMonthSparkline() {
+    function renderSixMonthSparklineData(raw) {
         const barsContainer = document.getElementById('sixm-sparkline-bars');
         const totalLabel    = document.getElementById('sixm-sparkline-total');
+        if (!barsContainer) return;
+
+        const points = Array.isArray(raw) ? raw : (raw.dataPoints || []);
+        if (points.length < 2) {
+            barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
+            return;
+        }
+
+        // --- Group data points by calendar month ---
+        const monthMap = {};
+        for (const pt of points) {
+            const key = (pt.date || '').substring(0, 7); // "YYYY-MM"
+            if (!key) continue;
+            const profit = (pt.value || 0) - (pt.netDeposits || 0);
+            if (!monthMap[key]) monthMap[key] = { first: profit, last: profit };
+            else monthMap[key].last = profit;
+        }
+
+        const sortedKeys = Object.keys(monthMap).sort();
+        const months = [];
+        for (let i = 1; i < sortedKeys.length; i++) {
+            const prev = monthMap[sortedKeys[i - 1]];
+            const curr = monthMap[sortedKeys[i]];
+            const gain = curr.last - prev.last;
+            const monthNum = parseInt(sortedKeys[i].split('-')[1], 10);
+            months.push({ key: sortedKeys[i], monthNum, gain });
+        }
+        if (months.length === 0 && sortedKeys.length === 1) {
+            const curr = monthMap[sortedKeys[0]];
+            const gain = curr.last - curr.first;
+            const monthNum = parseInt(sortedKeys[0].split('-')[1], 10);
+            months.push({ key: sortedKeys[0], monthNum, gain });
+        }
+        const bars = months.slice(-12);
+
+        if (bars.length === 0) {
+            barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
+            return;
+        }
+
+        const maxAbs    = Math.max(...bars.map(d => Math.abs(d.gain)), 1);
+        const sixMTotal = bars.reduce((s, d) => s + d.gain, 0);
+        const currentYear = new Date().getFullYear().toString();
+        const reversedBars = bars.slice().reverse();
+
+        let html = '';
+        let prevBarYear = null;
+        for (let i = 0; i < reversedBars.length; i++) {
+            const d = reversedBars[i];
+            const barYear = d.key.split('-')[0];
+            const isCurrentYear = barYear === currentYear;
+
+            if (prevBarYear !== null && prevBarYear !== barYear) {
+                html += `<div class="self-stretch flex flex-col items-center justify-end gap-0.5" style="width:6px">
+                    <div style="width:1px;height:${Math.max(42 * 0.6, 12)}px;background:rgba(148,163,184,0.4);border-radius:1px;"></div>
+                    <span class="text-[6px] font-bold" style="color:rgba(148,163,184,0.6);writing-mode:vertical-rl;transform:rotate(180deg);line-height:1">${barYear}</span>
+                </div>`;
+            }
+            prevBarYear = barYear;
+
+            const pct     = Math.round((Math.abs(d.gain) / maxAbs) * 100);
+            const isPos   = d.gain >= 0;
+            const barColor = isPos ? '#10b981' : '#f43f5e';
+            const barAlpha = isCurrentYear ? 1 : 0.4;
+            const labelAlpha = isCurrentYear ? 1 : 0.45;
+            const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
+            const barH    = Math.max(pct * 0.42, 3);
+            const isCurrentMonth = (i === 0);
+            const liveIndicator = isCurrentMonth
+                ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${barColor}" class="animate-pulse"></div>`
+                : '';
+            const monthNames = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+            const monthShort = `${monthNames[d.monthNum]} '${barYear.slice(-2)}`;
+            const tooltipText = `${monthShort}: ${gainStr}${isCurrentMonth ? ' ●' : ''}`;
+            html += `
+            <div class="flex flex-col items-center gap-0.5 group relative" style="width:18px">
+                <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none shadow-sm"
+                     style="background:${barColor}; color:white">${tooltipText}</div>
+                <div style="position:relative;width:100%">
+                    ${liveIndicator}
+                    <div class="w-full rounded-sm transition-all duration-300"
+                         style="height:${barH}px; background:${barColor}; opacity:${barAlpha}; box-shadow: 0 0 4px ${barColor}40; ${isCurrentMonth ? `outline:1px solid ${barColor};outline-offset:1px;` : ''}"></div>
+                </div>
+                <span class="text-[7px] font-bold" style="color:${isCurrentMonth ? '#135bec' : `rgba(100,116,139,${labelAlpha})`}">${d.monthNum}</span>
+            </div>`;
+        }
+        barsContainer.innerHTML = html;
+
+        if (totalLabel) {
+            const isPos = sixMTotal >= 0;
+            totalLabel.style.color = isPos ? '#10b981' : '#f43f5e';
+            totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(sixMTotal, 'EUR', 0) + ' 12 mesi';
+        }
+    }
+
+    async function loadSixMonthSparkline() {
+        const barsContainer = document.getElementById('sixm-sparkline-bars');
         if (!barsContainer) return;
 
         try {
             let url = '/api/analytics/global-performance?range=1Y';
             if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
-            const res   = await fetch(url);
-            const raw   = await res.json();
-            const points = Array.isArray(raw) ? raw : (raw.dataPoints || []);
+            const cacheKey = `sparkline_1y_${selectedPortfolioIds.join(',')}`;
 
-            if (points.length < 2) {
-                barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
-                return;
-            }
-
-            // --- Group data points by calendar month ---
-            // Build a map: "YYYY-MM" -> { firstProfit, lastProfit }
-            const monthMap = {};
-            for (const pt of points) {
-                const key = (pt.date || '').substring(0, 7); // "YYYY-MM"
-                if (!key) continue;
-                const profit = (pt.value || 0) - (pt.netDeposits || 0);
-                if (!monthMap[key]) monthMap[key] = { first: profit, last: profit };
-                else monthMap[key].last = profit;
-            }
-
-            // Sort month keys and keep only the 6 most recent months with full data
-            const sortedKeys = Object.keys(monthMap).sort();
-            // We want month-over-month gain (last of month minus last of prior month)
-            const months = [];
-            for (let i = 1; i < sortedKeys.length; i++) {
-                const prev = monthMap[sortedKeys[i - 1]];
-                const curr = monthMap[sortedKeys[i]];
-                const gain = curr.last - prev.last;
-                const monthNum = parseInt(sortedKeys[i].split('-')[1], 10);
-                months.push({ key: sortedKeys[i], monthNum, gain });
-            }
-            if (months.length === 0 && sortedKeys.length === 1) {
-                const curr = monthMap[sortedKeys[0]];
-                const gain = curr.last - curr.first;
-                const monthNum = parseInt(sortedKeys[0].split('-')[1], 10);
-                months.push({ key: sortedKeys[0], monthNum, gain });
-            }
-            // Take last 12 months
-            const bars = months.slice(-12);
-
-            if (bars.length === 0) {
-                barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
-                return;
-            }
-
-            const maxAbs    = Math.max(...bars.map(d => Math.abs(d.gain)), 1);
-            const sixMTotal = bars.reduce((s, d) => s + d.gain, 0);
-
-            const currentYear = new Date().getFullYear().toString();
-
-            // Reverse so most recent month is on the LEFT
-            const reversedBars = bars.slice().reverse();
-
-            // Find where year changes (for the divider between prev year → current year)
-            // Since reversed: index 0 = most recent month
-            // We insert a divider AFTER the last current-year bar (i.e. before first prev-year bar)
-            let html = '';
-            let prevBarYear = null;
-            for (let i = 0; i < reversedBars.length; i++) {
-                const d = reversedBars[i];
-                const barYear = d.key.split('-')[0];
-                const isCurrentYear = barYear === currentYear;
-
-                // Insert year divider when we cross from current year to previous year
-                if (prevBarYear !== null && prevBarYear !== barYear) {
-                    html += `<div class="self-stretch flex flex-col items-center justify-end gap-0.5" style="width:6px">
-                        <div style="width:1px;height:${Math.max(42 * 0.6, 12)}px;background:rgba(148,163,184,0.4);border-radius:1px;"></div>
-                        <span class="text-[6px] font-bold" style="color:rgba(148,163,184,0.6);writing-mode:vertical-rl;transform:rotate(180deg);line-height:1">${barYear}</span>
-                    </div>`;
-                }
-                prevBarYear = barYear;
-
-                const pct     = Math.round((Math.abs(d.gain) / maxAbs) * 100);
-                const isPos   = d.gain >= 0;
-                const barColor = isPos ? '#10b981' : '#f43f5e';
-                const barAlpha = isCurrentYear ? 1 : 0.4;
-                const labelAlpha = isCurrentYear ? 1 : 0.45;
-                const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
-                const barH    = Math.max(pct * 0.42, 3);
-                const isCurrentMonth = (i === 0); // reversed → first = most recent month
-                const liveIndicator = isCurrentMonth
-                    ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${barColor}" class="animate-pulse"></div>`
-                    : '';
-                const monthNames = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-                const monthShort = `${monthNames[d.monthNum]} '${barYear.slice(-2)}`;
-                const tooltipText = `${monthShort}: ${gainStr}${isCurrentMonth ? ' ●' : ''}`;
-                html += `
-                <div class="flex flex-col items-center gap-0.5 group relative" style="width:18px">
-                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none shadow-sm"
-                         style="background:${barColor}; color:white">${tooltipText}</div>
-                    <div style="position:relative;width:100%">
-                        ${liveIndicator}
-                        <div class="w-full rounded-sm transition-all duration-300"
-                             style="height:${barH}px; background:${barColor}; opacity:${barAlpha}; box-shadow: 0 0 4px ${barColor}40; ${isCurrentMonth ? `outline:1px solid ${barColor};outline-offset:1px;` : ''}"></div>
-                    </div>
-                    <span class="text-[7px] font-bold" style="color:${isCurrentMonth ? '#135bec' : `rgba(100,116,139,${labelAlpha})`}">${d.monthNum}</span>
-                </div>`;
-            }
-            barsContainer.innerHTML = html;
-
-            if (totalLabel) {
-                const isPos = sixMTotal >= 0;
-                totalLabel.style.color = isPos ? '#10b981' : '#f43f5e';
-                totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(sixMTotal, 'EUR', 0) + ' 12 mesi';
+            if (window.ftCache) {
+                ftCache.fetchSWR(cacheKey, url, {
+                    onData: (raw) => renderSixMonthSparklineData(raw)
+                });
+            } else {
+                const res = await fetch(url);
+                const raw = await res.json();
+                renderSixMonthSparklineData(raw);
             }
         } catch (err) {
             console.error('12M sparkline error:', err);
@@ -1338,7 +1380,7 @@
             }).join('');
     }
 
-    async function updateDashboardChart() {
+    async function updateDashboardChart(forceNetwork = false) {
         if (!dashboardChart) return;
         const benchmark = document.getElementById('benchmark-selector')?.value || '';
         const mode = currentChartMode; // 'eur' | 'pnl' | 'pct'
@@ -1346,9 +1388,24 @@
         try {
             let url = `/api/analytics/global-performance?range=${currentChartRange}&benchmark=${benchmark}`;
             if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
+            const cacheKey = `chart_${currentChartRange}_${benchmark}_${selectedPortfolioIds.join(',')}`;
 
-            const res = await fetch(url);
-            const result = await res.json();
+            let result = null;
+            if (window.ftCache && !forceNetwork) {
+                result = ftCache.get(cacheKey);
+                // Background revalidation (completely decoupled)
+                ftCache.fetchSWR(cacheKey, url, {
+                    onUpdate: () => {
+                        updateDashboardChart(true);
+                    }
+                });
+            }
+
+            if (!result) {
+                const res = await fetch(url);
+                result = await res.json();
+                if (window.ftCache) ftCache.set(cacheKey, result);
+            }
             const dataPoints = result.dataPoints || [];
 
             dashboardChart.rawPoints = dataPoints;
@@ -1543,17 +1600,16 @@
     }
 
     async function initAllocationChart() {
-        if (allocationChart) allocationChart.destroy();
         const ctx = document.getElementById('allocationChart')?.getContext('2d');
         if (!ctx) return;
 
-        try {
-            let url = '/api/analytics/global-allocation';
-            if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
-            
-            const res = await fetch(url);
-            const data = await res.json();
-            
+        let url = '/api/analytics/global-allocation';
+        if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
+        const cacheKey = 'allocation_' + (selectedPortfolioIds.slice().sort().join(',') || 'all');
+
+        const renderAllocation = (data) => {
+            if (!data || !Array.isArray(data)) return;
+            if (allocationChart) allocationChart.destroy();
             allocationChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -1588,8 +1644,7 @@
                             }
                         }
                     }
-                }
-            });
+                });
 
             const legend = document.getElementById('allocation-legend');
             if (legend) {
@@ -1611,7 +1666,20 @@
                     }).join('');
                 }
             }
-        } catch (err) { console.error(err); }
+        };
+
+        if (window.ftCache) {
+            await window.ftCache.fetchSWR(cacheKey, url, {
+                onData: renderAllocation,
+                onUpdate: renderAllocation
+            });
+        } else {
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                renderAllocation(data);
+            } catch (err) { console.error(err); }
+        }
     }
 
     window.openPortfolioModal = async function() {
@@ -1760,51 +1828,61 @@
         const skeleton  = document.getElementById('news-skeleton');
         if (!container) return;
 
-        let allItems = [];
-        try {
-            const url = _newsFilter === 'portfolio' ? '/api/news?filter=portfolio' : '/api/news';
-            const res = await fetch(url);
-            allItems = await res.json();
-        } catch (e) {
-            console.error('Failed to fetch news', e);
-        }
+        const renderNewsItems = (allItems) => {
+            if (skeleton) skeleton.remove();
+            if (!allItems || allItems.length === 0) {
+                container.innerHTML = _newsFilter === 'portfolio'
+                    ? '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia per i tuoi titoli. Prova il feed completo.</p>'
+                    : '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento. Vai in Impostazioni per aggiungere sorgenti RSS.</p>';
+                return;
+            }
 
-        if (skeleton) skeleton.remove();
+            container.innerHTML = allItems.map(item => {
+                const source = item.source_name || 'News';
+                const color  = SOURCE_COLORS[source] || '#94a3b8';
+                const time   = relativeTime(item.pubDate);
+                const title  = (item.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const href   = item.link ? `href="${item.link}" target="_blank" rel="noopener noreferrer"` : '';
+                
+                const tagsHtml = (item.matchedTags && item.matchedTags.length > 0) 
+                  ? item.matchedTags.map(tag => `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-primary/10 text-primary uppercase ml-1.5">${tag}</span>`).join('')
+                  : '';
 
-        if (allItems.length === 0) {
-            container.innerHTML = _newsFilter === 'portfolio'
-                ? '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia per i tuoi titoli. Prova il feed completo.</p>'
-                : '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento. Vai in Impostazioni per aggiungere sorgenti RSS.</p>';
-            return;
-        }
-
-        container.innerHTML = allItems.map(item => {
-            const source = item.source_name || 'News';
-            const color  = SOURCE_COLORS[source] || '#94a3b8';
-            const time   = relativeTime(item.pubDate);
-            const title  = item.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const href   = item.link ? `href="${item.link}" target="_blank" rel="noopener noreferrer"` : '';
-            
-            const tagsHtml = (item.matchedTags && item.matchedTags.length > 0) 
-              ? item.matchedTags.map(tag => `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-primary/10 text-primary uppercase ml-1.5">${tag}</span>`).join('')
-              : '';
-
-            return `
-                <a ${href} class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
-                    <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center mb-1.5 flex-wrap gap-2">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
+                return `
+                    <a ${href} class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
+                        <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center mb-1.5 flex-wrap gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
+                                </div>
+                                ${tagsHtml}
+                                ${time ? `<span class="text-[10px] text-slate-400 font-bold ml-auto">${time}</span>` : ''}
                             </div>
-                            ${tagsHtml}
-                            ${time ? `<span class="text-[10px] text-slate-400 font-bold ml-auto">${time}</span>` : ''}
+                            <p class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors leading-snug line-clamp-2">${title}</p>
                         </div>
-                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors leading-snug line-clamp-2">${title}</p>
-                    </div>
-                </a>
-            `;
-        }).join('');
+                    </a>
+                `;
+            }).join('');
+        };
+
+        const url = _newsFilter === 'portfolio' ? '/api/news?filter=portfolio' : '/api/news';
+        const cacheKey = 'news_' + _newsFilter;
+
+        if (window.ftCache) {
+            await window.ftCache.fetchSWR(cacheKey, url, {
+                onData: renderNewsItems,
+                onUpdate: renderNewsItems
+            });
+        } else {
+            try {
+                const res = await fetch(url);
+                const allItems = await res.json();
+                renderNewsItems(allItems);
+            } catch (e) {
+                console.error('Failed to fetch news', e);
+            }
+        }
     }
 
 

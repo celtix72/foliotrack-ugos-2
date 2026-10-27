@@ -146,6 +146,7 @@
 <script src="/transaction_modal.js"></script>
 <script src="/mobile_transactions.js"></script>
     <script src="/auth.js"></script>
+    <script src="/client_cache.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
@@ -736,25 +737,12 @@
     return !!status.anyOpen;
   }
 
-  async function mobLoadAssets() {
-    try {
-      if (!_marketStatusData) {
-        try {
-          const statusRes = await fetch('/api/market-status?t=' + Date.now());
-          _marketStatusData = await statusRes.json();
-        } catch(e) {}
-      }
-
-      const [res, notesRes] = await Promise.all([
-        fetch('/api/assets?t=' + Date.now()),
-        fetch('/api/notes')
-      ]);
-      const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
-      const notesList = await notesRes.json();
-      window.mobNotesMap = {};
-      notesList.forEach(n => {
-          if (n.asset_symbol) window.mobNotesMap[n.asset_symbol] = n;
-      });
+  function mobRenderAssetsList(assets, notesList) {
+    if (!assets) return;
+    window.mobNotesMap = {};
+    (notesList || []).forEach(n => {
+        if (n.asset_symbol) window.mobNotesMap[n.asset_symbol] = n;
+    });
       
       const sortSelect = document.getElementById('mob-sort-select');
       if (sortSelect) sortSelect.value = _marketSortMode;
@@ -1380,7 +1368,35 @@
         }
         updateMarketScale();
       }
+  }
 
+  async function mobLoadAssets() {
+    try {
+      if (window.ftCache) {
+        const cached = ftCache.get('market_mobile_bundle');
+        if (cached && cached.assets) {
+          mobRenderAssetsList(cached.assets, cached.notesList);
+        }
+      }
+
+      if (!_marketStatusData) {
+        try {
+          const statusRes = await fetch('/api/market-status');
+          _marketStatusData = await statusRes.json();
+        } catch(e) {}
+      }
+
+      const [res, notesRes] = await Promise.all([
+        fetch('/api/assets'),
+        fetch('/api/notes')
+      ]);
+      const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
+      const notesList = await notesRes.json();
+      
+      if (window.ftCache) {
+        ftCache.set('market_mobile_bundle', { assets, notesList });
+      }
+      mobRenderAssetsList(assets, notesList);
     } catch(e) { console.error('[MOB] Market load error:', e); }
   }
 

@@ -1263,7 +1263,9 @@ function clearPerformanceCache() {
     historicalPricesCache = {};
     watchlistPerformanceCache = { data: {}, lastUpdated: 0 };
     if (eurUsdCache) eurUsdCache.timestamp = 0; // Reset currency cache as well
-    logger.info('Performance, Historical Prices, and Exchange Rate caches invalidated.');
+    if (typeof _allPortfolioStatsCache !== 'undefined') _allPortfolioStatsCache.clear();
+    if (typeof _pageViewCache !== 'undefined') _pageViewCache.clear();
+    logger.info('Performance, Historical Prices, Exchange Rate, and Portfolio Stats caches invalidated.');
 }
 
 // ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
@@ -1618,7 +1620,18 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 
 
-async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds = null) {
+const _allPortfolioStatsCache = new Map();
+const ALL_PORTFOLIO_STATS_TTL = 30 * 1000; // 30 seconds in-memory cache
+
+async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds = null, forceRefresh = false) {
+    const cacheKey = `${userId || 'all'}_${tagIds ? tagIds.sort().join(',') : 'all'}`;
+    if (!forceRefresh && _allPortfolioStatsCache.has(cacheKey)) {
+        const cached = _allPortfolioStatsCache.get(cacheKey);
+        if (Date.now() - cached.ts < ALL_PORTFOLIO_STATS_TTL) {
+            return cached.data;
+        }
+    }
+
     let liveRate = liveRateInput;
     if (!liveRate) {
         liveRate = await getEurUsdRate();
@@ -1660,7 +1673,8 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
     const { rateToday, rateYesterday, changePct: eurUsdChangePct } = await getEurUsdFxRates();
 
     const pIds = rows.map(r => r.id);
-    const perfData = await calculatePerformanceHistory(pIds, 'ALL', false, true, null, userId, tagIds);
+    // Optimize: 1M is sufficient to retrieve 7D/30D variations and current gain without simulating years of history
+    const perfData = await calculatePerformanceHistory(pIds, '1M', false, true, null, userId, tagIds);
     const globalPoints = perfData.dataPoints || [];
     const individual = perfData.individual || {};
 
@@ -1863,6 +1877,9 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         topLosersAbs: losersAbs.slice(0, 5),
         userTickers: uniqueTickers
     };
+
+    _allPortfolioStatsCache.set(cacheKey, { data: result, ts: Date.now() });
+    return result;
 }
 
 // Helper to calculate holdings for a portfolio
@@ -3270,8 +3287,8 @@ async function triggerHistoryRebuild(portfolioId = null) {
 // STATIC FILES  (must come AFTER all API routes)
 // ════════════════════════════════════════════════════════════════════════════
 
-app.use(express.static(path.join(__dirname, '../public')));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use(express.static(path.join(__dirname, '../public'), { maxAge: '2h', etag: true }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '2h', etag: true }));
 
 // Helper to detect mobile devices
 const isMobile = (req) => {
@@ -3296,133 +3313,64 @@ app.get('/admin', requireAuth, (req, res) => res.redirect('/settings'));
 
 
 let _cachedLastCodeModTime = null;
-let _lastCodeModCheckTs = 0;
 
-function getLastCodeModTime() {
-    const now = Date.now();
-    if (_cachedLastCodeModTime && (now - _lastCodeModCheckTs < 15000)) {
-        return _cachedLastCodeModTime;
-    }
-
+function resolveCodeModTime() {
     const fs = require('fs');
     const projectRoot = path.join(__dirname, '..');
-    let resolvedTime = null;
-
-    // 1. Try reading build_info.json (committed in repo & copied into Docker image)
-    let buildInfoTime = null;
-    let buildInfoTs = 0;
     try {
         const buildInfoPath = path.join(projectRoot, 'build_info.json');
         if (fs.existsSync(buildInfoPath)) {
             const data = JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'));
             if (data && data.lastModified) {
-                buildInfoTime = data.lastModified;
-                buildInfoTs = Number(data.timestamp) || 0;
+                return data.lastModified;
             }
         }
-    } catch (e) {}
+    } catch (_) {}
 
-    // 2. If git is available (e.g. host or dev environment), check latest commit
     try {
-        const { execSync } = require('child_process');
-        const gitDateStr = execSync('git log -1 --format="%cd" --date=format:"%d/%m/%y %H:%M"', {
-            cwd: projectRoot,
-            encoding: 'utf8',
-            timeout: 2000,
-            stdio: ['ignore', 'pipe', 'ignore']
-        }).trim();
-
-        if (gitDateStr) {
-            resolvedTime = gitDateStr;
-        }
-
-        const gitStatus = execSync('git status --porcelain', {
-            cwd: projectRoot,
-            encoding: 'utf8',
-            timeout: 2000,
-            stdio: ['ignore', 'pipe', 'ignore']
-        }).trim();
-
-        // If working tree is clean, git commit time is the exact truth
-        if (!gitStatus && gitDateStr) {
-            _cachedLastCodeModTime = gitDateStr;
-            _lastCodeModCheckTs = now;
-            return _cachedLastCodeModTime;
-        }
-    } catch (e) {
-        // Git not available (e.g. inside Docker alpine container) - continue with filesystem check
-    }
-
-    // 3. Check filesystem mtimes of key application folders
-    let maxFsMtime = 0;
-    try {
-        const scanDirs = [
-            path.join(projectRoot, 'src'),
-            path.join(projectRoot, 'public'),
-            path.join(projectRoot, 'private_views')
-        ];
-
-        for (const dir of scanDirs) {
-            if (!fs.existsSync(dir)) continue;
-            const files = fs.readdirSync(dir, { recursive: true });
-            for (const f of files) {
-                try {
-                    const fullPath = path.join(dir, f.toString());
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isFile() && stat.mtimeMs > maxFsMtime) {
-                        maxFsMtime = stat.mtimeMs;
-                    }
-                } catch (e) {}
-            }
-        }
-    } catch (e) {}
-
-    if (maxFsMtime > 0 && maxFsMtime > (buildInfoTs || 0)) {
-        const d = new Date(maxFsMtime);
+        const stat = fs.statSync(__filename);
+        const d = new Date(stat.mtimeMs);
         const pad = n => String(n).padStart(2, '0');
-        const day = pad(d.getDate());
-        const month = pad(d.getMonth() + 1);
-        const year = String(d.getFullYear()).slice(-2);
-        const hours = pad(d.getHours());
-        const minutes = pad(d.getMinutes());
-        resolvedTime = `${day}/${month}/${year} ${hours}:${minutes}`;
-    } else if (buildInfoTime) {
-        resolvedTime = buildInfoTime;
+        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${String(d.getFullYear()).slice(-2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch (_) {
+        return 'N/A';
     }
+}
 
-    // Fallback: mtime of current server file
-    if (!resolvedTime) {
-        try {
-            const stat = fs.statSync(__filename);
-            const d = new Date(stat.mtimeMs);
-            const pad = n => String(n).padStart(2, '0');
-            resolvedTime = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${String(d.getFullYear()).slice(-2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-        } catch (e) {
-            resolvedTime = 'N/A';
-        }
+function getLastCodeModTime() {
+    if (!_cachedLastCodeModTime) {
+        _cachedLastCodeModTime = resolveCodeModTime();
     }
-
-    _cachedLastCodeModTime = resolvedTime;
-    _lastCodeModCheckTs = now;
     return _cachedLastCodeModTime;
 }
 
+// In-Memory Page View Cache (serves assembled HTML in <1ms without disk I/O)
+const _pageViewCache = new Map();
+
+function invalidatePageViewCache() {
+    _pageViewCache.clear();
+}
+
 // Helper per iniettare la sidebar nelle viste desktop
-// NOTA: usare sempre fs.readFile + res.send() per ENTRAMBI mobile e desktop.
-// res.sendFile() in Express 5 può bypassare gli header impostati dai middleware (es. Helmet CSP),
-// mentre res.send() li rispetta correttamente → questo era la causa del "script-src 'none'" sulla mobile dashboard.
+// NOTA: usare sempre fs.readFile + res.send() per ENTRAMBI mobile e desktop per rispettare Helmet CSP.
 function serveWithSidebar(req, res, file) {
+    // 1. Serve from in-memory cache if available (instant response)
+    if (_pageViewCache.has(file)) {
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        return res.send(_pageViewCache.get(file));
+    }
+
     const isMobileView = file.includes('_mobile.html');
     const viewPath = path.join(__dirname, '../private_views', file);
     const fs = require('fs');
 
     if (isMobileView) {
-        // Per le viste mobile: leggi e invia con res.send() per preservare gli header CSP di Helmet
         return fs.readFile(viewPath, 'utf8', (err, viewData) => {
             if (err) {
                 console.error(err);
                 return res.status(500).send('Error loading mobile view');
             }
+            _pageViewCache.set(file, viewData);
             res.set('Content-Type', 'text/html; charset=utf-8');
             res.send(viewData);
         });
@@ -3443,6 +3391,8 @@ function serveWithSidebar(req, res, file) {
             const codeTime = getLastCodeModTime();
             const populatedSidebar = sidebarData.replace('{{CODE_BUILD_TIME}}', codeTime);
             const finalHtml = viewData.replace(/<aside\s+id="app-sidebar"[^>]*>[\s\S]*?<\/aside>/, populatedSidebar);
+            _pageViewCache.set(file, finalHtml);
+            res.set('Content-Type', 'text/html; charset=utf-8');
             res.send(finalHtml);
         });
     });

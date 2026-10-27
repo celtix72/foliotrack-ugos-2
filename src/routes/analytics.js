@@ -704,6 +704,12 @@ module.exports = function (dependencies) {
 
             if (pIds.length === 0) return res.json({ days: [] });
 
+            const cacheKey = `daily_gains_${req.user.id}_${pIds.sort().join(',')}`;
+            const performanceResultsCache = getPerformanceResultsCache();
+            if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < ANALYTICS_CACHE_TTL)) {
+                return res.json(performanceResultsCache[cacheKey].data);
+            }
+
             // 1. Calculate 1-month continuous daily performance points using the core calculation engine
             // This is transaction-backed, cash-adjusted, FX-aware, and properly attributes latest trading session prices.
             let tradingDays = [];
@@ -840,7 +846,12 @@ module.exports = function (dependencies) {
 
             tradingDays.sort((a, b) => a.date.localeCompare(b.date));
 
-            res.json({ days: tradingDays.slice(-7) });
+            const responsePayload = { days: tradingDays.slice(-7) };
+            if (typeof setPerformanceResultsCache === 'function') {
+                setPerformanceResultsCache(cacheKey, { data: responsePayload, timestamp: Date.now() });
+            }
+
+            res.json(responsePayload);
         } catch (err) {
             logger.error('Daily gains error:', err);
             res.status(500).json({ error: err.message });

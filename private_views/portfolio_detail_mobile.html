@@ -34,6 +34,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="/asset_chart_component.js"></script>
     <script src="/auth.js"></script>
+    <script src="/client_cache.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
@@ -556,60 +557,72 @@
   }
 
   // ── Portfolio List ────────────────────────────────
+  function mobRenderPortfolioListData(data) {
+    if (!data) return;
+    const g = data.global || {};
+    const portfolios = data.portfolios || [];
+
+    // Global mini-stats
+    const netEl = document.getElementById('mob-global-net');
+    const gainEl = document.getElementById('mob-global-gain');
+    const dvEl = document.getElementById('mob-global-dayvar');
+
+    if (netEl) netEl.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-gnet', 0);
+    if (gainEl) {
+      const gain = g.totalGain || 0;
+      gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+      gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, 'EUR', 'mob-ggain', 0);
+    }
+    if (dvEl) {
+      const dv = g.changeValue || 0;
+      dvEl.style.color = dv >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+      dvEl.textContent = (dv >= 0 ? '+' : '') + formatPrivacy(dv, 'EUR', 'mob-gdv', 0);
+    }
+
+    const container = document.getElementById('mob-portf-cards');
+    if (!container) return;
+    if (portfolios.length === 0) {
+      container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div><div class="mob-empty-sub">Crea il tuo primo portafoglio</div></div>';
+      return;
+    }
+    container.innerHTML = portfolios.map(p => {
+      const changeVal = p.changeValue || 0;
+      const isPos = changeVal >= 0;
+      const sign = (isPos && changeVal !== 0) ? '+' : '';
+      const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+
+      return `
+        <div class="mob-holding-item mb-2" onclick="mobOpenPortfolio(${p.id})">
+          <div class="mob-holding-logo" style="background-color:${p.color||'var(--mob-primary)'}; color: white;">
+            <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'FILL' 1;">work</span>
+          </div>
+          <div class="mob-holding-info">
+            <div class="mob-holding-ticker truncate">${p.name}</div>
+            <div class="mob-holding-name">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
+          </div>
+          <div class="mob-holding-values">
+            <div class="mob-holding-value text-primary dark:text-primary">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
+            <div class="flex items-center justify-end mt-0.5">
+              <div class="mob-holding-gain" style="color: ${gainColor};">${sign}${formatPrivacy(changeVal, p.currency, 'mob-dv1-'+p.id, 0)}</div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
   async function mobLoadPortfolioList() {
-    try {
-      const res = await fetch('/api/portfolios');
-      const data = await res.json();
-      const g = data.global || {};
-      const portfolios = data.portfolios || [];
-
-      // Global mini-stats
-      const netEl = document.getElementById('mob-global-net');
-      const gainEl = document.getElementById('mob-global-gain');
-      const dvEl = document.getElementById('mob-global-dayvar');
-
-      if (netEl) netEl.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-gnet', 0);
-      if (gainEl) {
-        const gain = g.totalGain || 0;
-        gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, 'EUR', 'mob-ggain', 0);
-      }
-      if (dvEl) {
-        const dv = g.changeValue || 0;
-        dvEl.style.color = dv >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        dvEl.textContent = (dv >= 0 ? '+' : '') + formatPrivacy(dv, 'EUR', 'mob-gdv', 0);
-      }
-
-      const container = document.getElementById('mob-portf-cards');
-      if (!container) return;
-      if (portfolios.length === 0) {
-        container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div><div class="mob-empty-sub">Crea il tuo primo portafoglio</div></div>';
-        return;
-      }
-      container.innerHTML = portfolios.map(p => {
-        const changeVal = p.changeValue || 0;
-        const isPos = changeVal >= 0;
-        const sign = (isPos && changeVal !== 0) ? '+' : '';
-        const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-
-        return `
-          <div class="mob-holding-item mb-2" onclick="mobOpenPortfolio(${p.id})">
-            <div class="mob-holding-logo" style="background-color:${p.color||'var(--mob-primary)'}; color: white;">
-              <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'FILL' 1;">work</span>
-            </div>
-            <div class="mob-holding-info">
-              <div class="mob-holding-ticker truncate">${p.name}</div>
-              <div class="mob-holding-name">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
-            </div>
-            <div class="mob-holding-values">
-              <div class="mob-holding-value text-primary dark:text-primary">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
-              <div class="flex items-center justify-end mt-0.5">
-                <div class="mob-holding-gain" style="color: ${gainColor};">${sign}${formatPrivacy(changeVal, p.currency, 'mob-dv1-'+p.id, 0)}</div>
-              </div>
-            </div>
-          </div>`;
-      }).join('');
-    } catch(e) { console.error('[MOB] Portfolio list error:', e); }
+    if (window.ftCache) {
+      await ftCache.fetchSWR('portfolios_list', '/api/portfolios', {
+        onData: mobRenderPortfolioListData,
+        onUpdate: mobRenderPortfolioListData
+      });
+    } else {
+      try {
+        const res = await fetch('/api/portfolios');
+        const data = await res.json();
+        mobRenderPortfolioListData(data);
+      } catch(e) { console.error('[MOB] Portfolio list error:', e); }
+    }
   }
 
   window.mobOpenPortfolio = function(id) {
@@ -884,115 +897,126 @@
   };
 
   // ── Portfolio Detail ──────────────────────────────
+  function mobRenderPortfolioDetailData(p, id) {
+    if (!p) return;
+    mobCurrentPortfolioData = p;
+    const currency = p.currency || 'EUR';
+    portfolioCurrency = currency;
+    const el = (eid) => document.getElementById(eid);
+
+    const hero = el('mob-hero-section');
+    if (hero) {
+      hero.style.background = ''; 
+      hero.style.color = '';
+      hero.querySelectorAll('.mob-hero-label, .mob-hero-stat-box-label, .mob-hero-stat-box-value, .mob-hero-value, .mob-hero-stat-box').forEach(l => {
+        l.style.color = '';
+        l.style.background = '';
+        l.style.borderColor = '';
+      });
+    }
+
+    if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
+    if (el('mob-detail-pname-hero')) el('mob-detail-pname-hero').textContent = p.name;
+    if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
+    if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt', 0);
+    if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg', 0);
+    if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.currentCash, currency, 'mob-dc', 0);
+    if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
+
+    // Performance Badge
+    const perfBadge = el('mob-detail-perf-badge');
+    if (perfBadge) {
+      const absValReg = p.changeValue || 0;
+      const absValPP = p.changeValuePrePost || 0;
+      const totalAbsVal = absValReg + absValPP;
+      const isPos = totalAbsVal >= 0;
+      
+      let html = `<span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(totalAbsVal, currency, 'mob-perf', 0)}`;
+      perfBadge.innerHTML = html;
+    }
+
+    // Fiscal Summary (Compact - Mob Redesign Phase 5)
+    const totalGross = (p.taxBreakdown || []).reduce((s, b) => s + (b.grossGain || 0), 0);
+    const totalTax   = p.totalLatentTax || 0;
+    const totalNetLatentGain = totalGross - totalTax;
+    const totalMinus = (p.taxBreakdown || []).reduce((s, b) => s + (b.minusvalenze || 0), 0);
+
+    const netValue = p.netValue || p.totalValue;
+    if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(netValue, currency, 'mob-dt', 0);
+    
+    // Daily Variation (Phase 6 Fix)
+    const dayVar = p.performance1D || 0;
+    const prevValue = netValue - dayVar;
+    const dayPct = prevValue > 0 ? (dayVar / prevValue) * 100 : 0;
+    
+    const gnEl = el('mob-detail-gain-netto-pill');
+    if (gnEl) {
+      const isPos = dayVar >= 0;
+      gnEl.style.background = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+      gnEl.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+      gnEl.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(dayVar, currency, 'mob-gn', 0)}`;
+    }
+
+    if (el('mob-f-tax')) el('mob-f-tax').textContent = formatPrivacy(totalTax, currency, 'mob-f-tax', 0);
+    if (el('mob-f-minus')) el('mob-f-minus').textContent = formatPrivacy(totalMinus, currency, 'mob-f-minus', 0);
+
+    // Performance Grid Populating
+    const roi = p.roi || 0;
+    const twr = p.twr || 0;
+    const xirr = p.xirr || 0;
+    if (el('mob-p-roi')) {
+        el('mob-p-roi').textContent = (roi * 100).toFixed(1) + '%';
+        el('mob-p-roi').style.color = roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+    }
+    if (el('mob-p-twr')) {
+        el('mob-p-twr').textContent = (twr * 100).toFixed(1) + '%';
+        el('mob-p-twr').style.color = twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+    }
+    if (el('mob-p-xirr')) {
+        el('mob-p-xirr').textContent = (xirr * 100).toFixed(1) + '%';
+        el('mob-p-xirr').style.color = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+    }
+
+    const gain = p.totalGain || 0;
+    const gainEl = el('mob-detail-gain');
+    if (gainEl) {
+      if (p.color) gainEl.style.color = '#fff';
+      else gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+      gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, currency, 'mob-d-gain', 0);
+    }
+
+    // 2. Load holdings and transactions from the already fetched portfolio data
+    currentHoldings = p.holdings || [];
+    currentTransactions = p.transactions || [];
+    
+    const sortSetting = localStorage.getItem('mobHoldingsSort') || 'value_desc';
+    const sortSelect = document.getElementById('mob-holdings-sort');
+    if (sortSelect) sortSelect.value = sortSetting;
+    mobSortHoldingsArray(currentHoldings, sortSetting);
+
+    mobLoadHoldings(currentHoldings, currency);
+    mobLoadTransactions(currentTransactions, currency);
+    mobRenderAllocation(p.allocation || [], currency);
+    // Init chart
+    mobInitDetailChart(id);
+  }
+
   async function mobLoadPortfolioDetail(id) {
-    try {
-        const res = await fetch(`/api/portfolios/${id}`);
+    const cacheKey = 'portfolio_detail_' + id;
+    const url = `/api/portfolios/${id}`;
+
+    if (window.ftCache) {
+      await ftCache.fetchSWR(cacheKey, url, {
+        onData: (p) => mobRenderPortfolioDetailData(p, id),
+        onUpdate: (freshP) => mobRenderPortfolioDetailData(freshP, id)
+      });
+    } else {
+      try {
+        const res = await fetch(url);
         const p = await res.json();
-        mobCurrentPortfolioData = p;
-        console.log('[DEBUG] Mob Portfolio Data:', p);
-       const currency = p.currency || 'EUR';
-       portfolioCurrency = currency;
-       const el = (eid) => document.getElementById(eid);
-
-       const hero = el('mob-hero-section');
-       if (hero) {
-         // Phase 4: Hero background is now consistently Amber (Fiscal Summary style)
-         // Individual portfolio color is no longer used for the entire hero background.
-         hero.style.background = ''; 
-         hero.style.color = '';
-         hero.querySelectorAll('.mob-hero-label, .mob-hero-stat-box-label, .mob-hero-stat-box-value, .mob-hero-value, .mob-hero-stat-box').forEach(l => {
-           l.style.color = '';
-           l.style.background = '';
-           l.style.borderColor = '';
-         });
-         // We can still use p.color for the "add" button or name icon if wanted, but the hero background is Amber.
-       }
-
-       if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
-       if (el('mob-detail-pname-hero')) el('mob-detail-pname-hero').textContent = p.name;
-       if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
-       if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt', 0);
-       if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg', 0);
-       if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.currentCash, currency, 'mob-dc', 0);
-       if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
-
-      // Performance Badge
-      const perfBadge = el('mob-detail-perf-badge');
-      if (perfBadge) {
-        const absValReg = p.changeValue || 0;
-        const absValPP = p.changeValuePrePost || 0;
-        const totalAbsVal = absValReg + absValPP;
-        const isPos = totalAbsVal >= 0;
-        
-        let html = `<span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(totalAbsVal, currency, 'mob-perf', 0)}`;
-        perfBadge.innerHTML = html;
-      }
-
-      // Fiscal Summary (Compact - Mob Redesign Phase 5)
-      const totalGross = (p.taxBreakdown || []).reduce((s, b) => s + (b.grossGain || 0), 0);
-      const totalTax   = p.totalLatentTax || 0;
-      const totalNetLatentGain = totalGross - totalTax;
-      const totalMinus = (p.taxBreakdown || []).reduce((s, b) => s + (b.minusvalenze || 0), 0);
-
-      const netValue = p.netValue || p.totalValue;
-      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(netValue, currency, 'mob-dt', 0);
-      
-      // Daily Variation (Phase 6 Fix)
-      const dayVar = p.performance1D || 0;
-      const prevValue = netValue - dayVar;
-      const dayPct = prevValue > 0 ? (dayVar / prevValue) * 100 : 0;
-      
-      const gnEl = el('mob-detail-gain-netto-pill');
-      if (gnEl) {
-        const isPos = dayVar >= 0;
-        gnEl.style.background = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
-        gnEl.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        gnEl.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(dayVar, currency, 'mob-gn', 0)}`;
-      }
-
-      if (el('mob-f-tax')) el('mob-f-tax').textContent = formatPrivacy(totalTax, currency, 'mob-f-tax', 0);
-      if (el('mob-f-minus')) el('mob-f-minus').textContent = formatPrivacy(totalMinus, currency, 'mob-f-minus', 0);
-
-      // Performance Grid Populating
-      const roi = p.roi || 0;
-      const twr = p.twr || 0;
-      const xirr = p.xirr || 0;
-      if (el('mob-p-roi')) {
-          el('mob-p-roi').textContent = (roi * 100).toFixed(1) + '%';
-          el('mob-p-roi').style.color = roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-      }
-      if (el('mob-p-twr')) {
-          el('mob-p-twr').textContent = (twr * 100).toFixed(1) + '%';
-          el('mob-p-twr').style.color = twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-      }
-      if (el('mob-p-xirr')) {
-          el('mob-p-xirr').textContent = (xirr * 100).toFixed(1) + '%';
-          el('mob-p-xirr').style.color = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-      }
-
-      const gain = p.totalGain || 0;
-      const gainEl = el('mob-detail-gain');
-      if (gainEl) {
-        if (p.color) gainEl.style.color = '#fff';
-        else gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, currency, 'mob-d-gain', 0);
-      }
-
-      // 2. Load holdings and transactions from the already fetched portfolio data
-      currentHoldings = p.holdings || [];
-      currentTransactions = p.transactions || [];
-      
-      const sortSetting = localStorage.getItem('mobHoldingsSort') || 'value_desc';
-      const sortSelect = document.getElementById('mob-holdings-sort');
-      if (sortSelect) sortSelect.value = sortSetting;
-      mobSortHoldingsArray(currentHoldings, sortSetting);
-
-      mobLoadHoldings(currentHoldings, currency);
-      mobLoadTransactions(currentTransactions, currency);
-      mobRenderAllocation(p.allocation || [], currency);
-      // Init chart
-      mobInitDetailChart(id);
-    } catch(e) { console.error('[MOB] Portfolio detail error:', e); }
+        mobRenderPortfolioDetailData(p, id);
+      } catch(e) { console.error('[MOB] Portfolio detail error:', e); }
+    }
   }
 
   function mobRenderAllocation(allocation, currency) {
@@ -1521,9 +1545,11 @@
     const isDark = document.documentElement.classList.contains('dark');
     const r = range || mobDetailRange;
     const mode = mobDetailChartMode;
-    try {
-      const res = await fetch(`/api/analytics/portfolio-performance/${portfolioId}?range=${r}`);
-      const result = await res.json();
+    const url = `/api/analytics/portfolio-performance/${portfolioId}?range=${r}`;
+    const cacheKey = `chart_perf_${portfolioId}_${r}`;
+
+    const renderChart = (result) => {
+      if (!result) return;
       const pts = result.dataPoints || (Array.isArray(result) ? result : []);
       
       mobDetailChart.rawPoints = pts;
@@ -1655,7 +1681,20 @@
       mobDetailChart.update();
       mobUpdatePortfolioChartKPI(pts, mode);
       mobUpdatePortfolioChartLegend(mobDetailChart.data.datasets);
-    } catch(e) { console.error('[MOB] Detail chart error:', e); }
+    };
+
+    if (window.ftCache) {
+      ftCache.fetchSWR(cacheKey, url, {
+        onData: renderChart,
+        onUpdate: renderChart
+      });
+    } else {
+      try {
+        const res = await fetch(url);
+        const result = await res.json();
+        renderChart(result);
+      } catch(e) { console.error('[MOB] Detail chart error:', e); }
+    }
   }
 
   window.mobDetailRange = function(range) {

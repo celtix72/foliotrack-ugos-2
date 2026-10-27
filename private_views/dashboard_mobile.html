@@ -41,6 +41,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="/auth.js"></script>
+    <script src="/client_cache.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
@@ -465,64 +466,100 @@
       }
   }
 
-  async function mobUpdateDashboard(prefetchedData = null) {
-      try {
-          const data = prefetchedData || await (await fetch('/api/portfolios')).json();
-          window._dashboardData = data;
-          const portfolios = data.portfolios || [];
-          
-          let filtered = portfolios;
-          if (selectedPortfolioIds.length > 0) {
-              filtered = portfolios.filter(p => selectedPortfolioIds.includes(Number(p.id)));
-          }
+  function mobRenderDashboardUI(data) {
+      if (!data) return;
+      window._dashboardData = data;
+      const portfolios = data.portfolios || [];
+      
+      let filtered = portfolios;
+      if (selectedPortfolioIds.length > 0) {
+          filtered = portfolios.filter(p => selectedPortfolioIds.includes(Number(p.id)));
+      }
 
-          const metrics = {
-              totalNetValue: filtered.reduce((sum, p) => sum + (parseFloat(p.netValueEUR) || parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
-              totalValue: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValueEUR) || parseFloat(p.totalValue) || 0), 0),
-              totalGain: filtered.reduce((sum, p) => sum + (parseFloat(p.totalGainEUR) || parseFloat(p.totalGain) || 0), 0),
-              changeReg: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueEUR) || parseFloat(p.changeValue) || 0), 0),
-              changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0),
-              changeFX: (selectedPortfolioIds.length === 0 && data.global && data.global.totalChangeFX !== undefined)
-                  ? Number(data.global.totalChangeFX)
-                  : filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueFX_EUR) || 0), 0),
-              assetGain: (selectedPortfolioIds.length === 0 && data.global && data.global.totalAssetChange !== undefined)
-                  ? Number(data.global.totalAssetChange)
-                  : filtered.reduce((sum, p) => sum + (parseFloat(p.assetChangeEUR) || ((parseFloat(p.changeValueEUR) || 0) - (parseFloat(p.changeValueFX_EUR) || 0))), 0)
-          };
-          window._mobCurrentMetrics = metrics;
+      const metrics = {
+          totalNetValue: filtered.reduce((sum, p) => sum + (parseFloat(p.netValueEUR) || parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
+          totalValue: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValueEUR) || parseFloat(p.totalValue) || 0), 0),
+          totalGain: filtered.reduce((sum, p) => sum + (parseFloat(p.totalGainEUR) || parseFloat(p.totalGain) || 0), 0),
+          changeReg: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueEUR) || parseFloat(p.changeValue) || 0), 0),
+          changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0),
+          changeFX: (selectedPortfolioIds.length === 0 && data.global && data.global.totalChangeFX !== undefined)
+              ? Number(data.global.totalChangeFX)
+              : filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueFX_EUR) || 0), 0),
+          assetGain: (selectedPortfolioIds.length === 0 && data.global && data.global.totalAssetChange !== undefined)
+              ? Number(data.global.totalAssetChange)
+              : filtered.reduce((sum, p) => sum + (parseFloat(p.assetChangeEUR) || ((parseFloat(p.changeValueEUR) || 0) - (parseFloat(p.changeValueFX_EUR) || 0))), 0)
+      };
+      window._mobCurrentMetrics = metrics;
 
-          document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
-          document.getElementById('mob-total-gross').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
-          
-          renderMobHeroDayVar(metrics);
+      document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
+      document.getElementById('mob-total-gross').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
+      
+      renderMobHeroDayVar(metrics);
 
-          const pList = document.getElementById('mob-portfolio-list');
-          if (pList) {
-              pList.innerHTML = portfolios.map(p => {
-                  const isDimmed = selectedPortfolioIds.length > 0 && !selectedPortfolioIds.includes(Number(p.id));
-                  return `
-                  <div class="p-4 bg-white dark:bg-surface-dark border-b border-slate-100 dark:border-slate-800 flex items-center justify-between transition-opacity ${isDimmed ? 'opacity-35' : ''}" onclick="window.location.href='/portfolio?id=${p.id}'">
-                      <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background-color:${p.color || '#6366f1'}">
-                              <span class="material-symbols-outlined">work</span>
-                          </div>
-                          <div>
-                              <div class="text-[14px] font-black">${p.name}</div>
-                              <div class="text-[10px] text-slate-500 uppercase font-bold">${p.assetCount || 0} Assets • Cash: ${formatPrivacy(p.currentCash || 0, p.currency, 'c-mob-'+p.id, 0)}</div>
-                          </div>
+      const pList = document.getElementById('mob-portfolio-list');
+      if (pList) {
+          pList.innerHTML = portfolios.map(p => {
+              const isDimmed = selectedPortfolioIds.length > 0 && !selectedPortfolioIds.includes(Number(p.id));
+              return `
+              <div class="p-4 bg-white dark:bg-surface-dark border-b border-slate-100 dark:border-slate-800 flex items-center justify-between transition-opacity ${isDimmed ? 'opacity-35' : ''}" onclick="window.location.href='/portfolio?id=${p.id}'">
+                  <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background-color:${p.color || '#6366f1'}">
+                          <span class="material-symbols-outlined">work</span>
                       </div>
-                      <div class="text-right">
-                          <div class="text-[14px] font-black">${formatPrivacy(p.totalValue, p.currency, 'p-mob-'+p.id)}</div>
-                          <div class="text-[11px] font-bold ${p.changeValue >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${p.changeValue >= 0 ? '+' : ''}${formatPrivacy(p.changeValue, p.currency, 'dv-mob-'+p.id)}</div>
+                      <div>
+                          <div class="text-[14px] font-black">${p.name}</div>
+                          <div class="text-[10px] text-slate-500 uppercase font-bold">${p.assetCount || 0} Assets • Cash: ${formatPrivacy(p.currentCash || 0, p.currency, 'c-mob-'+p.id, 0)}</div>
                       </div>
                   </div>
-              `;
-              }).join('');
+                  <div class="text-right">
+                      <div class="text-[14px] font-black">${formatPrivacy(p.totalValue, p.currency, 'p-mob-'+p.id)}</div>
+                      <div class="text-[11px] font-bold ${p.changeValue >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${p.changeValue >= 0 ? '+' : ''}${formatPrivacy(p.changeValue, p.currency, 'dv-mob-'+p.id)}</div>
+                  </div>
+              </div>
+          `;
+          }).join('');
+      }
+      mobRenderPortfolioFilters();
+      mobUpdateWinnersLosers(data.global);
+      mobSyncMarketStatus();
+  }
+
+  async function mobUpdateDashboard(prefetchedData = null) {
+      try {
+          if (prefetchedData) {
+              mobRenderDashboardUI(prefetchedData);
+              return;
           }
-          mobRenderPortfolioFilters();
-          mobUpdateWinnersLosers(data.global);
-          mobSyncMarketStatus();
-          mobLoadAllocation();
+
+          if (window.ftCache) {
+              let secondaryStarted = false;
+              const launchSecondary = () => {
+                  if (secondaryStarted) return;
+                  secondaryStarted = true;
+                  mobUpdateChart();
+                  mobLoadDailyGains();
+                  mobLoadSixMonthSparkline();
+                  mobLoadAllocation();
+                  loadDividendAlert();
+                  loadEarningsAlert();
+                  mobSetNewsFilter(_mobNewsFilter);
+              };
+
+              await ftCache.fetchSWR('dashboard_portfolios', '/api/portfolios', {
+                  onData: (data) => {
+                      mobRenderDashboardUI(data);
+                      launchSecondary();
+                  },
+                  onUpdate: (freshData) => {
+                      mobRenderDashboardUI(freshData);
+                  }
+              });
+          } else {
+              const res = await fetch('/api/portfolios');
+              const data = await res.json();
+              mobRenderDashboardUI(data);
+              mobLoadAllocation();
+          }
       } catch(e) { console.error(e); }
   }
 
@@ -677,10 +714,24 @@
       try {
           let url = `/api/analytics/global-performance?range=${mobCurrentRange}`;
           if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
-          const res = await fetch(url);
-          const result = await res.json();
-          _mobChartDataPoints = result.dataPoints || [];
-          mobUpdateChartFromData(_mobChartDataPoints);
+          const cacheKey = `chart_${mobCurrentRange}_${selectedPortfolioIds.slice().sort().join(',') || 'all'}`;
+
+          const renderPoints = (result) => {
+              if (!result) return;
+              _mobChartDataPoints = (Array.isArray(result) ? result : result.dataPoints) || [];
+              mobUpdateChartFromData(_mobChartDataPoints);
+          };
+
+          if (window.ftCache) {
+              await ftCache.fetchSWR(cacheKey, url, {
+                  onData: renderPoints,
+                  onUpdate: renderPoints
+              });
+          } else {
+              const res = await fetch(url);
+              const result = await res.json();
+              renderPoints(result);
+          }
       } catch(e) { console.error(e); }
   }
 
@@ -1069,13 +1120,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
       mobUpdateDashboard();
-      mobUpdateChart();
-      mobLoadDailyGains();
-      mobLoadSixMonthSparkline();
-      mobLoadAllocation();
-      loadDividendAlert();
-      loadEarningsAlert();
-      mobSetNewsFilter(_mobNewsFilter); // inits buttons + calls loadMobNews()
   });
 
   async function loadDividendAlert() {
@@ -1165,51 +1209,65 @@
       try {
           let url = '/api/analytics/daily-gains';
           if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
-          const res  = await fetch(url);
-          const data = await res.json();
-          const days  = (data.days || []).slice().reverse(); // most recent LEFT
+          const cacheKey = 'daily_gains_' + (selectedPortfolioIds.slice().sort().join(',') || 'all');
 
-          if (days.length === 0) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
+          const renderDailyGains = (data) => {
+              if (!data) return;
+              const days  = (data.days || []).slice().reverse(); // most recent LEFT
 
-          const maxAbs    = Math.max(...days.map(d => Math.abs(d.gain)), 1);
-          const weekTotal = days.reduce((s, d) => s + d.gain, 0);
+              if (days.length === 0) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
 
-          barsEl.innerHTML = days.map((d, renderIdx) => {
-              const pct    = Math.round((Math.abs(d.gain) / maxAbs) * 100);
-              const isPos  = d.gain >= 0;
-              const color  = isPos ? '#10b981' : '#f43f5e';
-              const parts  = d.date.split('-');
-              const lbl    = `${parts[2]}/${parts[1]}`;
-              const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
-              const isToday = renderIdx === 0; // reversed → first rendered = most recent = today
-              const todayDot = isToday ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${color};animation:pulse 1.5s infinite"></div>` : '';
-              return `<div class="flex flex-col items-center gap-0.5 group relative" style="width:24px">
-                  <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none" style="background:${color};color:white">${gainStr}${isToday ? ' ●' : ''}</div>
-                  <div style="position:relative;width:100%">
-                      ${todayDot}
-                      <div class="w-full rounded-sm" style="height:${Math.max(pct*0.38,2)}px;background:${color};box-shadow:0 0 4px ${color}40;${isToday ? `outline:1px solid ${color};outline-offset:1px` : ''}"></div>
-                  </div>
-                  <span style="font-size:7px;font-weight:bold;color:${isToday ? '#135bec' : '#94a3b8'}">${lbl}</span>
-              </div>`;
-          }).join('');
+              const maxAbs    = Math.max(...days.map(d => Math.abs(d.gain)), 1);
+              const weekTotal = days.reduce((s, d) => s + d.gain, 0);
 
-          if (totalEl) {
-              const isPos = weekTotal >= 0;
-              totalEl.style.color = isPos ? '#10b981' : '#f43f5e';
-              totalEl.textContent = (isPos ? '+' : '') + formatCurrency(weekTotal, 'EUR', 0);
-          }
+              barsEl.innerHTML = days.map((d, renderIdx) => {
+                  const pct    = Math.round((Math.abs(d.gain) / maxAbs) * 100);
+                  const isPos  = d.gain >= 0;
+                  const color  = isPos ? '#10b981' : '#f43f5e';
+                  const parts  = d.date.split('-');
+                  const lbl    = `${parts[2]}/${parts[1]}`;
+                  const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
+                  const isToday = renderIdx === 0; // reversed → first rendered = most recent = today
+                  const todayDot = isToday ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${color};animation:pulse 1.5s infinite"></div>` : '';
+                  return `<div class="flex flex-col items-center gap-0.5 group relative" style="width:24px">
+                      <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none" style="background:${color};color:white">${gainStr}${isToday ? ' ●' : ''}</div>
+                      <div style="position:relative;width:100%">
+                          ${todayDot}
+                          <div class="w-full rounded-sm" style="height:${Math.max(pct*0.38,2)}px;background:${color};box-shadow:0 0 4px ${color}40;${isToday ? `outline:1px solid ${color};outline-offset:1px` : ''}"></div>
+                      </div>
+                      <span style="font-size:7px;font-weight:bold;color:${isToday ? '#135bec' : '#94a3b8'}">${lbl}</span>
+                  </div>`;
+              }).join('');
 
-          // Fallback: If changeFX is not already showing on Mobile Hero card, check against last trading day gain
-          const rawDays = data.days || [];
-          if (rawDays.length > 0 && window._mobCurrentMetrics) {
-              const lastDayGain = rawDays[rawDays.length - 1].gain;
-              if (Math.abs(window._mobCurrentMetrics.changeFX || 0) < 1 && lastDayGain !== undefined) {
-                  const diff = Math.round((window._mobCurrentMetrics.changeReg || 0) - lastDayGain);
-                  if (Math.abs(diff) >= 5) {
-                      window._mobCurrentMetrics.changeFX = diff;
-                      renderMobHeroDayVar(window._mobCurrentMetrics);
+              if (totalEl) {
+                  const isPos = weekTotal >= 0;
+                  totalEl.style.color = isPos ? '#10b981' : '#f43f5e';
+                  totalEl.textContent = (isPos ? '+' : '') + formatCurrency(weekTotal, 'EUR', 0);
+              }
+
+              // Fallback: If changeFX is not already showing on Mobile Hero card, check against last trading day gain
+              const rawDays = data.days || [];
+              if (rawDays.length > 0 && window._mobCurrentMetrics) {
+                  const lastDayGain = rawDays[rawDays.length - 1].gain;
+                  if (Math.abs(window._mobCurrentMetrics.changeFX || 0) < 1 && lastDayGain !== undefined) {
+                      const diff = Math.round((window._mobCurrentMetrics.changeReg || 0) - lastDayGain);
+                      if (Math.abs(diff) >= 5) {
+                          window._mobCurrentMetrics.changeFX = diff;
+                          renderMobHeroDayVar(window._mobCurrentMetrics);
+                      }
                   }
               }
+          };
+
+          if (window.ftCache) {
+              await ftCache.fetchSWR(cacheKey, url, {
+                  onData: renderDailyGains,
+                  onUpdate: renderDailyGains
+              });
+          } else {
+              const res  = await fetch(url);
+              const data = await res.json();
+              renderDailyGains(data);
           }
       } catch(e) { console.error('mob daily gains:', e); }
   }
@@ -1221,95 +1279,109 @@
       try {
           let url = '/api/analytics/global-performance?range=1Y';
           if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
-          const res    = await fetch(url);
-          const raw    = await res.json();
-          const points = Array.isArray(raw) ? raw : (raw.dataPoints || []);
+          const cacheKey = 'sparkline_1y_' + (selectedPortfolioIds.slice().sort().join(',') || 'all');
 
-          if (points.length < 2) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
+          const renderSparkline = (raw) => {
+              if (!raw) return;
+              const points = Array.isArray(raw) ? raw : (raw.dataPoints || []);
 
-          // Group by month
-          const monthMap = {};
-          for (const pt of points) {
-              const key = (pt.date || '').substring(0, 7);
-              if (!key) continue;
-              const profit = (pt.value || 0) - (pt.netDeposits || 0);
-              if (!monthMap[key]) monthMap[key] = { first: profit, last: profit };
-              else monthMap[key].last = profit;
-          }
-          const sortedKeys = Object.keys(monthMap).sort();
-          const months = [];
-          for (let i = 1; i < sortedKeys.length; i++) {
-              const prev = monthMap[sortedKeys[i - 1]];
-              const curr = monthMap[sortedKeys[i]];
-              months.push({ key: sortedKeys[i], monthNum: parseInt(sortedKeys[i].split('-')[1], 10), gain: curr.last - prev.last });
-          }
-          if (months.length === 0 && sortedKeys.length === 1) {
-              const curr = monthMap[sortedKeys[0]];
-              months.push({ key: sortedKeys[0], monthNum: parseInt(sortedKeys[0].split('-')[1], 10), gain: curr.last - curr.first });
-          }
-          const bars = months.slice(-12).reverse(); // most recent LEFT
+              if (points.length < 2) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
 
-          if (bars.length === 0) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
-
-          const maxAbs    = Math.max(...bars.map(d => Math.abs(d.gain)), 1);
-          const sixMTotal = bars.reduce((s, d) => s + d.gain, 0);
-          const currYear  = new Date().getFullYear().toString();
-
-          let html = '';
-          let prevYear = null;
-          for (let mobI = 0; mobI < bars.length; mobI++) {
-              const d = bars[mobI];
-              const barYear = d.key.split('-')[0];
-              const isCurr  = barYear === currYear;
-              const isCurrentMonth = (mobI === 0); // reversed → first = most recent month
-              if (prevYear !== null && prevYear !== barYear) {
-                  html += `<div style="width:4px;align-self:stretch;display:flex;align-items:flex-end"><div style="width:1px;height:60%;background:rgba(148,163,184,0.4);margin:0 auto"></div></div>`;
+              // Group by month
+              const monthMap = {};
+              for (const pt of points) {
+                  const key = (pt.date || '').substring(0, 7);
+                  if (!key) continue;
+                  const profit = (pt.value || 0) - (pt.netDeposits || 0);
+                  if (!monthMap[key]) monthMap[key] = { first: profit, last: profit };
+                  else monthMap[key].last = profit;
               }
-              prevYear = barYear;
-              const pct     = Math.round((Math.abs(d.gain) / maxAbs) * 100);
-              const isPos   = d.gain >= 0;
-              const color   = isPos ? '#10b981' : '#f43f5e';
-              const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
-              const liveIndicator = isCurrentMonth
-                  ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${color};animation:pulse 1.5s infinite"></div>`
-                  : '';
-              const monthNames = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-              const monthShort = `${monthNames[d.monthNum]} '${barYear.slice(-2)}`;
-              const tooltipText = `${monthShort}: ${gainStr}${isCurrentMonth ? ' ●' : ''}`;
-              html += `<div class="flex flex-col items-center gap-0.5 group relative" style="width:20px">
-                  <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none shadow-sm" style="background:${color};color:white">${tooltipText}</div>
-                  <div style="position:relative;width:100%">
-                      ${liveIndicator}
-                      <div class="w-full rounded-sm" style="height:${Math.max(pct*0.38,2)}px;background:${color};opacity:${isCurr?1:0.4};box-shadow:0 0 4px ${color}40;${isCurrentMonth?`outline:1px solid ${color};outline-offset:1px`:''}"></div>
-                  </div>
-                  <span style="font-size:7px;font-weight:bold;color:${isCurrentMonth ? '#135bec' : `rgba(100,116,139,${isCurr?1:0.45})`}">${d.monthNum}</span>
-              </div>`;
-          }
-          barsEl.innerHTML = html;
+              const sortedKeys = Object.keys(monthMap).sort();
+              const months = [];
+              for (let i = 1; i < sortedKeys.length; i++) {
+                  const prev = monthMap[sortedKeys[i - 1]];
+                  const curr = monthMap[sortedKeys[i]];
+                  months.push({ key: sortedKeys[i], monthNum: parseInt(sortedKeys[i].split('-')[1], 10), gain: curr.last - prev.last });
+              }
+              if (months.length === 0 && sortedKeys.length === 1) {
+                  const curr = monthMap[sortedKeys[0]];
+                  months.push({ key: sortedKeys[0], monthNum: parseInt(sortedKeys[0].split('-')[1], 10), gain: curr.last - curr.first });
+              }
+              const bars = months.slice(-12).reverse(); // most recent LEFT
 
-          if (totalEl) {
-              const isPos = sixMTotal >= 0;
-              totalEl.style.color = isPos ? '#10b981' : '#f43f5e';
-              totalEl.textContent = (isPos ? '+' : '') + formatCurrency(sixMTotal, 'EUR', 0);
+              if (bars.length === 0) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
+
+              const maxAbs    = Math.max(...bars.map(d => Math.abs(d.gain)), 1);
+              const sixMTotal = bars.reduce((s, d) => s + d.gain, 0);
+              const currYear  = new Date().getFullYear().toString();
+
+              let html = '';
+              let prevYear = null;
+              for (let mobI = 0; mobI < bars.length; mobI++) {
+                  const d = bars[mobI];
+                  const barYear = d.key.split('-')[0];
+                  const isCurr  = barYear === currYear;
+                  const isCurrentMonth = (mobI === 0); // reversed → first = most recent month
+                  if (prevYear !== null && prevYear !== barYear) {
+                      html += `<div style="width:4px;align-self:stretch;display:flex;align-items:flex-end"><div style="width:1px;height:60%;background:rgba(148,163,184,0.4);margin:0 auto"></div></div>`;
+                  }
+                  prevYear = barYear;
+                  const pct     = Math.round((Math.abs(d.gain) / maxAbs) * 100);
+                  const isPos   = d.gain >= 0;
+                  const color   = isPos ? '#10b981' : '#f43f5e';
+                  const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
+                  const liveIndicator = isCurrentMonth
+                      ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${color};animation:pulse 1.5s infinite"></div>`
+                      : '';
+                  const monthNames = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+                  const monthShort = `${monthNames[d.monthNum]} '${barYear.slice(-2)}`;
+                  const tooltipText = `${monthShort}: ${gainStr}${isCurrentMonth ? ' ●' : ''}`;
+                  html += `<div class="flex flex-col items-center gap-0.5 group relative" style="width:20px">
+                      <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none shadow-sm" style="background:${color};color:white">${tooltipText}</div>
+                      <div style="position:relative;width:100%">
+                          ${liveIndicator}
+                          <div class="w-full rounded-sm" style="height:${Math.max(pct*0.38,2)}px;background:${color};opacity:${isCurr?1:0.4};box-shadow:0 0 4px ${color}40;${isCurrentMonth?`outline:1px solid ${color};outline-offset:1px`:''}"></div>
+                      </div>
+                      <span style="font-size:7px;font-weight:bold;color:${isCurrentMonth ? '#135bec' : `rgba(100,116,139,${isCurr?1:0.45})`}">${d.monthNum}</span>
+                  </div>`;
+              }
+              barsEl.innerHTML = html;
+
+              if (totalEl) {
+                  const isPos = sixMTotal >= 0;
+                  totalEl.style.color = isPos ? '#10b981' : '#f43f5e';
+                  totalEl.textContent = (isPos ? '+' : '') + formatCurrency(sixMTotal, 'EUR', 0);
+              }
+          };
+
+          if (window.ftCache) {
+              await ftCache.fetchSWR(cacheKey, url, {
+                  onData: renderSparkline,
+                  onUpdate: renderSparkline
+              });
+          } else {
+              const res    = await fetch(url);
+              const raw    = await res.json();
+              renderSparkline(raw);
           }
       } catch(e) { console.error('mob 12M sparkline:', e); }
   }
 
   let mobAllocationChart = null;
   async function mobLoadAllocation() {
-      if (mobAllocationChart) {
-          mobAllocationChart.destroy();
-          mobAllocationChart = null;
-      }
       const ctx = document.getElementById('mob-allocation-chart')?.getContext('2d');
       if (!ctx) return;
 
-      try {
-          let url = '/api/analytics/global-allocation';
-          if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
+      let url = '/api/analytics/global-allocation';
+      if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
+      const cacheKey = 'allocation_' + (selectedPortfolioIds.slice().sort().join(',') || 'all');
 
-          const res = await fetch(url);
-          const data = await res.json();
+      const renderAllocation = (data) => {
+          if (!data || !Array.isArray(data)) return;
+          if (mobAllocationChart) {
+              mobAllocationChart.destroy();
+              mobAllocationChart = null;
+          }
 
           mobAllocationChart = new Chart(ctx, {
               type: 'doughnut',
@@ -1351,7 +1423,7 @@
           const legend = document.getElementById('mob-allocation-legend');
           if (legend) {
               const total = data.reduce((sum, d) => sum + d.value, 0);
-              if (!data || data.length === 0 || total === 0) {
+              if (data.length === 0 || total === 0) {
                   legend.innerHTML = '<span class="text-[10px] text-slate-400 italic">Nessun asset</span>';
               } else {
                   legend.innerHTML = data.map(d => {
@@ -1368,7 +1440,20 @@
                   }).join('');
               }
           }
-      } catch(e) { console.error('mob allocation error:', e); }
+      };
+
+      if (window.ftCache) {
+          await ftCache.fetchSWR(cacheKey, url, {
+              onData: renderAllocation,
+              onUpdate: renderAllocation
+          });
+      } else {
+          try {
+              const res = await fetch(url);
+              const data = await res.json();
+              renderAllocation(data);
+          } catch(e) { console.error('mob allocation error:', e); }
+      }
   }
 
   const SOURCE_COLORS = {
@@ -1413,48 +1498,59 @@
       const skeleton  = document.getElementById('mob-news-skeleton');
       if (!container) return;
 
-      let allItems = [];
-      try {
-          const url = _mobNewsFilter === 'portfolio' ? '/api/news?filter=portfolio' : '/api/news';
-          const res = await fetch(url);
-          allItems = await res.json();
-      } catch (e) {
-          console.error('Failed to fetch mobile news', e);
-      }
+      const renderNews = (allItems) => {
+          if (skeleton) skeleton.remove();
 
-      if (skeleton) skeleton.remove();
+          if (!allItems || allItems.length === 0) {
+              container.innerHTML = _mobNewsFilter === 'portfolio'
+                  ? '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia per i tuoi titoli. Prova il feed completo.</p>'
+                  : '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia. Vai in Impostazioni per aggiungere feed RSS.</p>';
+              return;
+          }
 
-      if (allItems.length === 0) {
-          container.innerHTML = _mobNewsFilter === 'portfolio'
-              ? '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia per i tuoi titoli. Prova il feed completo.</p>'
-              : '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia. Vai in Impostazioni per aggiungere feed RSS.</p>';
-          return;
-      }
+          container.innerHTML = allItems.map(item => {
+              const source = item.source_name || 'News';
+              const color   = SOURCE_COLORS[source] || '#94a3b8';
+              const time    = relativeTime(item.pubDate);
+              const title   = (item.title || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+              const href    = item.link ? `href="${item.link}" target="_blank" rel="noopener noreferrer"` : '';
+              
+              const tagsHtml = (item.matchedTags && item.matchedTags.length > 0) 
+                ? item.matchedTags.map(tag => `<span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-primary/10 text-primary uppercase ml-1">${tag}</span>`).join('')
+                : '';
 
-      container.innerHTML = allItems.map(item => {
-          const source = item.source_name || 'News';
-          const color   = SOURCE_COLORS[source] || '#94a3b8';
-          const time    = relativeTime(item.pubDate);
-          const title   = item.title.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-          const href    = item.link ? `href="${item.link}" target="_blank" rel="noopener noreferrer"` : '';
-          
-          const tagsHtml = (item.matchedTags && item.matchedTags.length > 0) 
-            ? item.matchedTags.map(tag => `<span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-primary/10 text-primary uppercase ml-1">${tag}</span>`).join('')
-            : '';
-
-          return `
-          <a ${href} class="block p-3 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform">
-              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <div class="flex items-center gap-1.5">
-                      <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${color}"></div>
-                      <span class="text-[9px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
+              return `
+              <a ${href} class="block p-3 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform">
+                  <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <div class="flex items-center gap-1.5">
+                          <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${color}"></div>
+                          <span class="text-[9px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
+                      </div>
+                      ${tagsHtml}
+                      ${time ? `<span class="text-[9px] text-slate-400 font-bold ml-auto">${time}</span>` : ''}
                   </div>
-                  ${tagsHtml}
-                  ${time ? `<span class="text-[9px] text-slate-400 font-bold ml-auto">${time}</span>` : ''}
-              </div>
-              <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 leading-snug m-0 p-0">${title}</p>
-          </a>`;
-      }).join('');
+                  <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 leading-snug m-0 p-0">${title}</p>
+              </a>`;
+          }).join('');
+      };
+
+      const url = _mobNewsFilter === 'portfolio' ? '/api/news?filter=portfolio' : '/api/news';
+      const cacheKey = 'news_' + _mobNewsFilter;
+
+      if (window.ftCache) {
+          await ftCache.fetchSWR(cacheKey, url, {
+              onData: renderNews,
+              onUpdate: renderNews
+          });
+      } else {
+          try {
+              const res = await fetch(url);
+              const allItems = await res.json();
+              renderNews(allItems);
+          } catch (e) {
+              console.error('Failed to fetch mobile news', e);
+          }
+      }
   }
 
   document.addEventListener('DOMContentLoaded', () => {

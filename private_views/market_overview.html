@@ -29,6 +29,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
 <script src="/asset_chart_component.js"></script>
     <script src="/auth.js"></script>
+    <script src="/client_cache.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
@@ -592,26 +593,41 @@ async function loadAssets() {
         updateDisplayModeUI();
         applyMarketDesktopScale();
 
+        const applyMarketData = (bundle) => {
+            if (!bundle) return;
+            const { exData, notesList, assetsData } = bundle;
+            if (exData && exData.rate) {
+                usdEurRate = exData.rate;
+            }
+            if (notesList) {
+                notesMap = {};
+                (notesList || []).forEach(n => {
+                    if (n.asset_symbol) notesMap[n.asset_symbol] = n;
+                });
+            }
+            if (assetsData) {
+                allAssets = assetsData;
+                renderAssets();
+            }
+            const lastUpd = document.getElementById('header-last-update') || document.getElementById('last-update-label');
+            if (lastUpd) lastUpd.textContent = 'Upd: ' + new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+        };
+
+        if (window.ftCache) {
+            const cached = ftCache.get('market_overview_bundle');
+            if (cached) applyMarketData(cached);
+        }
+
         // Fetch exchange rate, notes, and assets in parallel
         const [exData, notesList, assetsData] = await Promise.all([
             fetch('/api/market/exchange-rate').then(r => r.json()).catch(() => ({})),
             fetch('/api/notes').then(r => r.json()).catch(() => []),
-            fetch('/api/assets?t=' + Date.now()).then(r => r.json())
+            fetch('/api/assets').then(r => r.json())
         ]);
 
-        if (exData && exData.rate) {
-            usdEurRate = exData.rate;
-        }
-
-        notesMap = {};
-        (notesList || []).forEach(n => {
-            if (n.asset_symbol) notesMap[n.asset_symbol] = n;
-        });
-
-        allAssets = assetsData;
-        renderAssets();
-        const lastUpd = document.getElementById('header-last-update') || document.getElementById('last-update-label');
-        if (lastUpd) lastUpd.textContent = 'Upd: ' + new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+        const freshBundle = { exData, notesList, assetsData };
+        if (window.ftCache) ftCache.set('market_overview_bundle', freshBundle);
+        applyMarketData(freshBundle);
     } catch (err) { console.error('Error loading assets:', err); }
 }
 

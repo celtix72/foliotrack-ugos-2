@@ -34,6 +34,7 @@
     <script src="/asset_chart_component.js"></script>
     <script src="/transaction_modal.js"></script>
     <script src="/auth.js"></script>
+    <script src="/client_cache.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
@@ -980,15 +981,27 @@
     }
 
     async function loadPortfolios() {
-        try {
-            const res = await fetch('/api/portfolios');
-            const data = await res.json();
+        const renderPortfolios = (data) => {
+            if (!data) return;
             const portfolios = data.portfolios || [];
             const grid = document.getElementById('portfolios-grid');
             if (grid) {
                 grid.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found. Create your first one above!</div>';
             }
-        } catch (err) { console.error(err); }
+        };
+
+        if (window.ftCache) {
+            await ftCache.fetchSWR('portfolios_list', '/api/portfolios', {
+                onData: renderPortfolios,
+                onUpdate: renderPortfolios
+            });
+        } else {
+            try {
+                const res = await fetch('/api/portfolios');
+                const data = await res.json();
+                renderPortfolios(data);
+            } catch (err) { console.error(err); }
+        }
     }
 
     function createPortfolioCard(p) {
@@ -1070,121 +1083,125 @@
         }
     }
 
-    async function loadPortfolioDetails() {
-        try {
-            const res = await fetch(`/api/portfolios/${currentPortfolioId}`);
-            if (!res.ok) {
-                console.error("Portfolio fetch failed");
-                return navigateToList();
-            }
-            const p = await res.json();
-            if (!p) return navigateToList();
-            currentTransactions = p.transactions || [];
-            currentHoldings = p.holdings || [];
-            
-            portfolioCurrency = p.currency || 'EUR';
-            portfolioColor = p.color || '#6366f1';
-            
-            window._portfolioData = p; // Cache data for privacy toggles
-            
-            document.getElementById('header-portfolio-name').innerText = p.name || 'Untitled';
-            document.getElementById('title-portfolio-name').innerText = p.name || 'Untitled';
-            const typeBadge = document.getElementById('p-type-badge');
-            if (typeBadge) {
-                if (p.type === 'Conto Deposito') {
-                    typeBadge.classList.remove('hidden');
-                    typeBadge.innerText = 'CONTO DEPOSITO';
-                } else {
-                    typeBadge.classList.add('hidden');
-                }
-            }
-            document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
-            
-            // Update New Header Fields
-            const totalVal = p.totalValue || 0;
-            const cashVal = p.currentCash || 0;
-            const assetsVal = totalVal - cashVal;
-            const dayGainReg = p.changeValue || 0;
-            const dayGainPP = p.changeValuePrePost || 0;
-            const totalDayGain = dayGainReg + dayGainPP;
-
-            // Use '' to get only the number from formatPrivacy (respecting privacy mode)
-            // and handle symbols separately in the HTML spans
-            document.getElementById('p-total-value').innerText = formatPrivacy(totalVal, '', 'p-total', 0);
-            document.getElementById('p-cash-value').innerText = formatPrivacy(cashVal, '', 'p-cash', 0);
-            document.getElementById('p-assets-value').innerText = formatPrivacy(assetsVal, '', 'p-assets', 0);
-            
-            const dayGainEl = document.getElementById('p-day-gain');
-            if (dayGainEl) {
-                const isPos = totalDayGain >= 0;
-                const formatted = formatPrivacy(totalDayGain, '', 'p-day-gain', 0);
-                dayGainEl.innerText = (isPos ? '+' : '') + formatted;
-                dayGainEl.className = `text-xl font-black tracking-tight ${isPos ? 'text-emerald-500' : 'text-rose-500'}`;
-            }
-
-            const currencySymbolMap = { 'EUR': '€', 'USD': '$', 'GBP': '£' };
-            const symbol = currencySymbolMap[p.currency] || p.currency;
-            document.querySelectorAll('.p-currency-code').forEach(el => el.innerText = symbol);
-            
-            document.querySelectorAll('.log-currency-label').forEach(el => el.innerText = p.currency);
-
-            // Render Assets
-            renderAssetsTable(p.holdings || [], p.transactions || [], p.currency);
-
-            // Render Taxation
-            const taxSection = document.getElementById('latent-taxation-section');
-            const taxTableBody = document.getElementById('tax-breakdown-table-body');
-            
-            if (p.taxBreakdown && p.taxBreakdown.length > 0) {
-                taxSection.classList.remove('hidden');
-                
-                // Header values
-                const totalGross = p.taxBreakdown.reduce((s, b) => s + b.grossGain, 0);
-                const totalNet = p.taxBreakdown.reduce((s, b) => s + b.netGain, 0);
-                
-                document.getElementById('taxation-gross-gain').innerText = formatPrivacy(totalGross, p.currency, 'tax-gross', 0);
-                document.getElementById('total-latent-tax-label').innerText = formatPrivacy(p.totalLatentTax, p.currency, 'tax-total', 0);
-                document.getElementById('taxation-net-gain').innerText = formatPrivacy(totalNet, p.currency, 'tax-net', 0);
-                
-                // Add privacy toggles if they don't exist in HTML (or just update content)
-                // For simplicity, we just use the labels themselves as targets if needed, but let's just format.
-
-                taxTableBody.innerHTML = p.taxBreakdown.map(b => `
-                    <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-amber-100/30 transition-colors">
-                        <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${b.type} <span class="text-[10px] text-slate-400 font-normal ml-1">(${b.rate}%)</span></td>
-                        <td class="py-3 text-right font-medium">${formatPrivacy(b.grossGain, p.currency, 'tax-row-gross-' + b.type, 0)}</td>
-                        <td class="py-2 text-right">
-                            <input type="number" step="any" min="0" data-type="${b.type}" 
-                                   class="fiscal-minusvalenza-input w-28 text-right bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 focus:ring-2 focus:ring-amber-500/40 outline-none shadow-sm transition-all" 
-                                   value="${b.minusvalenze || 0}" 
-                                   placeholder="0.00" 
-                                   onchange="saveFiscalMinusvalenze()" />
-                        </td>
-                        <td class="py-3 text-right font-bold">${formatPrivacy(b.taxableGain, p.currency, 'tax-row-taxable-' + b.type, 0)}</td>
-                        <td class="py-3 text-right text-rose-500 font-black">${formatPrivacy(b.tax, p.currency, 'tax-row-tax-' + b.type, 0)}</td>
-                        <td class="py-3 text-right text-emerald-600 font-black">${formatPrivacy(b.netGain, p.currency, 'tax-row-net-' + b.type, 0)}</td>
-                    </tr>
-                `).join('');
+    function renderPortfolioDetails(p) {
+        if (!p) return;
+        currentTransactions = p.transactions || [];
+        currentHoldings = p.holdings || [];
+        
+        portfolioCurrency = p.currency || 'EUR';
+        portfolioColor = p.color || '#6366f1';
+        
+        window._portfolioData = p; // Cache data for privacy toggles
+        
+        document.getElementById('header-portfolio-name').innerText = p.name || 'Untitled';
+        document.getElementById('title-portfolio-name').innerText = p.name || 'Untitled';
+        const typeBadge = document.getElementById('p-type-badge');
+        if (typeBadge) {
+            if (p.type === 'Conto Deposito') {
+                typeBadge.classList.remove('hidden');
+                typeBadge.innerText = 'CONTO DEPOSITO';
             } else {
-                taxSection.classList.add('hidden');
+                typeBadge.classList.add('hidden');
             }
+        }
+        document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
+        
+        // Update New Header Fields
+        const totalVal = p.totalValue || 0;
+        const cashVal = p.currentCash || 0;
+        const assetsVal = totalVal - cashVal;
+        const dayGainReg = p.changeValue || 0;
+        const dayGainPP = p.changeValuePrePost || 0;
+        const totalDayGain = dayGainReg + dayGainPP;
 
-            // Render Allocation
-            renderAllocation({
-                type: p.allocation,
-                currency: p.currencyAllocation,
-                country: p.countryAllocation
+        document.getElementById('p-total-value').innerText = formatPrivacy(totalVal, '', 'p-total', 0);
+        document.getElementById('p-cash-value').innerText = formatPrivacy(cashVal, '', 'p-cash', 0);
+        document.getElementById('p-assets-value').innerText = formatPrivacy(assetsVal, '', 'p-assets', 0);
+        
+        const dayGainEl = document.getElementById('p-day-gain');
+        if (dayGainEl) {
+            const isPos = totalDayGain >= 0;
+            const formatted = formatPrivacy(totalDayGain, '', 'p-day-gain', 0);
+            dayGainEl.innerText = (isPos ? '+' : '') + formatted;
+            dayGainEl.className = `text-xl font-black tracking-tight ${isPos ? 'text-emerald-500' : 'text-rose-500'}`;
+        }
+
+        const currencySymbolMap = { 'EUR': '€', 'USD': '$', 'GBP': '£' };
+        const symbol = currencySymbolMap[p.currency] || p.currency;
+        document.querySelectorAll('.p-currency-code').forEach(el => el.innerText = symbol);
+        
+        document.querySelectorAll('.log-currency-label').forEach(el => el.innerText = p.currency);
+
+        // Render Assets
+        renderAssetsTable(p.holdings || [], p.transactions || [], p.currency);
+
+        // Render Taxation
+        const taxSection = document.getElementById('latent-taxation-section');
+        const taxTableBody = document.getElementById('tax-breakdown-table-body');
+        
+        if (p.taxBreakdown && p.taxBreakdown.length > 0) {
+            taxSection.classList.remove('hidden');
+            
+            const totalGross = p.taxBreakdown.reduce((s, b) => s + b.grossGain, 0);
+            const totalNet = p.taxBreakdown.reduce((s, b) => s + b.netGain, 0);
+            
+            document.getElementById('taxation-gross-gain').innerText = formatPrivacy(totalGross, p.currency, 'tax-gross', 0);
+            document.getElementById('total-latent-tax-label').innerText = formatPrivacy(p.totalLatentTax, p.currency, 'tax-total', 0);
+            document.getElementById('taxation-net-gain').innerText = formatPrivacy(totalNet, p.currency, 'tax-net', 0);
+            
+            taxTableBody.innerHTML = p.taxBreakdown.map(b => `
+                <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-amber-100/30 transition-colors">
+                    <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${b.type} <span class="text-[10px] text-slate-400 font-normal ml-1">(${b.rate}%)</span></td>
+                    <td class="py-3 text-right font-medium">${formatPrivacy(b.grossGain, p.currency, 'tax-row-gross-' + b.type, 0)}</td>
+                    <td class="py-2 text-right">
+                        <input type="number" step="any" min="0" data-type="${b.type}" 
+                               class="fiscal-minusvalenza-input w-28 text-right bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 focus:ring-2 focus:ring-amber-500/40 outline-none shadow-sm transition-all" 
+                               value="${b.minusvalenze || 0}" 
+                               placeholder="0.00" 
+                               onchange="saveFiscalMinusvalenze()" />
+                    </td>
+                    <td class="py-3 text-right font-bold">${formatPrivacy(b.taxableGain, p.currency, 'tax-row-taxable-' + b.type, 0)}</td>
+                    <td class="py-3 text-right text-rose-500 font-black">${formatPrivacy(b.tax, p.currency, 'tax-row-tax-' + b.type, 0)}</td>
+                    <td class="py-3 text-right text-emerald-600 font-black">${formatPrivacy(b.netGain, p.currency, 'tax-row-net-' + b.type, 0)}</td>
+                </tr>
+            `).join('');
+        } else {
+            taxSection.classList.add('hidden');
+        }
+
+        renderAllocation({
+            type: p.allocation,
+            currency: p.currencyAllocation,
+            country: p.countryAllocation
+        });
+
+        renderCashHistory(p.transactions || [], p.currency);
+        renderTransactionsTable(p.transactions || [], p.holdings || [], p.currency);
+    }
+
+    async function loadPortfolioDetails() {
+        if (!currentPortfolioId) return;
+        const cacheKey = 'portfolio_detail_' + currentPortfolioId;
+        const url = `/api/portfolios/${currentPortfolioId}`;
+
+        if (window.ftCache) {
+            await ftCache.fetchSWR(cacheKey, url, {
+                onData: (p) => renderPortfolioDetails(p),
+                onUpdate: (freshP) => renderPortfolioDetails(freshP)
             });
-
-            // Render Cash History
-            renderCashHistory(p.transactions || [], p.currency);
-
-            // Render Chronological Transaction Log
-            renderTransactionsTable(p.transactions || [], p.holdings || [], p.currency);
-
-        } catch (err) { 
-            console.error("Error loading portfolio details:", err);
-            navigateToList();
+        } else {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    console.error("Portfolio fetch failed");
+                    return navigateToList();
+                }
+                const p = await res.json();
+                renderPortfolioDetails(p);
+            } catch (err) { 
+                console.error("Error loading portfolio details:", err);
+                navigateToList();
+            }
         }
     }
 
@@ -2263,9 +2280,11 @@
     async function updatePerformanceChart() {
         if (!currentPortfolioId || !performanceChart) return;
         const mode = currentPortfolioChartMode;
-        try {
-            const res = await fetch(`/api/analytics/portfolio-performance/${currentPortfolioId}?range=${currentChartRange}`);
-            const result = await res.json();
+        const url = `/api/analytics/portfolio-performance/${currentPortfolioId}?range=${currentChartRange}`;
+        const cacheKey = `chart_perf_${currentPortfolioId}_${currentChartRange}`;
+
+        const renderChart = (result) => {
+            if (!result) return;
             const dataPoints = result.dataPoints || [];
             currentPerformanceData = dataPoints;
             performanceChart.rawPoints = dataPoints;
@@ -2417,8 +2436,21 @@
                 `;
                 perfBadge.classList.remove('hidden');
             }
-        } catch (err) {
-            console.error('Failed to update chart:', err);
+        };
+
+        if (window.ftCache) {
+            await ftCache.fetchSWR(cacheKey, url, {
+                onData: renderChart,
+                onUpdate: renderChart
+            });
+        } else {
+            try {
+                const res = await fetch(url);
+                const result = await res.json();
+                renderChart(result);
+            } catch (err) {
+                console.error('Failed to update chart:', err);
+            }
         }
     }
 
