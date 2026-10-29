@@ -116,25 +116,66 @@
         padding: 5px 8px;
     }
 
-    /* ── Layout V1 (Legacy: Original spacing and 90px AI column) ── */
+    /* ── Layout V1 (New: Modern 1-Line Clean View) ── */
     .layout-v1 #mob-movers-section {
-        margin-bottom: 0;
+        margin-bottom: 0px;
     }
     .layout-v1 #mob-movers-carousel {
-        padding-bottom: 1rem !important;
+        padding-bottom: 2px !important;
     }
     .layout-v1 .mob-movers-spacer {
-        display: block !important;
-        flex: 1 !important;
-        height: 16px !important;
+        display: none !important;
     }
     .layout-v1 #mob-open-asset-header {
-        padding: 14px 16px 6px !important;
+        padding: 6px 16px 2px !important;
     }
-    .layout-v1 .mkcard-row {
-        grid-template-columns: 1fr 90px 55px 75px;
-        gap: 8px;
-        padding: 6px 8px;
+    .layout-v1 .mkcard-v1-row {
+        display: grid;
+        grid-template-columns: minmax(68px, 1.1fr) minmax(76px, 1.1fr) minmax(64px, 0.9fr) minmax(82px, 1.2fr);
+        align-items: center;
+        height: 40px;
+        padding: 0 10px;
+        gap: 6px;
+        background: var(--mob-surface);
+        border-bottom: 1px solid var(--mob-border);
+        cursor: pointer;
+        position: relative;
+        z-index: 2;
+        transition: background 0.15s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        will-change: transform;
+        white-space: nowrap;
+    }
+    .layout-v1 .mkcard-v1-row:active {
+        background: var(--mob-border);
+    }
+    .layout-v1 .mkcard-v1-row::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 4px; bottom: 4px;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+    }
+    .layout-v1 .mkcard-v1-row.pos::before { background: var(--mob-emerald); }
+    .layout-v1 .mkcard-v1-row.neg::before { background: var(--mob-rose); }
+    .layout-v1 .mkcard-v1-row.closed-market {
+        background: var(--mob-surface-2) !important;
+    }
+    .layout-v1 .mkcard-v1-row.closed-market > * {
+        opacity: 0.75;
+    }
+    .layout-v1 .mkcard-v1-header {
+        display: grid;
+        grid-template-columns: minmax(68px, 1.1fr) minmax(76px, 1.1fr) minmax(64px, 0.9fr) minmax(82px, 1.2fr);
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--mob-text-muted);
+        background: var(--mob-surface-2);
+        border-bottom: 1px solid var(--mob-border);
     }
 </style>
 <script src="/theme.js"></script>
@@ -224,13 +265,13 @@
       <div class="flex items-center gap-1.5">
         <span id="mob-pos-count" class="mob-header-subtitle text-[11px] font-bold">0 Assets</span>
 
-        <!-- Layout Version Switcher: V2 (Nuovo) / V1 (Vecchio) -->
-        <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5 border border-slate-200 dark:border-slate-700" title="Passa tra Layout Nuovo (V2) e Layout Precedente (V1)">
-          <button id="btn-layout-new" onclick="setMarketLayoutVersion('new')" title="Layout Nuovo (V2: compatto + icone colorate)"
+        <!-- Layout Version Switcher: V2 (Completo) / V1 (Moderno 1 riga) -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5 border border-slate-200 dark:border-slate-700" title="Passa tra Layout V2 (Completo) e Layout V1 (Moderno 1 riga)">
+          <button id="btn-layout-new" onclick="setMarketLayoutVersion('new')" title="Layout V2: Completo (2 righe, AI, Totali)"
                   class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all">
             V2
           </button>
-          <button id="btn-layout-legacy" onclick="setMarketLayoutVersion('legacy')" title="Layout Precedente (V1: originale)"
+          <button id="btn-layout-legacy" onclick="setMarketLayoutVersion('legacy')" title="Layout V1: Moderno 1 Riga (Ticker, Prezzo, % Giorno, Val Giorno)"
                   class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all">
             V1
           </button>
@@ -421,7 +462,7 @@
         btnLegacy.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all text-slate-400 hover:text-slate-200';
       } else {
         btnNew.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all text-slate-400 hover:text-slate-200';
-        btnLegacy.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all bg-amber-600 text-white shadow-sm';
+        btnLegacy.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all bg-primary text-white shadow-sm';
       }
     }
   }
@@ -446,13 +487,13 @@
     } else {
       scrollEl?.classList.add('layout-v1');
       scrollEl?.classList.remove('layout-v2');
-      if (spacerEl) spacerEl.style.display = 'block';
+      if (spacerEl) spacerEl.style.display = 'none';
       if (moversCarousel) {
-        moversCarousel.classList.add('pb-4');
-        moversCarousel.style.paddingBottom = '';
+        moversCarousel.classList.remove('pb-4');
+        moversCarousel.style.paddingBottom = '2px';
       }
       if (openSectionHeader) {
-        openSectionHeader.style.padding = '14px 16px 6px';
+        openSectionHeader.style.padding = '6px 16px 2px';
       }
     }
   }
@@ -1196,8 +1237,116 @@
           </div>`;
       }
 
-      // ── Legacy Normal / Compact renderer ────────────────────────────
+      // ==========================================================================
+      // [LAYOUT V1] ULTRA-MODERN 1-LINE ASSET ROW
+      // Strictly 1 line per asset with:
+      // 1. TICKER
+      // 2. Prezzo attuale
+      // 3. Variazione % giornaliera
+      // 4. Valore Assoluto di variazione giornaliero (con simbolo valuta)
+      // ==========================================================================
+      function renderCardViewV1(a) {
+        const price = a.currentPrice || 0;
+        const change = a.changePercent || 0;
+        const isZero = Math.abs(change) < 0.001;
+        const isPos = change > 0.0001;
+        const chgColor = isPos ? 'var(--mob-emerald)' : (isZero ? 'var(--mob-text-muted)' : 'var(--mob-rose)');
+        const tickerEsc = (a.ticker || '').replace(/'/g, "\\'");
+        const nameEsc = (a.name || '').replace(/'/g, "\\'");
+        const cur = a.currency || 'EUR';
+        const isOpen = isAssetMarketOpen(a);
+        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
+
+        // 1. TICKER
+        const displaySymbol = _marketExtMode ? abbreviateName(a.name, 12) : a.ticker;
+
+        // 2. PREZZO ATTUALE
+        const priceDec = (price >= 1000) ? 1 : 2;
+        const priceFmt = (price > 0)
+          ? formatCurrency(price, cur, priceDec)
+          : (price === 0 ? formatCurrency(0, cur, 0) : '—');
+
+        // 3. VARIAZIONE % GIORNALIERA
+        let varPctHtml = '';
+        if (a.marketState === 'CLOSED' && isZero) {
+          varPctHtml = `<span style="background:rgba(100,116,139,0.15); color:var(--mob-text-muted); border-radius:4px; padding:1.5px 5px; font-size:calc(9.5px * var(--mkcard-scale, 1)); font-weight:800; text-transform:uppercase; font-family:'SF Mono',monospace;">Chiuso</span>`;
+        } else if (a.marketState === 'WAITING_QUOTE' && isZero) {
+          varPctHtml = `<span style="background:rgba(245,158,11,0.15); color:#d97706; border-radius:4px; padding:1.5px 5px; font-size:calc(9.5px * var(--mkcard-scale, 1)); font-weight:800; text-transform:uppercase; font-family:'SF Mono',monospace;">Attesa</span>`;
+        } else if (a.marketState === 'MANUAL') {
+          varPctHtml = `<span style="color:var(--mob-text-muted); font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:700; font-family:'SF Mono',monospace;">—</span>`;
+        } else {
+          const sign = isPos ? '+' : '';
+          const bgPill = isPos ? 'rgba(16,185,129,0.12)' : (isZero ? 'rgba(100,116,139,0.12)' : 'rgba(244,63,94,0.12)');
+          varPctHtml = `<span style="background:${bgPill}; color:${chgColor}; border-radius:4px; padding:1.5px 5px; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; letter-spacing:-0.2px; display:inline-block;">${sign}${change.toFixed(1)}%</span>`;
+        }
+
+        // 4. VALORE ASSOLUTO DI VARIAZIONE GIORNALIERO (con simbolo valuta)
+        const unitChg = (a.changeValue !== null && a.changeValue !== undefined)
+          ? a.changeValue
+          : (price * change / 100);
+        const qty = a.hasPosition ? (a.totalQuantity || 0) : 1;
+        const dailyDelta = (qty > 0) ? (unitChg * qty) : unitChg;
+
+        const deltaIsZero = Math.abs(dailyDelta) < 0.001;
+        const deltaIsPos = dailyDelta > 0.0001;
+        const deltaIsNeg = dailyDelta < -0.0001;
+        const deltaColor = deltaIsPos ? 'var(--mob-emerald)' : (deltaIsNeg ? 'var(--mob-rose)' : 'var(--mob-text-muted)');
+        const deltaSign = deltaIsPos ? '+' : '';
+
+        let varValHtml = '';
+        if (a.marketState === 'CLOSED' && deltaIsZero) {
+          varValHtml = `<span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text-muted); font-family:'SF Mono',monospace;">0,00</span>`;
+        } else if (a.marketState === 'WAITING_QUOTE' && deltaIsZero) {
+          varValHtml = `<span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text-muted); font-family:'SF Mono',monospace;">0,00</span>`;
+        } else if (a.marketState === 'MANUAL') {
+          varValHtml = `<span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text-muted); font-family:'SF Mono',monospace;">—</span>`;
+        } else {
+          const deltaDec = (Math.abs(dailyDelta) >= 1000) ? 0 : 2;
+          const formattedDelta = formatCurrency(dailyDelta, cur, deltaDec);
+          const signedDeltaStr = deltaSign + formattedDelta;
+          varValHtml = `<span style="font-size:calc(11.5px * var(--mkcard-scale, 1)); font-weight:800; color:${deltaColor}; font-family:'SF Mono',monospace; white-space:nowrap;">${signedDeltaStr}</span>`;
+        }
+
+        return `
+          <div class="mob-holding-swipe-container"
+               ontouchstart="handleTouchStart(event,this)"
+               ontouchmove="handleTouchMove(event,this)"
+               ontouchend="handleTouchEnd(event,this)">
+            ${renderActions(a)}
+            <div class="mkcard-row mkcard-v1-row ${isPos ? 'pos' : (isZero ? '' : 'neg')} ${isOpen ? '' : 'closed-market'}"
+                 onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
+              
+              <!-- Col 1: TICKER -->
+              <div style="display:flex; align-items:center; min-width:0; overflow:hidden;">
+                <span style="background:${colors.bg}; color:var(--mob-text); border:1px solid ${colors.border}; border-radius:4px; padding:2px 5px; font-size:calc(10.5px * var(--mkcard-scale, 1)); font-weight:900; letter-spacing:-0.2px; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block;" title="${a.ticker}">
+                  ${displaySymbol}
+                </span>
+              </div>
+
+              <!-- Col 2: Prezzo attuale -->
+              <div style="text-align:right; min-width:0; overflow:hidden; text-overflow:ellipsis;">
+                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:800; font-family:'SF Mono',monospace; color:var(--mob-text); white-space:nowrap;">
+                  ${priceFmt}
+                </span>
+              </div>
+
+              <!-- Col 3: Variazione % giornaliera -->
+              <div style="text-align:right; min-width:0;">
+                ${varPctHtml}
+              </div>
+
+              <!-- Col 4: Valore Assoluto di variazione giornaliero (con simbolo valuta) -->
+              <div style="text-align:right; min-width:0; overflow:hidden; text-overflow:ellipsis;">
+                ${varValHtml}
+              </div>
+
+            </div>
+          </div>`;
+      }
+
+      // ── Card View Switcher between V1 and V2 ─────────────────────────
       const renderCard = (a) => {
+        if (_marketLayoutVersion === 'legacy') return renderCardViewV1(a);
         if (_marketViewMode === 'card') return renderCardView(a);
 
         const price = a.currentPrice || 0;
@@ -1323,6 +1472,15 @@
             
             const sectionId = title.replace(/\s+/g, '-').toLowerCase();
 
+            const v1SubHeader = (_marketLayoutVersion === 'legacy')
+              ? `<div class="mkcard-v1-header">
+                   <span>Ticker</span>
+                   <span style="text-align:right">Prezzo</span>
+                   <span style="text-align:right">% Giorno</span>
+                   <span style="text-align:right">Val Giorno</span>
+                 </div>`
+              : '';
+
             return `
               <div class="px-3 py-2 bg-yellow-100 dark:bg-yellow-900/20 text-xs font-black uppercase tracking-[0.15em] text-yellow-900 dark:text-yellow-100 border-y-2 border-yellow-300 dark:border-yellow-700/50 flex items-center justify-between cursor-pointer" onclick="toggleSectionMob('${sectionId}')">
                 <div class="flex items-center gap-2">
@@ -1342,6 +1500,7 @@
                 </div>
               </div>
               <div id="section-mob-${sectionId}">
+                  ${v1SubHeader}
                   ${items.map(a => renderCard(a, true)).join('')}
               </div>
             `;
@@ -1354,8 +1513,15 @@
             azHtml = renderSectionMob(azioniEur, 'Azioni EUR') +
                      renderSectionMob(azioniUsd, 'Azioni USD');
           } else {
-            const azioni = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni');
-            azHtml = renderSectionMob(azioni, 'Azioni');
+            const azioniEur = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni' && (a.currency || '').toUpperCase() !== 'USD');
+            const azioniUsd = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni' && (a.currency || '').toUpperCase() === 'USD');
+            if (azioniUsd.length > 0) {
+              azHtml = renderSectionMob(azioniEur, 'Azioni EUR') +
+                       renderSectionMob(azioniUsd, 'Azioni USD');
+            } else {
+              const azioni = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni');
+              azHtml = renderSectionMob(azioni, 'Azioni');
+            }
           }
 
           posContainer.innerHTML = azHtml +
