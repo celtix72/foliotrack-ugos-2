@@ -249,13 +249,34 @@ IMPORTANTE:
         try {
             const settings = database.getSettings(req.user.id);
             const matrix = {
-                tp: { push: settings.notify_tp_push === 'true' },
-                sl: { push: settings.notify_sl_push === 'true' },
-                vol: { push: settings.notify_vol_push === 'true' },
-                daily: { push: settings.notify_daily_push === 'true' },
-                status: { push: settings.notify_status_push === 'true' },
-                dividend: { push: settings.notify_dividend_push === 'true' },
-                news: { push: settings.notify_news_push === 'true' }
+                tp: { 
+                    push: settings.notify_tp_push === 'true',
+                    telegram: settings.notify_tp_telegram !== 'false'
+                },
+                sl: { 
+                    push: settings.notify_sl_push === 'true',
+                    telegram: settings.notify_sl_telegram !== 'false'
+                },
+                vol: { 
+                    push: settings.notify_vol_push === 'true',
+                    telegram: settings.notify_vol_telegram !== 'false'
+                },
+                daily: { 
+                    push: settings.notify_daily_push === 'true',
+                    telegram: settings.notify_daily_telegram !== 'false'
+                },
+                status: { 
+                    push: settings.notify_status_push === 'true',
+                    telegram: settings.notify_status_telegram === 'true'
+                },
+                dividend: { 
+                    push: settings.notify_dividend_push === 'true',
+                    telegram: settings.notify_dividend_telegram !== 'false'
+                },
+                news: { 
+                    push: settings.notify_news_push === 'true',
+                    telegram: settings.notify_news_telegram !== 'false'
+                }
             };
             res.json(matrix);
         } catch (e) {
@@ -272,6 +293,9 @@ IMPORTANTE:
             for (const [event, channels] of Object.entries(matrix)) {
                 if (channels.push !== undefined) {
                     updates.push({ key: `notify_${event}_push`, value: String(channels.push) });
+                }
+                if (channels.telegram !== undefined) {
+                    updates.push({ key: `notify_${event}_telegram`, value: String(channels.telegram) });
                 }
             }
             
@@ -304,6 +328,41 @@ IMPORTANTE:
                 res.status(400).json({ error: 'Nessun dispositivo registrato per le notifiche push. Assicurati di abilitare le notifiche su questo dispositivo.' });
             } else {
                 res.status(500).json({ error: result.error || 'Errore invio push' });
+            }
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // POST /api/settings/telegram/test
+    router.post('/settings/telegram/test', requireAuth, async (req, res) => {
+        try {
+            const { botToken, chatId } = req.body || {};
+            const settings = database.getSettings(req.user.id);
+            const tokenToUse = (botToken !== undefined && botToken !== '') ? botToken : settings.telegramBotToken;
+            const chatIdToUse = (chatId !== undefined && chatId !== '') ? chatId : settings.telegramChatId;
+
+            if (!tokenToUse || !chatIdToUse) {
+                return res.status(400).json({ 
+                    error: 'Configura sia il Bot Token che l\'ID Canale/Chat Telegram prima di inviare un test.' 
+                });
+            }
+
+            const { sendTelegramMessage } = require('../services/telegramService');
+            const testText = `🚀 <b>FolioTrack — Test Canale Telegram</b>\n\n` +
+                             `Se ricevi questo messaggio, il bot è configurato ed autorizzato a pubblicare nel tuo canale privato!\n\n` +
+                             `⏰ <i>Data: ${new Date().toLocaleString('it-IT')}</i>`;
+
+            const result = await sendTelegramMessage(testText, chatIdToUse, req.user.id, {
+                token: tokenToUse,
+                parseMode: 'HTML',
+                force: true
+            });
+
+            if (result.success) {
+                res.json({ success: true, message: 'Messaggio di test inviato con successo al canale Telegram!' });
+            } else {
+                res.status(400).json({ error: result.error || 'Errore invio messaggio Telegram' });
             }
         } catch (e) {
             res.status(500).json({ error: e.message });

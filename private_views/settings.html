@@ -419,6 +419,7 @@
                         <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                             <th class="pb-3 px-2">Tipo di Evento</th>
                             <th class="pb-3 text-center px-4">Web Push</th>
+                            <th class="pb-3 text-center px-4 text-[#0088cc]">Telegram</th>
                             <th class="pb-3 text-center px-4">Test</th>
                         </tr>
                     </thead>
@@ -431,6 +432,9 @@
                             </td>
                             <td class="py-4 text-center">
                                 <input type="checkbox" id="notify-tp-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-tp-telegram" class="rounded border-slate-300 dark:border-slate-700 text-[#0088cc] focus:ring-[#0088cc] h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                             </td>
                             <td class="py-4 text-center">
                                 <button onclick="sendTestNotify('tp')" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Invia Test">
@@ -448,6 +452,9 @@
                                 <input type="checkbox" id="notify-sl-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                             </td>
                             <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-sl-telegram" class="rounded border-slate-300 dark:border-slate-700 text-[#0088cc] focus:ring-[#0088cc] h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
                                 <button onclick="sendTestNotify('sl')" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Invia Test">
                                     <span class="material-symbols-outlined text-sm">send</span>
                                 </button>
@@ -461,6 +468,9 @@
                             </td>
                             <td class="py-4 text-center">
                                 <input type="checkbox" id="notify-vol-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-vol-telegram" class="rounded border-slate-300 dark:border-slate-700 text-[#0088cc] focus:ring-[#0088cc] h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                             </td>
                             <td class="py-4 text-center">
                                 <button onclick="sendTestNotify('vol')" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Invia Test">
@@ -478,6 +488,9 @@
                                 <input type="checkbox" id="notify-daily-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                             </td>
                             <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-daily-telegram" class="rounded border-slate-300 dark:border-slate-700 text-[#0088cc] focus:ring-[#0088cc] h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
                                 <button onclick="sendTestNotify('daily')" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Invia Test">
                                     <span class="material-symbols-outlined text-sm">send</span>
                                 </button>
@@ -491,6 +504,9 @@
                             </td>
                             <td class="py-4 text-center">
                                 <input type="checkbox" id="notify-status-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-status-telegram" class="rounded border-slate-300 dark:border-slate-700 text-[#0088cc] focus:ring-[#0088cc] h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                             </td>
                             <td class="py-4 text-center">
                                 <button onclick="sendTestNotify('status')" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Invia Test">
@@ -508,6 +524,9 @@
                                 <input type="checkbox" id="notify-dividend-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                             </td>
                             <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-dividend-telegram" class="rounded border-slate-300 dark:border-slate-700 text-[#0088cc] focus:ring-[#0088cc] h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
                                 <button onclick="sendTestNotify('dividend')" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Invia Test">
                                     <span class="material-symbols-outlined text-sm">send</span>
                                 </button>
@@ -521,6 +540,9 @@
                             </td>
                             <td class="py-4 text-center">
                                 <input type="checkbox" id="notify-news-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-news-telegram" class="rounded border-slate-300 dark:border-slate-700 text-[#0088cc] focus:ring-[#0088cc] h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
                             </td>
                             <td class="py-4 text-center">
                                 <button onclick="sendTestNotify('news')" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Invia Test">
@@ -644,6 +666,97 @@
                 <button onclick="sendTestPush()" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-xs font-bold hover:bg-blue-600 transition-all shadow-sm shadow-blue-500/20 flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">send_and_archive</span> Invia Test
                 </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Canale Telegram Privato -->
+<section class="space-y-2">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('telegram-settings-content')">
+        <h2 class="text-lg font-bold border-l-4 border-[#0088cc] pl-3 flex items-center gap-2">
+            <span>Canale Telegram Privato</span>
+            <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#0088cc]/10 text-[#0088cc] tracking-wider">Notifiche</span>
+        </h2>
+        <span id="telegram-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-[#0088cc] transition-transform">expand_more</span>
+    </div>
+    <div id="telegram-settings-content" class="hidden">
+        <div class="bg-white dark:bg-surface-dark border-y sm:border-x border-slate-200 dark:border-slate-800 rounded-none sm:rounded-xl p-6 space-y-6">
+            <!-- Toggle Abilita -->
+            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div>
+                    <div class="font-bold text-sm flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#0088cc] text-lg">send</span>
+                        Abilita Notifiche su Canale Telegram Privato
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                        Invia in tempo reale tutti gli avvisi su uno specifico canale Telegram privato
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="telegram-enabled-check" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#0088cc]"></div>
+                </label>
+            </div>
+
+            <!-- Parametri di configurazione -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest">
+                        Telegram Bot Token
+                    </label>
+                    <div class="relative">
+                        <input id="telegram-bot-token" type="password" 
+                               placeholder="es. 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"
+                               class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-3 pr-10 py-2.5 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-[#0088cc]/30">
+                        <button type="button" onclick="togglePasswordVisibility('telegram-bot-token')" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+                            <span class="material-symbols-outlined text-sm">visibility</span>
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-slate-400">Token ottenuto avviando una chat con <b>@BotFather</b> su Telegram.</p>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest">
+                        ID Canale o Chat Privata
+                    </label>
+                    <input id="telegram-chat-id" type="text" 
+                           placeholder="es. -1001234567890 oppure @nomecanale"
+                           class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2.5 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-[#0088cc]/30">
+                    <p class="text-[9px] text-slate-400">ID del canale privato (tipicamente inizia con <code>-100...</code>) o username (es. <code>@canale</code>).</p>
+                </div>
+            </div>
+
+            <!-- Guida configurazione canale privato -->
+            <div class="p-4 bg-sky-50 dark:bg-sky-950/20 rounded-xl border border-sky-200 dark:border-sky-900/40 text-xs text-slate-700 dark:text-slate-300 space-y-2">
+                <div class="font-black flex items-center gap-1.5 text-sky-700 dark:text-sky-300">
+                    <span class="material-symbols-outlined text-sm">info</span>
+                    Come configurare l'invio su Canale Privato Telegram
+                </div>
+                <ol class="list-decimal list-inside space-y-1 text-[11px] leading-relaxed">
+                    <li>Crea un bot su Telegram scrivendo a <b>@BotFather</b> (comando <code>/newbot</code>) e incolla il <b>Token</b> sopra.</li>
+                    <li>Crea il tuo <b>Canale Telegram Privato</b> (oppure usa un canale esistente).</li>
+                    <li>Nelle impostazioni del Canale, vai su <b>Amministratori &rarr; Aggiungi Amministratore</b>, cerca il tuo bot e aggiungilo con il permesso di <b>"Pubblicare messaggi"</b>.</li>
+                    <li>Recupera l'ID del canale (inoltra un messaggio del canale a <b>@userinfobot</b> su Telegram per vedere l'ID <code>-100...</code>) e incollalo nel campo qui sopra.</li>
+                    <li>Salva le impostazioni e usa il tasto <b>Invia Test Telegram</b> per verificare che il bot invii correttamente nel canale.</li>
+                </ol>
+            </div>
+
+            <!-- Azioni e Feedback Test -->
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <button onclick="saveTelegramSettings()" class="px-5 py-2.5 bg-[#0088cc] text-white rounded-lg text-xs font-black uppercase tracking-wider hover:bg-[#0077b5] transition-all shadow-sm shadow-[#0088cc]/20 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">save</span> Salva Configurazione Telegram
+                    </button>
+                    <span id="telegram-save-msg" class="text-xs font-bold text-emerald-500 hidden">Impostazioni Telegram salvate!</span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button id="btn-test-telegram" onclick="sendTestTelegram()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm text-[#0088cc]">send_and_archive</span> Invia Test Telegram
+                    </button>
+                    <span id="telegram-test-msg" class="text-xs font-bold hidden"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -3198,12 +3311,22 @@
                 for (const [event, channels] of Object.entries(matrix)) {
                     const psh = document.getElementById(`notify-${event}-push`);
                     if (psh && channels) psh.checked = !!channels.push;
+                    const tg = document.getElementById(`notify-${event}-telegram`);
+                    if (tg && channels) tg.checked = !!channels.telegram;
                 }
             }
             
-            // Also load threshold & Status Config
+            // Also load threshold & Status Config & Telegram Config
             const resS = await fetch('/api/settings');
             const settings = await resS.json();
+
+            const tgToken = document.getElementById('telegram-bot-token');
+            if (tgToken && settings.telegramBotToken) tgToken.value = settings.telegramBotToken;
+            const tgChat = document.getElementById('telegram-chat-id');
+            if (tgChat && settings.telegramChatId) tgChat.value = settings.telegramChatId;
+            const tgEnabled = document.getElementById('telegram-enabled-check');
+            if (tgEnabled) tgEnabled.checked = settings.telegramEnabled === 'true' || settings.telegramEnabled === true;
+
             const volInput = document.getElementById('volatility-threshold');
             if (volInput) volInput.value = settings.volatilityThreshold || 5.0;
             
@@ -3237,8 +3360,10 @@
         const matrix = {};
         events.forEach(ev => {
             const psh = document.getElementById(`notify-${ev}-push`);
+            const tg = document.getElementById(`notify-${ev}-telegram`);
             matrix[ev] = {
-                push: psh ? psh.checked : false
+                push: psh ? psh.checked : false,
+                telegram: tg ? tg.checked : false
             };
         });
 
@@ -3253,6 +3378,86 @@
             alert('Errore di rete');
         }
     }
+
+    window.togglePasswordVisibility = function(id) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.type = input.type === 'password' ? 'text' : 'password';
+    };
+
+    window.saveTelegramSettings = async function() {
+        const botToken = document.getElementById('telegram-bot-token')?.value || '';
+        const chatId = document.getElementById('telegram-chat-id')?.value || '';
+        const enabled = document.getElementById('telegram-enabled-check')?.checked ? 'true' : 'false';
+        const msg = document.getElementById('telegram-save-msg');
+
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    telegramBotToken: botToken,
+                    telegramChatId: chatId,
+                    telegramEnabled: enabled
+                })
+            });
+            if (res.ok) {
+                if (msg) {
+                    msg.textContent = 'Impostazioni Telegram salvate!';
+                    msg.className = 'text-xs font-bold text-emerald-500';
+                    msg.classList.remove('hidden');
+                    setTimeout(() => msg.classList.add('hidden'), 3500);
+                }
+            } else {
+                const data = await res.json();
+                alert('Errore salvataggio: ' + (data.error || 'Errore sconosciuto'));
+            }
+        } catch (e) {
+            alert('Errore di rete');
+        }
+    };
+
+    window.sendTestTelegram = async function() {
+        const btn = document.getElementById('btn-test-telegram');
+        const msg = document.getElementById('telegram-test-msg');
+        const botToken = document.getElementById('telegram-bot-token')?.value || '';
+        const chatId = document.getElementById('telegram-chat-id')?.value || '';
+        
+        if (btn) btn.disabled = true;
+        if (msg) {
+            msg.textContent = 'Invio test in corso...';
+            msg.className = 'text-xs font-bold text-slate-500';
+            msg.classList.remove('hidden');
+        }
+
+        try {
+            const res = await fetch('/api/settings/telegram/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ botToken, chatId })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                if (msg) {
+                    msg.textContent = 'Messaggio di test inviato con successo!';
+                    msg.className = 'text-xs font-bold text-emerald-500';
+                }
+            } else {
+                if (msg) {
+                    msg.textContent = 'Errore: ' + (data.error || 'Invio fallito');
+                    msg.className = 'text-xs font-bold text-rose-500';
+                }
+            }
+        } catch (e) {
+            if (msg) {
+                msg.textContent = 'Errore di rete durante il test';
+                msg.className = 'text-xs font-bold text-rose-500';
+            }
+        } finally {
+            if (btn) btn.disabled = false;
+            if (msg) setTimeout(() => msg.classList.add('hidden'), 6000);
+        }
+    };
 
     async function saveNotificationParams() {
         const volatility = document.getElementById('volatility-threshold')?.value;

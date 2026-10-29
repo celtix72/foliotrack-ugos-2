@@ -1,10 +1,11 @@
 const database = require('../db');
 const { logger } = require('../utils/logger');
 const { sendPushNotification } = require('./pushService');
+const { sendTelegramNotification } = require('./telegramService');
 
 /**
  * Unified Notification Center
- * event: 'TP', 'SL', 'VOL', 'DAILY', 'STATUS', 'DIVIDEND'
+ * event: 'TP', 'SL', 'VOL', 'DAILY', 'STATUS', 'DIVIDEND', 'NEWS'
  */
 async function notifyUser(userId, event, payload, force = false) {
     const settings = database.getSettings(userId);
@@ -20,7 +21,7 @@ async function notifyUser(userId, event, payload, force = false) {
         logger.error('Failed to log internal notification', e);
     }
 
-    // 2. Web Push
+    // 2. Web Push (Smartphone / Browser / PWA)
     const pushEnabled = force || settings[`notify_${eventKey}_push`] === 'true';
     if (pushEnabled) {
         const pushPayload = {
@@ -31,7 +32,17 @@ async function notifyUser(userId, event, payload, force = false) {
                 tag: eventKey 
             }
         };
-        sendPushNotification(userId, pushPayload.title, pushPayload.body, pushPayload.data).catch(e => logger.error(`Push notify failed for ${event}`, e));
+        sendPushNotification(userId, pushPayload.title, pushPayload.body, pushPayload.data)
+            .catch(e => logger.error(`Push notify failed for ${event}`, e));
+    }
+
+    // 3. Telegram Private Channel Notification
+    const tgGloballyEnabled = (settings.telegramEnabled === 'true' || settings.telegram_enabled === 'true');
+    const tgEventSetting = settings[`notify_${eventKey}_telegram`];
+    const tgEventEnabled = force || (eventKey === 'status' ? tgEventSetting === 'true' : tgEventSetting !== 'false');
+    if (tgGloballyEnabled && tgEventEnabled) {
+        sendTelegramNotification(userId, payload, force)
+            .catch(e => logger.error(`Telegram notify failed for ${event}:`, e.message));
     }
 }
 
