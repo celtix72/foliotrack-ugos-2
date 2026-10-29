@@ -484,7 +484,7 @@
         mobLoadReportData();
     };
 
-    let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
+    let selectedPortfolioIds = (JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]') || []).map(Number).filter(n => !isNaN(n) && n > 0);
 
     async function mobLoadPortfolios() {
       try {
@@ -496,12 +496,22 @@
 
 
     function mobTogglePortfolioFilter(pId) {
-      const idx = selectedPortfolioIds.indexOf(pId);
-      if (idx > -1) {
-        selectedPortfolioIds.splice(idx, 1);
+      if (pId === 'all' || !pId) {
+        selectedPortfolioIds = [];
       } else {
-        selectedPortfolioIds.push(pId);
+        const numId = Number(pId);
+        if (isNaN(numId) || numId <= 0) {
+          selectedPortfolioIds = [];
+        } else {
+          const idx = selectedPortfolioIds.indexOf(numId);
+          if (idx > -1) {
+            selectedPortfolioIds.splice(idx, 1);
+          } else {
+            selectedPortfolioIds.push(numId);
+          }
+        }
       }
+      selectedPortfolioIds = selectedPortfolioIds.filter(n => !isNaN(n) && n > 0);
       localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
       mobLoadReportData();
     }

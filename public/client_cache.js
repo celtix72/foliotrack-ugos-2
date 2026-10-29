@@ -163,6 +163,7 @@
         ftCache.clear('chart_perf_');
         ftCache.clear('dashboard_portfolios');
         ftCache.clear('daily_gains_');
+        ftCache.clear('sparkline_');
     });
 
     window.ftCache = ftCache;

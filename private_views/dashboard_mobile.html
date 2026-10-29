@@ -141,7 +141,7 @@
           <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">TREND 7gg</span>
           <span class="text-[9px] font-bold" id="mob-daily-gains-total" style="color:#10b981"></span>
         </div>
-        <div class="flex items-end gap-1" id="mob-daily-gains-bars" style="height:44px">
+        <div class="flex items-end gap-1 overflow-x-auto" id="mob-daily-gains-bars" style="height:44px;scrollbar-width:none">
           <span class="text-[9px] text-slate-500 italic">...</span>
         </div>
       </div>
@@ -152,7 +152,7 @@
           <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">TREND MENSILE</span>
           <span class="text-[9px] font-bold" id="mob-sixm-sparkline-total" style="color:#10b981"></span>
         </div>
-        <div class="flex items-end gap-1" id="mob-sixm-sparkline-bars" style="height:44px">
+        <div class="flex items-end gap-1 overflow-x-auto" id="mob-sixm-sparkline-bars" style="height:44px;scrollbar-width:none">
           <span class="text-[9px] text-slate-500 italic">...</span>
         </div>
       </div>
@@ -331,23 +331,42 @@
 <script>
   let mobPerfChart = null;
   let mobCurrentRange = '1M';
-  let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]').map(Number);
+  let selectedPortfolioIds = (JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]') || []).map(Number).filter(n => !isNaN(n) && n > 0);
 
   window.mobTogglePortfolioFilter = function(pId) {
-      if (pId === 'all') {
+      if (pId === 'all' || !pId) {
           selectedPortfolioIds = [];
       } else {
           const numId = Number(pId);
-          const idx = selectedPortfolioIds.indexOf(numId);
-          if (idx > -1) {
-              selectedPortfolioIds.splice(idx, 1);
+          if (isNaN(numId) || numId <= 0) {
+              selectedPortfolioIds = [];
           } else {
-              selectedPortfolioIds.push(numId);
+              const idx = selectedPortfolioIds.indexOf(numId);
+              if (idx > -1) {
+                  selectedPortfolioIds.splice(idx, 1);
+              } else {
+                  selectedPortfolioIds.push(numId);
+              }
           }
       }
+      selectedPortfolioIds = selectedPortfolioIds.filter(n => !isNaN(n) && n > 0);
       localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
       mobRenderPortfolioFilters();
-      mobUpdateDashboard(window._dashboardData);
+      if (window._dashboardData) {
+          mobRenderDashboardUI(window._dashboardData);
+      }
+      mobUpdateChart();
+      mobLoadDailyGains();
+      mobLoadSixMonthSparkline();
+      mobLoadAllocation();
+  };
+
+  window.onPortfolioFilterChanged = function() {
+      selectedPortfolioIds = (JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]') || []).map(Number).filter(n => !isNaN(n) && n > 0);
+      mobRenderPortfolioFilters();
+      if (window._dashboardData) {
+          mobRenderDashboardUI(window._dashboardData);
+      }
       mobUpdateChart();
       mobLoadDailyGains();
       mobLoadSixMonthSparkline();
@@ -522,6 +541,9 @@
       mobRenderPortfolioFilters();
       mobUpdateWinnersLosers(data.global);
       mobSyncMarketStatus();
+      if (_mobDailyGainsRaw && typeof mobLoadDailyGains === 'function') {
+          mobLoadDailyGains();
+      }
   }
 
   async function mobUpdateDashboard(prefetchedData = null) {
@@ -552,13 +574,19 @@
                   },
                   onUpdate: (freshData) => {
                       mobRenderDashboardUI(freshData);
+                      mobLoadDailyGains();
                   }
               });
           } else {
               const res = await fetch('/api/portfolios');
               const data = await res.json();
               mobRenderDashboardUI(data);
+              mobUpdateChart();
+              mobLoadDailyGains();
+              mobLoadSixMonthSparkline();
               mobLoadAllocation();
+              loadDividendAlert();
+              loadEarningsAlert();
           }
       } catch(e) { console.error(e); }
   }
@@ -1202,6 +1230,8 @@
       }
   }
 
+  let _mobDailyGainsRaw = null;
+
   async function mobLoadDailyGains() {
       const barsEl  = document.getElementById('mob-daily-gains-bars');
       const totalEl = document.getElementById('mob-daily-gains-total');
@@ -1209,18 +1239,30 @@
       try {
           let url = '/api/analytics/daily-gains';
           if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
-          const cacheKey = 'daily_gains_' + (selectedPortfolioIds.slice().sort().join(',') || 'all');
+          const cacheKey = `daily_gains_${selectedPortfolioIds.join(',')}`;
 
           const renderDailyGains = (data) => {
               if (!data) return;
-              const days  = (data.days || []).slice().reverse(); // most recent LEFT
+              _mobDailyGainsRaw = data;
+              const days = (data.days || []).map(d => ({ ...d }));
 
-              if (days.length === 0) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
+              if (days.length === 0) {
+                  barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>';
+                  if (totalEl) totalEl.textContent = '—';
+                  return;
+              }
+
+              // Riconciliazione autoritativa della sessione odierna (uguale a Desktop)
+              if (days.length > 0 && window._mobCurrentMetrics) {
+                  const authoritativeGain = (window._mobCurrentMetrics.changeReg || 0)
+                                          + (window._mobCurrentMetrics.changePP  || 0);
+                  days[days.length - 1].gain = Math.round(authoritativeGain * 100) / 100;
+              }
 
               const maxAbs    = Math.max(...days.map(d => Math.abs(d.gain)), 1);
               const weekTotal = days.reduce((s, d) => s + d.gain, 0);
 
-              barsEl.innerHTML = days.map((d, renderIdx) => {
+              barsEl.innerHTML = days.slice().reverse().map((d, renderIdx) => {
                   const pct    = Math.round((Math.abs(d.gain) / maxAbs) * 100);
                   const isPos  = d.gain >= 0;
                   const color  = isPos ? '#10b981' : '#f43f5e';
@@ -1229,7 +1271,7 @@
                   const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
                   const isToday = renderIdx === 0; // reversed → first rendered = most recent = today
                   const todayDot = isToday ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${color};animation:pulse 1.5s infinite"></div>` : '';
-                  return `<div class="flex flex-col items-center gap-0.5 group relative" style="width:24px">
+                  return `<div class="flex flex-col items-center gap-0.5 group relative shrink-0" style="width:20px">
                       <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none" style="background:${color};color:white">${gainStr}${isToday ? ' ●' : ''}</div>
                       <div style="position:relative;width:100%">
                           ${todayDot}
@@ -1245,17 +1287,8 @@
                   totalEl.textContent = (isPos ? '+' : '') + formatCurrency(weekTotal, 'EUR', 0);
               }
 
-              // Fallback: If changeFX is not already showing on Mobile Hero card, check against last trading day gain
-              const rawDays = data.days || [];
-              if (rawDays.length > 0 && window._mobCurrentMetrics) {
-                  const lastDayGain = rawDays[rawDays.length - 1].gain;
-                  if (Math.abs(window._mobCurrentMetrics.changeFX || 0) < 1 && lastDayGain !== undefined) {
-                      const diff = Math.round((window._mobCurrentMetrics.changeReg || 0) - lastDayGain);
-                      if (Math.abs(diff) >= 5) {
-                          window._mobCurrentMetrics.changeFX = diff;
-                          renderMobHeroDayVar(window._mobCurrentMetrics);
-                      }
-                  }
+              if (window._mobCurrentMetrics && Math.abs(window._mobCurrentMetrics.changeFX || 0) >= 1) {
+                  renderMobHeroDayVar(window._mobCurrentMetrics);
               }
           };
 
@@ -1279,13 +1312,17 @@
       try {
           let url = '/api/analytics/global-performance?range=1Y';
           if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
-          const cacheKey = 'sparkline_1y_' + (selectedPortfolioIds.slice().sort().join(',') || 'all');
+          const cacheKey = `sparkline_1y_${selectedPortfolioIds.join(',')}`;
 
           const renderSparkline = (raw) => {
               if (!raw) return;
               const points = Array.isArray(raw) ? raw : (raw.dataPoints || []);
 
-              if (points.length < 2) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
+              if (points.length < 2) {
+                  barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>';
+                  if (totalEl) totalEl.textContent = '—';
+                  return;
+              }
 
               // Group by month
               const monthMap = {};
@@ -1307,23 +1344,28 @@
                   const curr = monthMap[sortedKeys[0]];
                   months.push({ key: sortedKeys[0], monthNum: parseInt(sortedKeys[0].split('-')[1], 10), gain: curr.last - curr.first });
               }
-              const bars = months.slice(-12).reverse(); // most recent LEFT
+              const bars = months.slice(-12);
 
-              if (bars.length === 0) { barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>'; return; }
+              if (bars.length === 0) {
+                  barsEl.innerHTML = '<span class="text-[9px] text-slate-500 italic">No data</span>';
+                  if (totalEl) totalEl.textContent = '—';
+                  return;
+              }
 
               const maxAbs    = Math.max(...bars.map(d => Math.abs(d.gain)), 1);
               const sixMTotal = bars.reduce((s, d) => s + d.gain, 0);
               const currYear  = new Date().getFullYear().toString();
+              const reversedBars = bars.slice().reverse();
 
               let html = '';
               let prevYear = null;
-              for (let mobI = 0; mobI < bars.length; mobI++) {
-                  const d = bars[mobI];
+              for (let mobI = 0; mobI < reversedBars.length; mobI++) {
+                  const d = reversedBars[mobI];
                   const barYear = d.key.split('-')[0];
                   const isCurr  = barYear === currYear;
                   const isCurrentMonth = (mobI === 0); // reversed → first = most recent month
                   if (prevYear !== null && prevYear !== barYear) {
-                      html += `<div style="width:4px;align-self:stretch;display:flex;align-items:flex-end"><div style="width:1px;height:60%;background:rgba(148,163,184,0.4);margin:0 auto"></div></div>`;
+                      html += `<div style="width:4px;align-self:stretch;display:flex;align-items:flex-end;flex-shrink:0"><div style="width:1px;height:60%;background:rgba(148,163,184,0.4);margin:0 auto"></div></div>`;
                   }
                   prevYear = barYear;
                   const pct     = Math.round((Math.abs(d.gain) / maxAbs) * 100);
@@ -1336,7 +1378,7 @@
                   const monthNames = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
                   const monthShort = `${monthNames[d.monthNum]} '${barYear.slice(-2)}`;
                   const tooltipText = `${monthShort}: ${gainStr}${isCurrentMonth ? ' ●' : ''}`;
-                  html += `<div class="flex flex-col items-center gap-0.5 group relative" style="width:20px">
+                  html += `<div class="flex flex-col items-center gap-0.5 group relative shrink-0" style="width:18px">
                       <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none shadow-sm" style="background:${color};color:white">${tooltipText}</div>
                       <div style="position:relative;width:100%">
                           ${liveIndicator}
