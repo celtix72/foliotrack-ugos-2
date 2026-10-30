@@ -380,3 +380,4 @@ if __name__ == '__main__':
     out = sys.argv[2] if len(sys.argv) > 2 else "directa_wealthfolio_export.csv"
     count = convert_directa_csv(inp, out)
     print(f"Conversione completata con successo! {count} movimenti esportati in {out}")
+
