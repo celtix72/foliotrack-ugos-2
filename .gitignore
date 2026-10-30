@@ -16,6 +16,9 @@ scratch/
 backups/
 data/
 
+# Personal exports / imports
+*.csv
+
 # Legacy root files (migrated to src/ and private_views/)
 /server.js
 /market.js
