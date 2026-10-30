@@ -2,6 +2,7 @@ const express = require('express');
 const { parse } = require('json2csv'); // Needed for export
 const fs = require('fs');
 const path = require('path');
+const { generateWealthfolioCSV } = require('../utils/exportFormats');
 
 module.exports = function (dependencies) {
     const router = express.Router();
@@ -239,13 +240,38 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
     // GET /api/portfolios/:id/export
     router.get('/:id/export', requireAuth, requirePortfolioAccess, (req, res) => {
         try {
-            const format = req.query.format || 'csv';
+            const format = (req.query.format || 'csv').toLowerCase();
+            const portfolio = database.db.prepare('SELECT name, currency FROM portfolios WHERE id = ?').get(req.params.id);
+            const pName = (portfolio?.name || `portfolio_${req.params.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+            const pCurr = portfolio?.currency || 'EUR';
+
+            if (format === 'wealthfolio' || format === 'wealthfolio_csv') {
+                const txs = database.db.prepare(`
+                    SELECT t.*, 
+                           p.name AS portfolioName, 
+                           p.currency AS portfolioCurrency,
+                           a.name AS assetName, 
+                           a.type AS assetType, 
+                           a.currency AS assetCurrency
+                    FROM transactions t
+                    JOIN portfolios p ON t.portfolioId = p.id
+                    LEFT JOIN assets a ON t.assetTicker = a.ticker
+                    WHERE t.portfolioId = ?
+                    ORDER BY t.date ASC, t.id ASC
+                `).all(req.params.id);
+
+                const csv = generateWealthfolioCSV(txs, pCurr);
+                res.header('Content-Type', 'text/csv; charset=utf-8');
+                res.attachment(`wealthfolio_${pName}_${new Date().toISOString().split('T')[0]}.csv`);
+                return res.send(csv);
+            }
+
             const txs = database.db.prepare('SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date DESC').all(req.params.id);
             
             if (format === 'csv') {
                 const fields = ['id', 'type', 'assetTicker', 'date', 'quantity', 'price', 'commission', 'tax', 'exchangeRate', 'amount', 'notes'];
                 const csv = parse(txs, { fields });
-                res.header('Content-Type', 'text/csv');
+                res.header('Content-Type', 'text/csv; charset=utf-8');
                 res.attachment(`portfolio_${req.params.id}_transactions.csv`);
                 return res.send(csv);
             } else {

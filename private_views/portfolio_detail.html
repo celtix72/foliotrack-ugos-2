@@ -194,9 +194,47 @@
             <button onclick="openReconcileModal()" title="Reconcile Cash" class="w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-amber-500">
                 <span class="material-symbols-outlined">balance</span>
             </button>
-            <button onclick="exportToCSV()" title="Export CSV" class="w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-indigo-500">
-                <span class="material-symbols-outlined">download</span>
-            </button>
+            <div class="relative inline-block text-left" id="export-dropdown-wrapper">
+                <button onclick="toggleExportMenu(event)" id="export-dropdown-btn" title="Esporta Transazioni" class="w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-indigo-500 focus:outline-none">
+                    <span class="material-symbols-outlined">download</span>
+                </button>
+                <div id="export-dropdown-menu" class="hidden absolute right-0 mt-2 w-72 bg-white dark:bg-surface-dark rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 p-2 space-y-1">
+                    <div class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">Esporta Transazioni Portafoglio</div>
+                    
+                    <button onclick="exportToCSV('wealthfolio')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center gap-2.5 group">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center justify-between">
+                                <span>Wealthfolio CSV</span>
+                                <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-500">wealthfolio.app</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 truncate">Formato standard pronto all'import</div>
+                        </div>
+                    </button>
+
+                    <button onclick="exportToCSV('csv')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-lg">table_chart</span>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800 dark:text-slate-100">CSV Standard (FolioTrack)</div>
+                            <div class="text-[10px] text-slate-400">Tutti i campi nativi FolioTrack</div>
+                        </div>
+                    </button>
+
+                    <button onclick="exportToCSV('json')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-lg">data_object</span>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800 dark:text-slate-100">JSON Completo</div>
+                            <div class="text-[10px] text-slate-400">Struttura dati raw</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     <!-- Detailed Taxation Summary -->
@@ -1974,10 +2012,26 @@
         );
     }
 
-    // ─── Export CSV ──────────────────────────────────────────────────────────
-    function exportToCSV() {
+    // ─── Export CSV & Wealthfolio ─────────────────────────────────────────────
+    window.toggleExportMenu = function(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('export-dropdown-menu');
+        if (menu) menu.classList.toggle('hidden');
+    };
+
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('export-dropdown-wrapper');
+        const menu = document.getElementById('export-dropdown-menu');
+        if (menu && !menu.classList.contains('hidden') && wrapper && !wrapper.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    function exportToCSV(format = 'wealthfolio') {
         if (!currentPortfolioId) return;
-        window.location.href = `/api/portfolios/${currentPortfolioId}/export`;
+        const menu = document.getElementById('export-dropdown-menu');
+        if (menu) menu.classList.add('hidden');
+        window.location.href = `/api/portfolios/${currentPortfolioId}/export?format=${format}`;
     }
 
     // ─── Chart Management ───────────────────────────────────────────────────

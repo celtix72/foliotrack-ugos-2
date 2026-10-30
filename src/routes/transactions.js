@@ -1,6 +1,7 @@
 const express = require('express');
 const { detectBroker, parseDirecta, parseIfis } = require('../utils/brokerParsers');
 const { mapYahooToGoogleTicker, mapGoogleToYahooTicker } = require('../services/googleFinance');
+const { generateWealthfolioCSV } = require('../utils/exportFormats');
 
 /**
  * Transactions Router
@@ -903,7 +904,8 @@ module.exports = function(dependencies) {
     // ─── EXPORT TRANSACTIONS ─────────────────────────────────────────────────
     const handleTransactionsExport = (req, res) => {
         try {
-            const { portfolioId, format } = req.query;
+            const { portfolioId } = req.query;
+            const format = (req.query.format || 'csv').toLowerCase();
             let transactions;
 
             if (portfolioId && portfolioId !== 'all') {
@@ -913,30 +915,65 @@ module.exports = function(dependencies) {
                     return res.status(403).json({ error: 'Access denied to portfolio' });
                 }
                 transactions = database.db.prepare(`
-                    SELECT t.*, p.name as portfolioName 
+                    SELECT t.*, 
+                           p.name AS portfolioName, 
+                           p.currency AS portfolioCurrency,
+                           a.name AS assetName, 
+                           a.type AS assetType, 
+                           a.currency AS assetCurrency
                     FROM transactions t
                     JOIN portfolios p ON t.portfolioId = p.id
+                    LEFT JOIN assets a ON t.assetTicker = a.ticker
                     WHERE t.portfolioId = ?
                     ORDER BY t.date DESC, t.id DESC
                 `).all(pid);
             } else {
                 if (req.user.role === 'admin') {
                     transactions = database.db.prepare(`
-                        SELECT t.*, p.name as portfolioName 
+                        SELECT t.*, 
+                               p.name AS portfolioName, 
+                               p.currency AS portfolioCurrency,
+                               a.name AS assetName, 
+                               a.type AS assetType, 
+                               a.currency AS assetCurrency
                         FROM transactions t
                         JOIN portfolios p ON t.portfolioId = p.id
+                        LEFT JOIN assets a ON t.assetTicker = a.ticker
                         ORDER BY t.date DESC, t.id DESC
                     `).all();
                 } else {
                     transactions = database.db.prepare(`
-                        SELECT t.*, p.name as portfolioName 
+                        SELECT t.*, 
+                               p.name AS portfolioName, 
+                               p.currency AS portfolioCurrency,
+                               a.name AS assetName, 
+                               a.type AS assetType, 
+                               a.currency AS assetCurrency
                         FROM transactions t
                         JOIN portfolios p ON t.portfolioId = p.id
                         JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                        LEFT JOIN assets a ON t.assetTicker = a.ticker
                         WHERE pu.user_id = ?
                         ORDER BY t.date DESC, t.id DESC
                     `).all(req.user.id);
                 }
+            }
+
+            if (format === 'wealthfolio' || format === 'wealthfolio_csv') {
+                let pCurr = 'EUR';
+                let pName = 'all_portfolios';
+                if (portfolioId && portfolioId !== 'all') {
+                    const portfolio = database.db.prepare('SELECT name, currency FROM portfolios WHERE id = ?').get(parseInt(portfolioId));
+                    if (portfolio) {
+                        pName = (portfolio.name || `portfolio_${portfolioId}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+                        pCurr = portfolio.currency || 'EUR';
+                    }
+                }
+                const csvContent = generateWealthfolioCSV(transactions, pCurr);
+                const filename = `wealthfolio_${pName}_${new Date().toISOString().split('T')[0]}.csv`;
+                res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+                res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+                return res.status(200).send(csvContent);
             }
 
             if (format === 'json') {

@@ -141,10 +141,39 @@
                         <span>Importa CSV</span>
                     </button>
                     
-                    <button onclick="exportTransactionsCsv()" class="px-2.5 py-1.5 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-[11px] font-bold transition-all shadow-sm flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[15px] text-amber-500">download</span>
-                        <span>Esporta CSV</span>
-                    </button>
+                    <div class="relative inline-block text-left" id="tx-export-dropdown-wrapper">
+                        <button onclick="toggleTxExportMenu(event)" class="px-2.5 py-1.5 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-[11px] font-bold transition-all shadow-sm flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[15px] text-amber-500">download</span>
+                            <span>Esporta</span>
+                            <span class="material-symbols-outlined text-[14px] text-slate-400">expand_more</span>
+                        </button>
+                        <div id="tx-export-dropdown-menu" class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 p-2 space-y-1">
+                            <button onclick="exportTransactionsCsv('wealthfolio')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-emerald-500 text-base">account_balance_wallet</span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                        Wealthfolio CSV
+                                        <span class="text-[8px] font-black px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-500">Consigliato</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">Pronto per wealthfolio.app</div>
+                                </div>
+                            </button>
+                            <button onclick="exportTransactionsCsv('csv')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-indigo-500 text-base">table_chart</span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100">CSV Standard (FolioTrack)</div>
+                                    <div class="text-[10px] text-slate-400">Tutti i campi nativi</div>
+                                </div>
+                            </button>
+                            <button onclick="exportTransactionsCsv('json')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-amber-500 text-base">data_object</span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100">JSON Completo</div>
+                                    <div class="text-[10px] text-slate-400">Struttura raw per backup</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                     
                     <button onclick="loadTransactionsPage()" class="p-1.5 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-500 rounded-lg text-xs transition-all shadow-sm flex items-center justify-center" title="Ricarica Dati">
                         <span class="material-symbols-outlined text-[16px]" id="refresh-icon">refresh</span>
@@ -911,10 +940,28 @@
             }
         };
 
-        // CSV Export
-        window.exportTransactionsCsv = function() {
+        // CSV & Wealthfolio Export
+        window.toggleTxExportMenu = function(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('tx-export-dropdown-menu');
+            if (menu) menu.classList.toggle('hidden');
+        };
+
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('tx-export-dropdown-wrapper');
+            const menu = document.getElementById('tx-export-dropdown-menu');
+            if (menu && !menu.classList.contains('hidden') && wrapper && !wrapper.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        window.exportTransactionsCsv = function(format = 'wealthfolio') {
+            const menu = document.getElementById('tx-export-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
             const pid = document.getElementById('filter-portfolio')?.value || 'all';
-            const url = pid === 'all' ? '/api/transactions/export' : `/api/transactions/export?portfolioId=${pid}`;
+            const url = pid === 'all' 
+                ? `/api/transactions/export?format=${format}` 
+                : `/api/transactions/export?portfolioId=${pid}&format=${format}`;
             window.location.href = url;
         };
 

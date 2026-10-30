@@ -1175,9 +1175,9 @@
         } catch(e) { alert('Errore: ' + e.message); }
     };
 
-    window.exportMgmtTransactions = () => {
+    window.exportMgmtTransactions = (format = 'wealthfolio') => {
         const portId = document.getElementById('mob-mgmt-portfolio-select')?.value || 'all';
-        window.location.href = `/api/transactions/export?portfolioId=${portId}`;
+        window.location.href = `/api/transactions/export?portfolioId=${portId}&format=${format}`;
     };
 
     // --- SL / TP & ALERT MANAGEMENT (UNIFIED HUB) ---

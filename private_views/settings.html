@@ -334,9 +334,39 @@
                     <button onclick="document.getElementById('mgmt-import-file').click()" class="flex-1 md:flex-none px-3.5 py-2 bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
                         <span class="material-symbols-outlined text-sm text-sky-500">upload_file</span> Importa CSV
                     </button>
-                    <button onclick="exportMgmtTransactions()" class="flex-1 md:flex-none px-3.5 py-2 bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm text-amber-500">download</span> Esporta CSV
-                    </button>
+                    <div class="relative inline-block text-left" id="mgmt-export-dropdown-wrapper">
+                        <button onclick="toggleMgmtExportMenu(event)" class="flex-1 md:flex-none px-3.5 py-2 bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm text-amber-500">download</span>
+                            <span>Esporta</span>
+                            <span class="material-symbols-outlined text-[13px] text-slate-400">expand_more</span>
+                        </button>
+                        <div id="mgmt-export-dropdown-menu" class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 p-2 space-y-1">
+                            <button onclick="exportMgmtTransactions('wealthfolio')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-emerald-500 text-base">account_balance_wallet</span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                        Wealthfolio CSV
+                                        <span class="text-[8px] font-black px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-500">Consigliato</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">Pronto per wealthfolio.app</div>
+                                </div>
+                            </button>
+                            <button onclick="exportMgmtTransactions('csv')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-indigo-500 text-base">table_chart</span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100">CSV Standard (FolioTrack)</div>
+                                    <div class="text-[10px] text-slate-400">Tutti i campi nativi</div>
+                                </div>
+                            </button>
+                            <button onclick="exportMgmtTransactions('json')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-amber-500 text-base">data_object</span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100">JSON Completo</div>
+                                    <div class="text-[10px] text-slate-400">Struttura raw per backup</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3075,15 +3105,33 @@
         tbody.innerHTML = html;
     }
 
-    async function exportMgmtTransactions() {
+    window.toggleMgmtExportMenu = function(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('mgmt-export-dropdown-menu');
+        if (menu) menu.classList.toggle('hidden');
+    };
+
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('mgmt-export-dropdown-wrapper');
+        const menu = document.getElementById('mgmt-export-dropdown-menu');
+        if (menu && !menu.classList.contains('hidden') && wrapper && !wrapper.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    async function exportMgmtTransactions(format = 'wealthfolio') {
+        const menu = document.getElementById('mgmt-export-dropdown-menu');
+        if (menu) menu.classList.add('hidden');
         const pid = document.getElementById('mgmt-portfolio-select')?.value || 'all';
-        const url = pid === 'all' ? '/api/transactions/export' : `/api/transactions/export?portfolioId=${pid}`;
+        const url = pid === 'all' 
+            ? `/api/transactions/export?format=${format}` 
+            : `/api/transactions/export?portfolioId=${pid}&format=${format}`;
         
-        const btn = document.querySelector('button[onclick="exportMgmtTransactions()"]');
+        const btn = document.querySelector('#mgmt-export-dropdown-wrapper button');
         const origHTML = btn ? btn.innerHTML : '';
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Exporting...';
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Esportazione...';
         }
 
         try {
@@ -3101,7 +3149,7 @@
             a.href = downloadUrl;
 
             const disposition = res.headers.get('Content-Disposition');
-            let filename = `transactions_export_${pid}_${new Date().toISOString().split('T')[0]}.csv`;
+            let filename = `wealthfolio_${pid}_${new Date().toISOString().split('T')[0]}.csv`;
             if (disposition && disposition.includes('filename=')) {
                 const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
                 if (match && match[1]) filename = match[1].replace(/['"]/g, '');
