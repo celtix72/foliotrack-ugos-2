@@ -221,7 +221,7 @@ if [ "$SHOULD_REBUILD" = true ]; then
         echo "   Dettagli stato: $CONTAINER_STATUS"
     else
         echo "⚠️ Avviso: Il container potrebbe non essere ancora completamente avviato."
-        echo "   Controlla i log con: $DOCKER_CMD logs --tail 30 foliotrack"
+        echo "   Controlla i log con: $DOCKER_CMD logs --tail 30 foliotrack-2"
     fi
     
     echo "══════════════════════════════════════════════════════════════"

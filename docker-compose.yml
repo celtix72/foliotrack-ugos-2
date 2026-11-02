@@ -1,13 +1,13 @@
 services:
-  foliotrack:
+  foliotrack-2:
     # ─── Modalità produzione: scarica l'immagine pre-compilata da GitHub ─────────
     # L'immagine viene costruita automaticamente da GitHub Actions ad ogni push.
-    image: ghcr.io/celtix72/foliotrack:latest
-    container_name: foliotrack
+    image: ghcr.io/celtix72/foliotrack-ugos-2:latest
+    container_name: foliotrack-2
     restart: unless-stopped
     networks:
       lan_static:
-        ipv4_address: 192.168.178.210
+        ipv4_address: 192.168.178.211
     dns:
       - 192.168.178.1
       - 1.1.1.1

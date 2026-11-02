@@ -1,6 +1,6 @@
-# 🚀 Guida di Installazione FolioTrack su UGREEN NAS (UGOS 1.9+)
+# 🚀 Guida di Installazione FolioTrack 2 su UGREEN NAS (UGOS 1.9+)
 
-Questa cartella (`FolioTrackUGOS`) è pronta e ottimizzata per essere eseguita sul motore **Docker nativo** del tuo **NAS UGREEN con UGOS 1.9**, senza alcuna virtualizzazione aggiuntiva (zero overhead).
+Questa cartella (`FolioTrackUGOS_2`) è pronta e ottimizzata per essere eseguita come istanza separata e indipendente sul motore **Docker nativo** del tuo **NAS UGREEN con UGOS 1.9**, collegata al repository GitHub `foliotrack-ugos-2`.
 
 ---
 
@@ -8,7 +8,7 @@ Questa cartella (`FolioTrackUGOS`) è pronta e ottimizzata per essere eseguita s
 
 - **`data/`**: Contiene il database SQLite persistente (`data/foliotrack.db`) già sincronizzato e la sottocartella `data/backups/`. Questo percorso è montato nel container, quindi tutti i tuoi dati e backup sono al sicuro sul disco del NAS anche aggiornando il container.
 - **`Dockerfile`**: Ottimizzato su Alpine Linux con `dumb-init` per la gestione corretta dei segnali di stop (evita corruzioni del database SQLite) e con compilazione dei moduli C++ (`better-sqlite3`).
-- **`docker-compose.yml`**: Configurato con riavvio automatico (`unless-stopped`), limiti sui log di sistema (per evitare che i log riempiano la memoria interna del NAS), healthcheck automatico e timezone italiana (`Europe/Rome`).
+- **`docker-compose.yml`**: Configurato con riavvio automatico (`unless-stopped`), servizio `foliotrack-2`, IP statico dedicato `192.168.178.211` (per evitare collisioni con l'istanza originale su `192.168.178.210`), limiti sui log di sistema, healthcheck automatico e timezone italiana (`Europe/Rome`).
 - **`.env`**: File con le variabili d'ambiente e segreti dell'applicazione.
 
 ---
@@ -19,16 +19,16 @@ Questa cartella (`FolioTrackUGOS`) è pronta e ottimizzata per essere eseguita s
 1. Sul Mac, apri il **Finder** e premi `Cmd + K`.
 2. Digita `smb://<IP_DEL_TUO_NAS>` e collegati con le tue credenziali.
 3. Apri la cartella condivisa **`docker`** del NAS.
-4. Trascina l'intera cartella **`FolioTrackUGOS`** (oppure rinominala in `foliotrack` dentro `docker`).
+4. Trascina l'intera cartella **`FolioTrackUGOS_2`** (oppure rinominala in `foliotrack-2` dentro `docker`).
 
 ### 2. Crea il Progetto nell'App Docker di UGOS
 1. Apri l'interfaccia web di UGOS e fai clic sull'app **Docker**.
 2. Dal menu a sinistra, clicca su **Progetti** (oppure **Compose**).
 3. Clicca su **Crea Progetto**:
-   - **Nome Progetto**: `foliotrack`
-   - **Percorso**: Seleziona la cartella `/docker/FolioTrackUGOS` (o `/docker/foliotrack`) appena copiata.
+   - **Nome Progetto**: `foliotrack-2`
+   - **Percorso**: Seleziona la cartella `/docker/FolioTrackUGOS_2` (o `/docker/foliotrack-2`) appena copiata.
    - Assicurati che sia selezionato l'uso del file `docker-compose.yml` presente nella cartella.
-4. Clicca su **Avanti / Distribuisci**: UGOS compilerà automaticamente l'immagine e avvierà il container.
+4. Clicca su **Avanti / Distribuisci**: UGOS compilerà automaticamente l'immagine o scaricherà l'immagine da `ghcr.io/celtix72/foliotrack-ugos-2:latest` e avvierà il container.
 5. In breve tempo vedrai lo stato passare a **In esecuzione (Sano/Healthy)**.
 
 ---
@@ -39,7 +39,7 @@ Questa cartella (`FolioTrackUGOS`) è pronta e ottimizzata per essere eseguita s
    - *Pannello di Controllo* > *Terminale e SNMP* > seleziona **Abilita servizio SSH** (porta 22).
 2. **Copia la cartella via rsync** dal terminale del Mac:
    ```bash
-   rsync -av /Users/mauro/Documents/Progetti_Sviluppo/FolioTrackUGOS/ <utente_nas>@<IP_DEL_NAS>:/volume1/docker/foliotrack/
+   rsync -av /Users/mauro/Documents/Progetti_Sviluppo/FolioTrackUGOS_2/ <utente_nas>@<IP_DEL_NAS>:/volume1/docker/foliotrack-2/
    ```
 3. **Accedi via SSH** al NAS:
    ```bash
@@ -47,7 +47,7 @@ Questa cartella (`FolioTrackUGOS`) è pronta e ottimizzata per essere eseguita s
    ```
 4. **Avvia il container**:
    ```bash
-   cd /volume1/docker/foliotrack
+   cd /volume1/docker/foliotrack-2
    docker compose up -d --build
    ```
 

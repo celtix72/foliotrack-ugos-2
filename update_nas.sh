@@ -10,7 +10,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-IMAGE="ghcr.io/celtix72/foliotrack:latest"
+IMAGE="ghcr.io/celtix72/foliotrack-ugos-2:latest"
 ENV_FILE="$SCRIPT_DIR/.env"
 
 echo "══════════════════════════════════════════════════════════════"
@@ -94,7 +94,7 @@ if [ -n "$STATUS" ]; then
     echo "✅ Container attivo: $STATUS"
 else
     echo "⚠️  Container non ancora avviato. Verifica con:"
-    echo "   $DOCKER_CMD logs --tail 30 foliotrack"
+    echo "   $DOCKER_CMD logs --tail 30 foliotrack-2"
 fi
 
 echo "══════════════════════════════════════════════════════════════"

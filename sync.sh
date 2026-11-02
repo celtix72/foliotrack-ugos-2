@@ -15,8 +15,13 @@ fi
 
 # 2. Pull latest changes from GitHub
 echo "📥 Checking for remote updates..."
-git pull --rebase origin main
-PULL_STATUS=$?
+if git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+    git pull --rebase origin main
+    PULL_STATUS=$?
+else
+    echo "ℹ️ Remote branch 'main' does not exist yet on remote. Skipping pull..."
+    PULL_STATUS=0
+fi
 
 # Restore local changes if they were stashed
 if [ $HAS_CHANGES = true ]; then
@@ -61,7 +66,7 @@ EOF
     
     # Push to GitHub
     echo "📤 Pushing changes to GitHub..."
-    git push origin main
+    git push -u origin main
     
     if [ $? -eq 0 ]; then
         echo "✅ Changes successfully pushed to GitHub!"

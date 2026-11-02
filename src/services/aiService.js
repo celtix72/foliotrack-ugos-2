@@ -700,7 +700,7 @@ async function callAIModel(engine, prompt, keys) {
                     headers: { 
                         'Authorization': `Bearer ${apiKey}`, 
                         'Content-Type': 'application/json',
-                        'HTTP-Referer': 'https://github.com/celtix72/foliotrack', 
+                        'HTTP-Referer': 'https://github.com/celtix72/foliotrack-ugos-2', 
                         'X-Title': 'FolioTrack'
                     },
                     timeout: 180000
