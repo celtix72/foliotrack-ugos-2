@@ -7,7 +7,7 @@
  *   node reset_password.js [username] [nuova_password]
  *
  * Esempio da NAS via Docker:
- *   docker exec -it foliotrack node reset_password.js mauro miaPassword123
+ *   docker exec -it foliotrack-2 node reset_password.js mauro miaPassword123
  */
 
 const Database = require('better-sqlite3');

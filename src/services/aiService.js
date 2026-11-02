@@ -7,15 +7,15 @@ const GEMINI_MODEL_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
 // Modelli statici di fallback Gemini
 const STATIC_GEMINI_FREE_MODELS = [
-    { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',       isFree: true },
-    { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',       isFree: true },
-    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite',  isFree: true },
-    { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',         isFree: false },
-    { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
-    { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',         isFree: false },
-    { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',       isFree: true },
-    { id: 'gemini-2.8-flash',      name: 'Gemini 2.8 Flash',       isFree: true },
-    { id: 'gemini-2.7-flash',      name: 'Gemini 2.7 Flash',       isFree: true },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', isFree: true },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', isFree: true },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', isFree: true },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', isFree: false },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', isFree: true },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', isFree: false },
+    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', isFree: true },
+    { id: 'gemini-2.8-flash', name: 'Gemini 2.8 Flash', isFree: true },
+    { id: 'gemini-2.7-flash', name: 'Gemini 2.7 Flash', isFree: true },
 ];
 
 // Modelli statici di fallback Requesty
@@ -71,26 +71,26 @@ async function fetchOpenRouterModels() {
     try {
         const res = await axios.get('https://openrouter.ai/api/v1/models');
         if (res.data && res.data.data) {
-            
+
             const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/', 'xiaomi/', 'nvidia/', 'cohere/', 'liquid/'];
-            
+
             let filtered = res.data.data.filter(m => {
                 const id = m.id.toLowerCase();
                 const promptPrice = parseFloat(m.pricing?.prompt || 0) * 1000000;
-                
+
                 // Esclude i modelli troppo costosi (> $15 per 1M token in input)
                 if (promptPrice > 15) return false;
-                
+
                 // Esclude versioni obsolete, vision, roleplay o non adatte ad analisi testuale finanziaria
                 if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|lyria/.test(id)) {
                     return false;
                 }
-                
+
                 // Filtra la maggior parte dei modelli ":free" inaffidabili, salvaguarda Llama, Qwen, DeepSeek, Xiaomi, NVIDIA, Nemotron, Mistral, Gemma
                 if (id.endsWith(':free') && !/llama|qwen|deepseek|mistral|xiaomi|nvidia|nemotron|gemma/.test(id)) {
                     return false;
                 }
-                
+
                 // Seleziona solo provider leader affidabili per compiti di ragionamento
                 return preferredProviders.some(p => id.startsWith(p));
             });
@@ -99,25 +99,25 @@ async function fetchOpenRouterModels() {
                 const promptPrice = parseFloat(m.pricing?.prompt || 0);
                 const compPrice = parseFloat(m.pricing?.completion || 0);
                 const isFree = (promptPrice === 0 && compPrice === 0) || m.id.endsWith(':free');
-                
+
                 // Convert to per 1M tokens
                 const prompt1M = (promptPrice * 1000000).toFixed(2);
                 const comp1M = (compPrice * 1000000).toFixed(2);
-                
+
                 let priceLabel = isFree ? 'Free' : `$${prompt1M} / $${comp1M}`;
-                
+
                 // Punteggio di rilevanza per ordinamento
                 let score = 0;
                 const id = m.id.toLowerCase();
-                if (isFree) score += 50; 
-                
+                if (isFree) score += 50;
+
                 // Flagships / High reasoning (include NVIDIA Nemotron, GPT-5, Claude 4/5, Gemini Pro, DeepSeek R1, QwQ, MiMo)
                 if (/nvidia|nemotron|gpt-5(?!.*mini)|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[1234]-(70b|405b)|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro/.test(id)) score += 200;
                 // Fast / Good performance
                 else if (/qwen-?[23]|qwen3\.7|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)|llama-3\.[123]/.test(id)) score += 100;
                 // Minis
                 else if (/mini|flash|haiku|8b|nano/.test(id)) score += 30;
-                
+
                 // Penalizza modelli troppo vecchi
                 if (/llama-3-8b(?!.*3\.[123])|gpt-4-0|claude-3-haiku/.test(id)) score -= 20;
 
@@ -137,10 +137,10 @@ async function fetchOpenRouterModels() {
                 if (a.costScore !== b.costScore) return a.costScore - b.costScore;
                 return a.name.localeCompare(b.name);
             });
-            
+
             // Prendi i primi 80
             _cachedOpenRouterModels = mappedModels.slice(0, 80);
-            
+
             // Riordina i selezionati in modo che i Free stiano in cima, poi ordine alfabetico (migliore UX)
             _cachedOpenRouterModels.sort((a, b) => {
                 if (a.isFree && !b.isFree) return -1;
@@ -178,13 +178,13 @@ async function fetchRequestyModels() {
                 const settings = db.getSettings(1) || {};
                 apiKey = settings.requestyApiKey || settings.requestyApiKeyPay || settings.requestyApiKeyFree || apiKey;
             }
-        } catch(e) {}
-        
+        } catch (e) { }
+
         const config = {};
         if (apiKey) {
             config.headers = { 'Authorization': `Bearer ${apiKey}` };
         }
-        
+
         const res = await axios.get('https://router.requesty.ai/v1/models', config);
         if (res.data && res.data.data) {
             // Check if Requesty injects an approval/routed flag when auth is provided
@@ -192,7 +192,7 @@ async function fetchRequestyModels() {
 
             let filtered = res.data.data.filter(m => {
                 const id = m.id.toLowerCase();
-                
+
                 // If the user has configured an Approved Models list in Requesty, strictly adhere to it
                 if (hasApprovalFlags) {
                     if (!(m.approved === true || m.is_approved === true || m.status === 'approved' || m.routed === true)) return false;
@@ -214,10 +214,10 @@ async function fetchRequestyModels() {
                 const prompt1M = (promptPrice * 1000000).toFixed(2);
                 const comp1M = (compPrice * 1000000).toFixed(2);
                 let priceLabel = isFree ? 'Free' : `$${prompt1M} / $${comp1M}`;
-                
+
                 let score = 0;
                 const id = m.id.toLowerCase();
-                if (isFree) score += 20; 
+                if (isFree) score += 20;
                 if (id.includes('nemotron-3-ultra-550b-a55b') || id.includes('nemotron-3-ultra')) score += 500;
                 else if (/gpt-5|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro|deepseek-v4-pro|nemotron/.test(id)) score += 200;
                 else if (/qwen-?[23]|qwen3\.7|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)|deepseek-v4-flash/.test(id)) score += 100;
@@ -240,7 +240,7 @@ async function fetchRequestyModels() {
                 if (a.costScore !== b.costScore) return a.costScore - b.costScore;
                 return a.name.localeCompare(b.name);
             });
-            
+
             _cachedRequestyModels = mappedModels.slice(0, 300);
             _cachedRequestyModels.sort((a, b) => {
                 if (a.id.includes('nemotron-3-ultra-550b-a55b')) return -1;
@@ -480,7 +480,7 @@ async function checkNewAIModels() {
         const database = require('../db');
         const { notifyUser } = require('./notificationService');
         const settings = database.getSettings(1) || {};
-        
+
         let knownModels = [];
         let isFirstRun = false;
         if (settings.knownAiModels) {
@@ -530,7 +530,7 @@ async function checkNewAIModels() {
             const orRes = await axios.get('https://openrouter.ai/api/v1/models', { timeout: 15000 });
             if (orRes.data && Array.isArray(orRes.data.data)) {
                 const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/', 'xiaomi/', 'nvidia/'];
-                
+
                 for (const m of orRes.data.data) {
                     const id = m.id.toLowerCase();
                     const promptPrice = parseFloat(m.pricing?.prompt || 0);
@@ -564,8 +564,8 @@ async function checkNewAIModels() {
             database.setSetting(1, 'knownAiModels', JSON.stringify(knownModels));
 
             // Ricarica le cache dei modelli
-            fetchOpenRouterModels().catch(() => {});
-            if (geminiKey) fetchGeminiModels(geminiKey).catch(() => {});
+            fetchOpenRouterModels().catch(() => { });
+            if (geminiKey) fetchGeminiModels(geminiKey).catch(() => { });
 
             aiLogger.info(`[Check AI Models] Rilevati ${totalNew.length} nuovi modelli:`, newlyDiscovered);
 
@@ -629,16 +629,16 @@ function parseAIResponse(rawText) {
     } catch (e) {
         console.warn('JSON parse failed, attempting regex extraction. Error:', e.message);
         const result = { action: 'HOLD', targetProfit: 0, stopLoss: 0, reasoning: rawText };
-        
+
         const actionMatch = rawText.match(/"action"\s*:\s*"([^"]+)"/i);
         if (actionMatch) result.action = actionMatch[1].toUpperCase();
-        
+
         const tpMatch = rawText.match(/"targetProfit"\s*:\s*([\d.]+)/i);
         if (tpMatch) result.targetProfit = parseFloat(tpMatch[1]);
-        
+
         const slMatch = rawText.match(/"stopLoss"\s*:\s*([\d.]+)/i);
         if (slMatch) result.stopLoss = parseFloat(slMatch[1]);
-        
+
         const reasoningMatch = rawText.match(/"reasoning"\s*:\s*"([\s\S]*?)"(?=\n\s*\}|\r\n\s*\}|,\s*"targetProfit"|,\s*"stopLoss"|,\s*"action"|$)/i);
         if (reasoningMatch) {
             result.reasoning = reasoningMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
@@ -647,7 +647,7 @@ function parseAIResponse(rawText) {
             stripped = stripped.replace(/"\s*\}[\s\S]*$/i, '');
             result.reasoning = stripped.trim() ? stripped : rawText;
         }
-        
+
         return result;
     }
 }
@@ -666,7 +666,7 @@ async function callAIModel(engine, prompt, keys) {
     if (isOpenRouter) {
         const apiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
         if (!apiKey) throw new Error(`OpenRouter API Key mancante. Inseriscila nei Settings dell'amministratore.`);
-        
+
         let orModel = '';
         if (baseEngine === 'OR1') orModel = keys.openrouterModel1;
         else if (baseEngine === 'OR2') orModel = keys.openrouterModel2;
@@ -676,7 +676,7 @@ async function callAIModel(engine, prompt, keys) {
         else {
             orModel = engine.replace(/^openrouter:/, '').replace(/^or:/, '');
         }
-        
+
         // Fallback predefinito se lo slot non è configurato nei settings
         if (!orModel) {
             if (baseEngine === 'OR1') orModel = 'deepseek/deepseek-r1:free';
@@ -686,7 +686,7 @@ async function callAIModel(engine, prompt, keys) {
             else if (baseEngine === 'OR5') orModel = 'openai/gpt-4o';
             else orModel = 'deepseek/deepseek-r1:free';
         }
-        
+
         let res;
         let attempt = 0;
         let maxAttempts = 3;
@@ -697,10 +697,10 @@ async function callAIModel(engine, prompt, keys) {
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.1
                 }, {
-                    headers: { 
-                        'Authorization': `Bearer ${apiKey}`, 
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json',
-                        'HTTP-Referer': 'https://github.com/celtix72/foliotrack-ugos-2', 
+                        'HTTP-Referer': 'https://github.com/celtix72/foliotrack-ugos-2',
                         'X-Title': 'FolioTrack'
                     },
                     timeout: 180000
@@ -724,7 +724,7 @@ async function callAIModel(engine, prompt, keys) {
     } else if (isRequesty) {
         const apiKey = keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
         if (!apiKey) throw new Error(`Requesty API Key mancante. Inseriscila nei Settings dell'amministratore.`);
-        
+
         let reqModel = '';
         if (baseEngine === 'REQ1') reqModel = keys.requestyModel1;
         else if (baseEngine === 'REQ2') reqModel = keys.requestyModel2;
@@ -734,7 +734,7 @@ async function callAIModel(engine, prompt, keys) {
         else {
             reqModel = engine.replace(/^requesty:/, '').replace(/^req:/, '');
         }
-        
+
         // Fallback predefinito se lo slot non è configurato nei settings
         if (!reqModel) {
             if (baseEngine === 'REQ1') reqModel = 'nvidia/nemotron-3-ultra-550b-a55b';
@@ -747,7 +747,7 @@ async function callAIModel(engine, prompt, keys) {
         if (reqModel === 'nemotron-3-ultra-550b-a55b') {
             reqModel = 'nvidia/nemotron-3-ultra-550b-a55b';
         }
-        
+
         let res;
         let attempt = 0;
         let maxAttempts = 3;
@@ -758,8 +758,8 @@ async function callAIModel(engine, prompt, keys) {
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.1
                 }, {
-                    headers: { 
-                        'Authorization': `Bearer ${apiKey}`, 
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json'
                     },
                     timeout: 180000
@@ -860,11 +860,11 @@ async function callAIModel(engine, prompt, keys) {
                     aiLogger.info(`[Gemini] Attempting generation with model: ${currentModel} (attempt ${attempt}/${maxModelAttempts})`);
                     res = await axios.post(
                         `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`,
-                        { 
+                        {
                             contents: [{ parts: [{ text: prompt }] }],
                             generationConfig: { temperature: 0.1 }
                         },
-                        { 
+                        {
                             headers: { 'Content-Type': 'application/json' },
                             timeout: 120000
                         }

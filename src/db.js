@@ -1182,10 +1182,10 @@ function initDb() {
     try { dbConnection.prepare(`ALTER TABLE asset_ai_history ADD COLUMN user_id INTEGER DEFAULT 1`).run(); } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE asset_ai_history ADD COLUMN completed_at DATETIME DEFAULT NULL`).run(); } catch (e) {}
 
-    // ─── Seed: default admin user (mauro / pippo) ───────────────────────────
+    // ─── Seed: default admin user (mauro / Lakota.1972) ─────────────────────────
     const existingAdmin = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro'`).get();
     if (!existingAdmin) {
-        const hash = bcrypt.hashSync('pippo', 10);
+        const hash = bcrypt.hashSync('Lakota.1972', 10);
         dbConnection.prepare(
             `INSERT INTO users (username, password_hash, role, display_name, must_change_password) VALUES (?, ?, ?, ?, ?)`
         ).run('mauro', hash, 'admin', 'Mauro', 0);
